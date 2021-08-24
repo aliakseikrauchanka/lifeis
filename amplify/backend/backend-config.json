@@ -1,13 +1,13 @@
 {
   "auth": {
-    "lifeisd80bdd7a": {
+    "lifeisa4917191": {
       "service": "Cognito",
       "providerPlugin": "awscloudformation",
       "dependsOn": [],
       "customAuth": false,
       "frontendAuthConfig": {
         "loginMechanism": [
-          "EMAIL"
+          "PREFERRED_USERNAME"
         ],
         "signupAttributes": [
           "EMAIL"
