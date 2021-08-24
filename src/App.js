@@ -20,6 +20,7 @@ function App() {
           Learn React v2
         </a>
       </header>
+      <div>deploy node</div>
       <AmplifySignOut />
     </div>
   );
