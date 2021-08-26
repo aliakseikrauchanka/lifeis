@@ -22,5 +22,29 @@
         ]
       }
     }
+  },
+  "api": {
+    "lifeisapp": {
+      "service": "AppSync",
+      "providerPlugin": "awscloudformation",
+      "output": {
+        "authConfig": {
+          "defaultAuthentication": {
+            "authenticationType": "API_KEY",
+            "apiKeyConfig": {
+              "apiKeyExpirationDays": 7,
+              "description": "demo"
+            }
+          },
+          "additionalAuthenticationProviders": []
+        }
+      }
+    }
+  },
+  "storage": {
+    "lifeisfiles": {
+      "service": "S3",
+      "providerPlugin": "awscloudformation"
+    }
   }
 }
