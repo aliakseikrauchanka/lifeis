@@ -14,20 +14,26 @@ import UseEffectHacker from "./experiments/UseEffectForHacker";
 
 const LazyComponent = React.lazy(() => import("./experiments/LazyComponent"))
 
-const initialFormState = { name: '', description: '' };
+interface IFormState {
+  name: string;
+  description: string;
+  image?: string;
+}
+const initialFormState: IFormState = { name: '', description: '' };
 
-function App() {
-  const [todos, setTodos] = useState([]);
-  const [formData, setFormData] = useState(initialFormState);
+const App: React.FC = () => {
+  // TODO: any[] need to be moved to some custom interface
+  const [todos, setTodos] = useState<any[]>([]);
+  const [formData, setFormData] = useState<IFormState>(initialFormState);
 
   useEffect(() => {
     fetchTodos();
   }, []);
 
   async function fetchTodos() {
-    const apiData = await API.graphql({ query: listTodos })
+    const apiData: any = await API.graphql({ query: listTodos })
 
-    const fetchedTodos = apiData.data.listTodos.items;
+    const fetchedTodos: any[] = apiData.data.listTodos.items;
     await Promise.all(fetchedTodos.map(async todo => {
       if (todo.image) {
         let image = await Storage.get(todo.image);
@@ -44,23 +50,21 @@ function App() {
 
     if (formData.image) {
       const image = Storage.get(formData.image);
-      formData.image = image; 
+      formData.image = (await image) as string; 
     }
 
 
     setTodos([...todos, formData]);
-    setFormData({initialFormState});
+    setFormData({ ...initialFormState });
   }
 
-  async function deleteTodo(todoId) {
-    console.log("deleteTodo");
+  async function deleteTodo(todoId: string) {
     const newTodoArr = todos.filter(todo => todo.id !== todoId);
     setTodos(newTodoArr);
     await API.graphql({ query: deleteTodoMutation, variables: { input: { id: todoId } } })
   }
 
-  async function setImage(files) {
-    debugger;
+  async function setImage(files: FileList | null) {
     if (!files) { return; }
 
     const file = files[0];

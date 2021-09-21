@@ -1,19 +1,19 @@
 import React from "react";
 
-class CustomErrorBoundary extends React.Component{
-    constructor(props) {
+class CustomErrorBoundary extends React.Component<{}, { hasError: boolean }>{
+    constructor(props: any) {
         super(props);
         this.state = {
             hasError: false
         }
     }
-    static getDerivedStateFromError(error, errorInfo) {
-        // return {
-        //     hasError: true
-        // };
-    }
+    // static getDerivedStateFromError(error, errorInfo) {
+    //     // return {
+    //     //     hasError: true
+    //     // };
+    // }
     componentDidCatch() {
-        this.state({
+        this.setState({
             hasError: true
         })
     }

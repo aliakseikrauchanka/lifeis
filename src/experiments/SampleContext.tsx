@@ -2,7 +2,7 @@ import React, { useContext } from 'react';
 
 const SampleContext = React.createContext("initial")
 
-export default function ParentComponent(props) {
+export default function ParentComponent() {
     return <SampleContext.Provider value="global">
         <ChildComponent />
     </SampleContext.Provider>

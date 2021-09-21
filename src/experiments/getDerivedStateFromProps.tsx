@@ -1,14 +1,14 @@
 import React from "react";
 
 class GetDerivedStateFromProps extends React.Component {
-    constructor(props) {
+    constructor(props: any) {
         super(props);
         this.state = {
             value: "ololo"
         };
     }
 
-    static getDerivedStateFromProps(props, state) {
+    static getDerivedStateFromProps(props: any, state: any) {
         return {
             ...state,
             ...props

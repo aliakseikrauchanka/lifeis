@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useReducer } from "react"
 import axios from "axios";
 
-function UseEffectHacker() {
+function UseEffectHacker(): any {
     const [query, setQuery] = useState("redux");
     const [{ isLoading, data }, setSearch] = useApi();
 
@@ -24,7 +24,7 @@ function UseEffectHacker() {
                     <button type="submit">
                         Set search
                     </button>
-                    {data.hits.map(item => (
+                    {data.hits.map((item: any) => (
                     <li key={item.objectID}>
                         <a href={item.url}>{item.title}</a>
                     </li>
@@ -35,7 +35,7 @@ function UseEffectHacker() {
     </>;
 }
 
-function fetchReducer(state, action) {
+function fetchReducer(state: any, action: any) {
     switch (action.type) {
         case "FETCH_INIT":
             return {
@@ -74,7 +74,7 @@ function useApi() {
 
         getHits();
 
-        return () => didCancel = true;
+        return () => { didCancel = true };
     }, [search]);
 
     return [ state , setSearch ];
