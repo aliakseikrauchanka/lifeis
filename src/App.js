@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { Suspense, useState, useEffect } from "react";
 
 import './App.css';
 
@@ -7,6 +7,12 @@ import { withAuthenticator, AmplifySignOut } from "@aws-amplify/ui-react"
 
 import { listTodos } from "./graphql/queries";
 import { createTodo as createTodoMutation, deleteTodo as deleteTodoMutation } from "./graphql/mutations";
+import GetDerivedStateFromProps from "./experiments/getDerivedStateFromProps";
+import CustomErrorBoundary from "./experiments/CustomErrorBoundary";
+import ParentComponent from "./experiments/SampleContext";
+import UseEffectHacker from "./experiments/UseEffectForHacker";
+
+const LazyComponent = React.lazy(() => import("./experiments/LazyComponent"))
 
 const initialFormState = { name: '', description: '' };
 
@@ -47,6 +53,7 @@ function App() {
   }
 
   async function deleteTodo(todoId) {
+    console.log("deleteTodo");
     const newTodoArr = todos.filter(todo => todo.id !== todoId);
     setTodos(newTodoArr);
     await API.graphql({ query: deleteTodoMutation, variables: { input: { id: todoId } } })
@@ -81,7 +88,7 @@ function App() {
       <input
         type="file"
         onChange = { e => { 
-          setImage(e.target.files);
+          setImage(e.target.files); 
         } }
       />
 
@@ -103,6 +110,26 @@ function App() {
           ))
         }
       </div>
+
+      {/* GetDerivedStateFromProps has context */}
+      {/*
+      <CustomErrorBoundary>
+        <GetDerivedStateFromProps prop1="value1" prop2="value2"/>
+      </CustomErrorBoundary> 
+      */}
+
+      {/* ParentComponent has context */}
+      {/* 
+      <Suspense fallback={<div>"Loading..."</div>}>
+        <LazyComponent />
+      </Suspense>
+       */}
+
+      {/* ParentComponent has context */}
+       <UseEffectHacker />
+
+      <ParentComponent />
+
       <AmplifySignOut />
     </div>
   );
