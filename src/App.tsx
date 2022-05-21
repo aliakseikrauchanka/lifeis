@@ -46,11 +46,11 @@ const App: React.FC = () => {
 
   async function addTodo() {
     if (!formData.name || !formData.description) { return }
-    await API.graphql({ query: createTodoMutation, variables: { input: formData} });
+    await API.graphql({ query: createTodoMutation, variables: { input: formData } });
 
     if (formData.image) {
       const image = Storage.get(formData.image);
-      formData.image = (await image) as string; 
+      formData.image = (await image) as string;
     }
 
 
@@ -67,7 +67,8 @@ const App: React.FC = () => {
   async function setImage(files: FileList | null) {
     if (!files) { return; }
 
-    const file = files[0];
+    const [ file ] = files;
+    console.log('test commit');
 
     setFormData({ ...formData, image: file.name });
     await Storage.put(file.name, file);
@@ -79,36 +80,36 @@ const App: React.FC = () => {
     <div className="App">
       <input
         placeholder="Type name"
-        value={ formData.name }
-        onChange = { e => {
+        value={formData.name}
+        onChange={e => {
           setFormData({ ...formData, name: e.target.value })
         }}
       />
       <input
         placeholder="Type description"
-        value={ formData.description }
-        onChange = { e => { setFormData({ ...formData, description: e.target.value })}}
+        value={formData.description}
+        onChange={e => { setFormData({ ...formData, description: e.target.value }) }}
       />
       <input
         type="file"
-        onChange = { e => { 
-          setImage(e.target.files); 
-        } }
+        onChange={e => {
+          setImage(e.target.files);
+        }}
       />
 
       <button
-        onClick={ e => { addTodo(); } }
+        onClick={e => { addTodo(); }}
       >Add TODO</button>
-      <div style={{marginBottom: 30}}>
+      <div style={{ marginBottom: 30 }}>
         {
           todos.map(todo => (
             <div key={todo.id || todo.name}>
               <h2>{todo.name}</h2>
               <p>{todo.description}</p>
               {
-                todo.image && <img src={todo.image} style={ {width: 400} }/>
+                todo.image && <img src={todo.image} style={{ width: 400 }} />
               }
-              
+
               <button onClick={() => deleteTodo(todo.id)}>Delete note</button>
             </div>
           ))
@@ -130,7 +131,7 @@ const App: React.FC = () => {
        */}
 
       {/* ParentComponent has context */}
-       <UseEffectHacker />
+      <UseEffectHacker />
 
       <ParentComponent />
 
