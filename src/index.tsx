@@ -4,18 +4,12 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-import Amplify from "aws-amplify";
-// import configuration from "./aws-exports.js"
+import { Amplify } from "aws-amplify";
+import configuration from "./aws-exports.js"
 
-// Amplify.configure(configuration);
+Amplify.configure(configuration);
 
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-  document.getElementById('root')
-);
-
+ 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
 // or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
