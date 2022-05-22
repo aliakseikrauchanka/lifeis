@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "serviceConfiguration": {
+    "apiName": "lifeis",
+    "serviceName": "AppSync",
+    "gqlSchemaPath": "/home/aliakseikrauchanka/code/lifeis/amplify/backend/api/lifeis/schema.graphql",
+    "defaultAuthType": {
+      "mode": "API_KEY",
+      "expirationTime": 7
+    }
+  }
+}

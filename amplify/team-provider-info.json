@@ -1,20 +1,15 @@
 {
-  "staging": {
+  "dev": {
     "awscloudformation": {
-      "AuthRoleName": "amplify-amplify5d02b8beced04-staging-165926-authRole",
-      "UnauthRoleArn": "arn:aws:iam::634913260194:role/amplify-amplify5d02b8beced04-staging-165926-unauthRole",
-      "AuthRoleArn": "arn:aws:iam::634913260194:role/amplify-amplify5d02b8beced04-staging-165926-authRole",
-      "Region": "eu-west-1",
-      "DeploymentBucketName": "amplify-amplify5d02b8beced04-staging-165926-deployment",
-      "UnauthRoleName": "amplify-amplify5d02b8beced04-staging-165926-unauthRole",
-      "StackName": "amplify-amplify5d02b8beced04-staging-165926",
-      "StackId": "arn:aws:cloudformation:eu-west-1:634913260194:stack/amplify-amplify5d02b8beced04-staging-165926/cfac53b0-010e-11ec-b783-0abe543f6d29",
-      "AmplifyAppId": "ddh5azb39wlnl"
-    },
-    "categories": {
-      "auth": {
-        "lifeisa4917191": {}
-      }
+      "AuthRoleName": "amplify-lifeis-dev-105002-authRole",
+      "UnauthRoleArn": "arn:aws:iam::634913260194:role/amplify-lifeis-dev-105002-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::634913260194:role/amplify-lifeis-dev-105002-authRole",
+      "Region": "us-west-1",
+      "DeploymentBucketName": "amplify-lifeis-dev-105002-deployment",
+      "UnauthRoleName": "amplify-lifeis-dev-105002-unauthRole",
+      "StackName": "amplify-lifeis-dev-105002",
+      "StackId": "arn:aws:cloudformation:us-west-1:634913260194:stack/amplify-lifeis-dev-105002/30c3e6b0-d9ac-11ec-89a2-02701553bbe7",
+      "AmplifyAppId": "d2xlvztwrqa1y3"
     }
   }
 }
