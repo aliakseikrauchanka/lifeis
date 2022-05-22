@@ -5,8 +5,8 @@ import './App.css';
 import { API, Storage } from "aws-amplify";
 import { withAuthenticator, AmplifySignOut } from "@aws-amplify/ui-react"
 
-// import { listTodos } from "./graphql/queries";
-// import { createTodo as createTodoMutation, deleteTodo as deleteTodoMutation } from "./graphql/mutations";
+import { listTodos } from "./graphql/queries";
+import { createTodo as createTodoMutation, deleteTodo as deleteTodoMutation } from "./graphql/mutations";
 import GetDerivedStateFromProps from "./experiments/getDerivedStateFromProps";
 import CustomErrorBoundary from "./experiments/CustomErrorBoundary";
 import ParentComponent from "./experiments/SampleContext";
@@ -26,43 +26,43 @@ const App: React.FC = () => {
   const [todos, setTodos] = useState<any[]>([]);
   const [formData, setFormData] = useState<IFormState>(initialFormState);
 
-  // useEffect(() => {
-  //   fetchTodos();
-  // }, []);
+  useEffect(() => {
+    fetchTodos();
+  }, []);
 
-  // async function fetchTodos() {
-  //   const apiData: any = await API.graphql({ query: listTodos })
+  async function fetchTodos() {
+    const apiData: any = await API.graphql({ query: listTodos })
 
-  //   const fetchedTodos: any[] = apiData.data.listTodos.items;
-  //   await Promise.all(fetchedTodos.map(async todo => {
-  //     if (todo.image) {
-  //       let image = await Storage.get(todo.image);
-  //       todo.image = image;
-  //     }
-  //   }));
+    const fetchedTodos: any[] = apiData.data.listTodos.items;
+    await Promise.all(fetchedTodos.map(async todo => {
+      if (todo.image) {
+        let image = await Storage.get(todo.image);
+        todo.image = image;
+      }
+    }));
 
-  //   setTodos(fetchedTodos);
-  // }
+    setTodos(fetchedTodos);
+  }
 
-  // async function addTodo() {
-  //   if (!formData.name || !formData.description) { return }
-  //   await API.graphql({ query: createTodoMutation, variables: { input: formData } });
+  async function addTodo() {
+    if (!formData.name || !formData.description) { return }
+    await API.graphql({ query: createTodoMutation, variables: { input: formData } });
 
-  //   if (formData.image) {
-  //     const image = Storage.get(formData.image);
-  //     formData.image = (await image) as string;
-  //   }
+    // if (formData.image) {
+    //   const image = Storage.get(formData.image);
+    //   formData.image = (await image) as string;
+    // }
 
 
-  //   setTodos([...todos, formData]);
-  //   setFormData({ ...initialFormState });
-  // }
+    setTodos([...todos, formData]);
+    // setFormData({ ...initialFormState });
+  }
 
-  // async function deleteTodo(todoId: string) {
-  //   const newTodoArr = todos.filter(todo => todo.id !== todoId);
-  //   setTodos(newTodoArr);
-  //   await API.graphql({ query: deleteTodoMutation, variables: { input: { id: todoId } } })
-  // }
+  async function deleteTodo(todoId: string) {
+    const newTodoArr = todos.filter(todo => todo.id !== todoId);
+    setTodos(newTodoArr);
+    await API.graphql({ query: deleteTodoMutation, variables: { input: { id: todoId } } })
+  }
 
   // async function setImage(files: FileList | null) {
   //   if (!files) { return; }
@@ -98,7 +98,7 @@ const App: React.FC = () => {
       />
 
       <button
-        // onClick={e => { addTodo(); }}
+        onClick={e => { addTodo(); }}
       >Add TODO</button>
       <div style={{ marginBottom: 30 }}>
         {
@@ -110,7 +110,7 @@ const App: React.FC = () => {
                 todo.image && <img src={todo.image} style={{ width: 400 }} />
               }
 
-              {/* <button onClick={() => deleteTodo(todo.id)}>Delete note</button> */}
+              <button onClick={() => deleteTodo(todo.id)}>Delete note</button>
             </div>
           ))
         }

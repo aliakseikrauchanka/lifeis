@@ -10,6 +10,11 @@
       "StackName": "amplify-lifeis-dev-105002",
       "StackId": "arn:aws:cloudformation:us-west-1:634913260194:stack/amplify-lifeis-dev-105002/30c3e6b0-d9ac-11ec-89a2-02701553bbe7",
       "AmplifyAppId": "d2xlvztwrqa1y3"
+    },
+    "categories": {
+      "auth": {
+        "lifeisc6b33769": {}
+      }
     }
   }
 }
