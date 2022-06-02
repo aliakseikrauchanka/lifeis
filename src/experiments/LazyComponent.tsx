@@ -3,3 +3,15 @@ function LazyComponent() {
 }
 
 export default LazyComponent 
+
+
+// USAGE
+
+// const LazyComponent = React.lazy(() => import("./experiments/LazyComponent"))
+
+
+//       {/* ParentComponent has context */}
+      
+//       <Suspense fallback={<div>"Loading..."</div>}>
+//         <LazyComponent />
+//       </Suspense>

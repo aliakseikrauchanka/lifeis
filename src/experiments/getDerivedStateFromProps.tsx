@@ -24,3 +24,12 @@ class GetDerivedStateFromProps extends React.Component {
 }
 
 export default GetDerivedStateFromProps;
+
+
+// USAGE
+
+    //   {/* GetDerivedStateFromProps has context */}
+      
+    //   <CustomErrorBoundary>
+    //     <GetDerivedStateFromProps prop1="value1" prop2="value2"/>
+    //   </CustomErrorBoundary> 

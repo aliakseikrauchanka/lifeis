@@ -1,4 +1,4 @@
-import React, { Suspense, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 import './App.css';
 
@@ -7,12 +7,6 @@ import { withAuthenticator, AmplifySignOut } from "@aws-amplify/ui-react"
 
 import { listTodos } from "./graphql/queries";
 import { createTodo as createTodoMutation, deleteTodo as deleteTodoMutation } from "./graphql/mutations";
-import GetDerivedStateFromProps from "./experiments/getDerivedStateFromProps";
-import CustomErrorBoundary from "./experiments/CustomErrorBoundary";
-import ParentComponent from "./experiments/SampleContext";
-import UseEffectHacker from "./experiments/UseEffectForHacker";
-
-const LazyComponent = React.lazy(() => import("./experiments/LazyComponent"))
 
 interface IFormState {
   name: string;
@@ -22,7 +16,6 @@ interface IFormState {
 const initialFormState: IFormState = { name: '', description: '' };
 
 const App: React.FC = () => {
-  // TODO: any[] need to be moved to some custom interface
   const [todos, setTodos] = useState<any[]>([]);
   const [formData, setFormData] = useState<IFormState>(initialFormState);
 
@@ -48,14 +41,7 @@ const App: React.FC = () => {
     if (!formData.name || !formData.description) { return }
     await API.graphql({ query: createTodoMutation, variables: { input: formData } });
 
-    // if (formData.image) {
-    //   const image = Storage.get(formData.image);
-    //   formData.image = (await image) as string;
-    // }
-
-
     setTodos([...todos, formData]);
-    // setFormData({ ...initialFormState });
   }
 
   async function deleteTodo(todoId: string) {
@@ -63,18 +49,6 @@ const App: React.FC = () => {
     setTodos(newTodoArr);
     await API.graphql({ query: deleteTodoMutation, variables: { input: { id: todoId } } })
   }
-
-  // async function setImage(files: FileList | null) {
-  //   if (!files) { return; }
-
-  //   const [ file ] = files;
-  //   console.log('test commit');
-
-  //   setFormData({ ...formData, image: file.name });
-  //   await Storage.put(file.name, file);
-
-  //   await fetchTodos();
-  // }
 
   return (
     <div className="App">
@@ -90,12 +64,6 @@ const App: React.FC = () => {
         value={formData.description}
         onChange={e => { setFormData({ ...formData, description: e.target.value }) }}
       />
-      <input
-        type="file"
-        onChange={e => {
-          // setImage(e.target.files);
-        }}
-      />
 
       <button
         onClick={e => { addTodo(); }}
@@ -107,7 +75,7 @@ const App: React.FC = () => {
               <h2>{todo.name}</h2>
               <p>{todo.description}</p>
               {
-                todo.image && <img src={todo.image} style={{ width: 400 }} />
+                todo.image && <img src={todo.image} style={{ width: 400 }} alt="alt" />
               }
 
               <button onClick={() => deleteTodo(todo.id)}>Delete note</button>
@@ -115,26 +83,7 @@ const App: React.FC = () => {
           ))
         }
       </div>
-
-      {/* GetDerivedStateFromProps has context */}
-      {/*
-      <CustomErrorBoundary>
-        <GetDerivedStateFromProps prop1="value1" prop2="value2"/>
-      </CustomErrorBoundary> 
-      */}
-
-      {/* ParentComponent has context */}
-      {/* 
-      <Suspense fallback={<div>"Loading..."</div>}>
-        <LazyComponent />
-      </Suspense>
-       */}
-
-      {/* ParentComponent has context */}
-      <UseEffectHacker />
-
-      <ParentComponent />
-
+  
       <AmplifySignOut />
     </div>
   );
