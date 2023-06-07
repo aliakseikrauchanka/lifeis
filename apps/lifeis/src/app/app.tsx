@@ -7,7 +7,6 @@ export function App() {
   return (
     <div>
       <NxWelcome title="lifeis" />
-      <div>test</div>
     </div>
   );
 }
