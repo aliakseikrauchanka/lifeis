@@ -1,7 +1,7 @@
 {
-  "name": "lifeis",
+  "name": "insights-app",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/lifeis/src",
+  "sourceRoot": "apps/insights-app/src",
   "projectType": "application",
   "targets": {
     "build": {
@@ -9,7 +9,7 @@
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/lifeis"
+        "outputPath": "dist/apps/insights-app"
       },
       "configurations": {
         "development": {
@@ -24,15 +24,15 @@
       "executor": "@nx/vite:dev-server",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "lifeis:build"
+        "buildTarget": "insights-app:build"
       },
       "configurations": {
         "development": {
-          "buildTarget": "lifeis:build:development",
+          "buildTarget": "insights-app:build:development",
           "hmr": true
         },
         "production": {
-          "buildTarget": "lifeis:build:production",
+          "buildTarget": "insights-app:build:production",
           "hmr": false
         }
       }
@@ -41,36 +41,36 @@
       "executor": "@nx/vite:preview-server",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "lifeis:build"
+        "buildTarget": "insights-app:build"
       },
       "configurations": {
         "development": {
-          "buildTarget": "lifeis:build:development"
+          "buildTarget": "insights-app:build:development"
         },
         "production": {
-          "buildTarget": "lifeis:build:production"
+          "buildTarget": "insights-app:build:production"
         }
       }
     },
     "test": {
       "executor": "@nx/vite:test",
-      "outputs": ["coverage/apps/lifeis"],
+      "outputs": ["coverage/apps/insights-app"],
       "options": {
         "passWithNoTests": true,
-        "reportsDirectory": "../../coverage/apps/lifeis"
+        "reportsDirectory": "../../coverage/apps/insights-app"
       }
     },
     "lint": {
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/lifeis/**/*.{ts,tsx,js,jsx}"]
+        "lintFilePatterns": ["apps/insights-app/**/*.{ts,tsx,js,jsx}"]
       }
     },
     "serve-static": {
       "executor": "@nx/web:file-server",
       "options": {
-        "buildTarget": "lifeis:build"
+        "buildTarget": "insights-app:build"
       }
     }
   },

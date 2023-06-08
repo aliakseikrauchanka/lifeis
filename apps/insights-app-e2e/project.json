@@ -1,22 +1,22 @@
 {
-  "name": "lifeis-e2e",
+  "name": "insights-app-e2e",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/lifeis-e2e/src",
+  "sourceRoot": "apps/insights-app-e2e/src",
   "projectType": "application",
   "targets": {
     "e2e": {
       "executor": "@nx/cypress:cypress",
       "options": {
-        "cypressConfig": "apps/lifeis-e2e/cypress.config.ts",
-        "devServerTarget": "lifeis:serve:development",
+        "cypressConfig": "apps/insights-app-e2e/cypress.config.ts",
+        "devServerTarget": "insights-app:serve:development",
         "testingType": "e2e"
       },
       "configurations": {
         "production": {
-          "devServerTarget": "lifeis:serve:production"
+          "devServerTarget": "insights-app:serve:production"
         },
         "ci": {
-          "devServerTarget": "lifeis:serve-static"
+          "devServerTarget": "insights-app:serve-static"
         }
       }
     },
@@ -24,10 +24,10 @@
       "executor": "@nx/linter:eslint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": ["apps/lifeis-e2e/**/*.{js,ts}"]
+        "lintFilePatterns": ["apps/insights-app-e2e/**/*.{js,ts}"]
       }
     }
   },
   "tags": [],
-  "implicitDependencies": ["lifeis"]
+  "implicitDependencies": ["insights-app"]
 }
