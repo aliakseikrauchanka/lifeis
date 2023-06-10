@@ -5,7 +5,7 @@ export interface ButtonProps {}
 
 export function Button(props: ButtonProps) {
   return (
-    <button>
+    <button class="btn-common">
       Super puper button
     </button>
   );
