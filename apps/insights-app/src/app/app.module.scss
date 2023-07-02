@@ -1,1 +1,13 @@
 /* Your styles goes here. */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+.container > div:not(:last-child) {
+    margin-bottom: 1rem;
+}
+
+//   div.container with content centralized vertically, content is text only
