@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  # React App
+  insights-app:
+    extends:
+      file: docker-compose.base.yml
+      service: nx-app-base
+    command: npx nx run insights-app:serve --host=0.0.0.0
+    ports:
+      - 4201:4200
+
+  # Express App
+  # api-1:
+  #   extends:
+  #     file: docker-compose.base.yml
+  #     service: nx-app-base
+  #   command: npm run api-1:dev:docker
+  #   ports:
+  #     - 4310:3333 # API Entry port
+  #     - 4311:4311 # Server Debugging port
+
+volumes:
+  mono-node-modules: null
