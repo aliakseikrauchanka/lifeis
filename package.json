@@ -2,7 +2,9 @@
   "name": "@lifeis/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "app": "npx nx run insights-app:serve --host=0.0.0.0"
+  },
   "private": true,
   "dependencies": {
     "@swc/helpers": "~0.5.0",
