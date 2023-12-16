@@ -11,14 +11,13 @@ services:
       - 4201:4200
 
   # Express App
-  # api-1:
-  #   extends:
-  #     file: docker-compose.base.yml
-  #     service: nx-app-base
-  #   command: npm run api-1:dev:docker
-  #   ports:
-  #     - 4310:3333 # API Entry port
-  #     - 4311:4311 # Server Debugging port
+  node-server:
+    extends:
+      file: docker-compose.base.yml
+      service: nx-app-base
+    command: npx nx run node-server:serve --host=0.0.0.0
+    ports:
+      - 4202:3000 # API Entry port
 
 volumes:
   mono-node-modules: null
