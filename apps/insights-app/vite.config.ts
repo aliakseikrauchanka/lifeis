@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import viteTsConfigPaths from 'vite-tsconfig-paths';
+import crypto from 'crypto';
 
 export default defineConfig({
   cacheDir: '../../node_modules/.vite/insights-app',
@@ -16,12 +17,17 @@ export default defineConfig({
     host: 'localhost',
   },
 
-  plugins: [
-    react(),
-    viteTsConfigPaths({
-      root: '../../',
-    }),
-  ],
+  css: {
+    modules: {
+      localsConvention: 'camelCaseOnly',
+    },
+  },
+
+  define: {
+    'process.env.VITE_APP_TITLE': JSON.stringify(process.env.VITE_APP_TITLE),
+  },
+
+  plugins: [react(), viteTsConfigPaths()],
 
   // Uncomment this if you are using workers.
   // worker: {

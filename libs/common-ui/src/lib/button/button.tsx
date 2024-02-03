@@ -1,12 +1,16 @@
+import { ReactNode } from 'react';
 import styles from './button.module.scss';
 
 /* eslint-disable-next-line */
-export interface ButtonProps {}
+export interface IButtonProps {
+  children: ReactNode;
+  onClick?: () => void;
+}
 
-export function Button(props: ButtonProps) {
+export function Button({ children, onClick }: IButtonProps) {
   return (
-    <button className={styles["button-common"]}>
-      Super puper button yay!
+    <button className={styles.buttonCommon} onClick={onClick}>
+      {children}
     </button>
   );
 }

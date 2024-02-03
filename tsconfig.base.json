@@ -8,7 +8,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
-    "target": "es2015",
+    "target": "es2018",
     "module": "esnext",
     "lib": ["es2020", "dom"],
     "skipLibCheck": true,
@@ -16,7 +16,15 @@
     "baseUrl": ".",
     "paths": {
       "@lifeis/common-ui": ["libs/common-ui/src/index.ts"]
-    }
+    },
+    "plugins": [
+      {
+        "name": "typescript-plugin-css-modules",
+        "options": {
+          "classnameTransform": "camelCaseOnly"
+        }
+      }
+    ]
   },
   "exclude": ["node_modules", "tmp"]
 }

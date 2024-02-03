@@ -20,6 +20,25 @@ export default defineConfig({
     }),
   ],
 
+  css: {
+    modules: {
+      // localsConvention: 'camelCaseOnly',
+      // generateScopedName: (name, filename, css) => {
+      //   const componentName = filename
+      //     .replace(/\.\w+$/, '')
+      //     .split('/')
+      //     .pop();
+      //   // Generate hash
+      //   const hash = crypto
+      //     .createHash('md5')
+      //     .update(css)
+      //     .digest('base64')
+      //     .substring(0, 5);
+      //   return `${componentName}__${name}__${hash}`;
+      // },
+    },
+  },
+
   // Uncomment this if you are using workers.
   // worker: {
   //  plugins: [

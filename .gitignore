@@ -40,3 +40,6 @@ Thumbs.db
 
 # cache
 /.nx/cache
+
+# env
+.env

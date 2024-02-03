@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  # React App
+  # Client App
   insights-app:
     extends:
       file: docker-compose.base.yml
@@ -9,15 +9,24 @@ services:
     command: npx nx run insights-app:serve --host=0.0.0.0
     ports:
       - 4201:4200
+    environment:
+      - VITE_BE=http://localhost:4202
+      - VITE_CLIENT_ID=${CLIENT_ID}
 
-  # Express App
+  # Node.js Server App
   node-server:
     extends:
       file: docker-compose.base.yml
       service: nx-app-base
     command: npx nx run node-server:serve --host=0.0.0.0
     ports:
-      - 4202:3000 # API Entry port
+      - 4202:3000
+    environment:
+      - PORT=3000
+      - DB_URI=${DB_URI}
+      - REDIRECT_URL=http://localhost:4201
+      - CLIENT_ID=${CLIENT_ID}
+      - CLIENT_SECRET=${CLIENT_SECRET}
 
 volumes:
   mono-node-modules: null
