@@ -1,36 +1,30 @@
 import React, { useState } from 'react';
-import SignIn from '../../pages/sign-in';
+import { SignIn } from './components/sign-in';
 
 import css from './user-session.module.scss';
-
-interface IUserState {
-  accessToken: string;
-  refreshToken: string;
-}
+import { AuthResponse } from '../../domains/auth.domain';
+import { IUserState } from '../../domains/user.domain';
+import {
+  getAuthData,
+  removeAuthData,
+  saveAuthData,
+} from '../../services/local-storage.service';
 
 export const UserSession = () => {
-  const [user, setUser] = useState<IUserState | null>({
-    accessToken: localStorage.getItem('accessToken') ?? '',
-    refreshToken: localStorage.getItem('refreshToken') ?? '',
-  });
+  const [user, setUser] = useState<IUserState | null>(getAuthData());
 
-  const handleLoginSuccess = (tokens: any) => {
-    // Assuming tokens contain user details and the access token
+  const handleLoginSuccess = (response: AuthResponse): void => {
     setUser({
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
+      accessToken: response.accessToken,
+      refreshToken: response.refreshToken,
     });
 
-    // Optionally, you might want to store the access token in local storage for persistence
-    localStorage.setItem('accessToken', tokens.access_token);
-    localStorage.setItem('refreshToken', tokens.refresh_token);
+    saveAuthData(response);
   };
 
-  const handleLogout = () => {
-    // Clear the user session and tokens
+  const handleLogout = (): void => {
     setUser(null);
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    removeAuthData();
   };
 
   return (

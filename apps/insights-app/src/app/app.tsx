@@ -6,11 +6,11 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import { Button } from '@lifeis/common-ui';
 import { UserSession } from './components/user-session/user-session';
 import { CONFIG } from '../config';
+import { LogForm } from './components/log-form/log-form';
 
 export function App() {
-  const handleTestBEClick = async () => {
+  const handleBEPing = async () => {
     const accessToken = localStorage.getItem('accessToken');
-    console.log('accessToken:', accessToken);
     try {
       await fetch(`${CONFIG.BE_URL}/ping`, {
         method: 'GET',
@@ -25,10 +25,11 @@ export function App() {
 
   return (
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
-      <div>
+      <header>
         <UserSession />
-        <Button onClick={handleTestBEClick}>Ping BE</Button>
-      </div>
+        <Button onClick={handleBEPing}>Ping BE</Button>
+      </header>
+      <LogForm />
     </GoogleOAuthProvider>
   );
 }

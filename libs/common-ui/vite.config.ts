@@ -15,9 +15,7 @@ export default defineConfig({
       skipDiagnostics: true,
     }),
     react(),
-    viteTsConfigPaths({
-      root: '../../',
-    }),
+    viteTsConfigPaths(),
   ],
 
   css: {
