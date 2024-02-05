@@ -52,13 +52,13 @@ app.get('/ping', verifyAccessToken, (req, res) => {
   res.send({ message: 'pong' });
 });
 
-app.post('/logs', verifyAccessToken, (req, res) => {
+app.post('/logs', verifyAccessToken, async (req, res) => {
   const log: IDiaryLog = {
     message: req.body.message,
     timestamp: Date.now(),
   };
-  client.db('lifeis').collection('logs').insertOne(log);
-  res.send({ message: 'pong' });
+  await client.db('lifeis').collection('logs').insertOne(log);
+  res.status(200).send({ message: 'log submitted' });
 });
 
 app.get('/logs', verifyAccessToken, (_, res) => {
