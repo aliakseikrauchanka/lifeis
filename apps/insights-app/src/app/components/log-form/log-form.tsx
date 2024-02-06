@@ -20,6 +20,7 @@ export const LogForm = () => {
         },
         body: JSON.stringify({ message }),
       });
+      setMessage('');
     } catch (e) {
       console.log('error happened during fetch');
     }
@@ -27,6 +28,7 @@ export const LogForm = () => {
   return (
     <form method="post" onSubmit={handleSubmit}>
       <textarea
+        value={message}
         name="message"
         placeholder="Enter your message here"
         onChange={handleChange}
