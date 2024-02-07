@@ -1,5 +1,11 @@
 import express, { json } from 'express';
 import cors from 'cors';
+import multer from 'multer';
+import fs from 'fs';
+import path from 'path';
+import OpenAI from 'openai';
+import ffmpeg from 'fluent-ffmpeg';
+
 import { verifyAccessToken } from './hooks/verify-access.middleware';
 
 import { MongoClient, ServerApiVersion } from 'mongodb';
@@ -17,6 +23,23 @@ const client = new MongoClient(uri, {
     version: ServerApiVersion.v1,
     strict: true,
     deprecationErrors: true,
+  },
+});
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const d = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(d)) {
+      fs.mkdirSync(d, { recursive: true });
+    }
+    cb(null, d);
+  },
+  filename: (req, file, cb) => {
+    cb(
+      null,
+      // file.fieldname + '-' + Date.now() + path.extname(file.originalname)
+      'record.ogg'
+    );
   },
 });
 
@@ -47,6 +70,46 @@ const app = express();
 
 app.use(cors());
 app.use(json());
+
+const upload = multer({ storage });
+
+function convertFile(inputPath, outputPath, onSuccess) {
+  console.log('input', inputPath, 'output', outputPath);
+  ffmpeg(inputPath)
+    .output(outputPath)
+    .on('end', function () {
+      console.log('Conversion Finished');
+      onSuccess && onSuccess();
+    })
+    .on('error', function (err) {
+      console.log('Conversion Error: ' + err.message);
+    })
+    .run();
+}
+
+app.post('/transcribe', verifyAccessToken, upload.single('audio'), (_, res) => {
+  const openai = new OpenAI();
+
+  const files = fs.readdirSync(path.join(__dirname, 'uploads'));
+  console.log('Files:', files);
+
+  const filePath = path.join(__dirname, 'uploads', 'record.ogg'); // replace 'yourfile.ext' with your file name
+  const filePathMp3 = path.join(__dirname, 'uploads', 'record.mp3');
+
+  convertFile(filePath, filePathMp3, () => {
+    async function main() {
+      console.log('sending file to openai');
+      const translation = await openai.audio.translations.create({
+        file: fs.createReadStream(filePath),
+        model: 'whisper-1',
+      });
+      res.send(translation);
+      console.log('file was sent to openai');
+    }
+
+    main();
+  });
+});
 
 app.get('/ping', verifyAccessToken, (req, res) => {
   res.send({ message: 'pong' });
