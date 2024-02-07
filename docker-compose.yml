@@ -27,6 +27,7 @@ services:
       - REDIRECT_URL=${DOMAIN}:${CLIENT_PORT}
       - CLIENT_ID=${CLIENT_ID}
       - CLIENT_SECRET=${CLIENT_SECRET}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
 
 volumes:
   mono-node-modules: null

@@ -10,12 +10,16 @@
       "defaultConfiguration": "production",
       "options": {
         "platform": "node",
-        "outputPath": "dist/apps/node-server",
+        "outputPath": "dist", // "dist/apps/node-server" was before
         "format": ["cjs"],
         "bundle": false,
         "main": "apps/node-server/src/main.ts",
         "tsConfig": "apps/node-server/tsconfig.app.json",
-        "assets": ["apps/node-server/src/assets"],
+        "assets": [{
+          "input": "apps/node-server/src/assets",
+          "glob": "*.*",
+          "output": "apps/node-server/src/assets"
+        }],
         "generatePackageJson": true,
         "esbuildOptions": {
           "sourcemap": true,
