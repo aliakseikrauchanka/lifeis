@@ -87,35 +87,40 @@ function convertFile(inputPath, outputPath, onSuccess) {
     .run();
 }
 
-app.post('/transcribe', verifyAccessToken, upload.single('audio'), (_, res) => {
-  const openai = new OpenAI();
+app.post(
+  '/api/transcribe',
+  verifyAccessToken,
+  upload.single('audio'),
+  (_, res) => {
+    const openai = new OpenAI();
 
-  const files = fs.readdirSync(path.join(__dirname, 'uploads'));
-  console.log('Files:', files);
+    const files = fs.readdirSync(path.join(__dirname, 'uploads'));
+    console.log('Files:', files);
 
-  const filePath = path.join(__dirname, 'uploads', 'record.ogg'); // replace 'yourfile.ext' with your file name
-  const filePathMp3 = path.join(__dirname, 'uploads', 'record.mp3');
+    const filePath = path.join(__dirname, 'uploads', 'record.ogg'); // replace 'yourfile.ext' with your file name
+    const filePathMp3 = path.join(__dirname, 'uploads', 'record.mp3');
 
-  convertFile(filePath, filePathMp3, () => {
-    async function main() {
-      console.log('sending file to openai');
-      const translation = await openai.audio.translations.create({
-        file: fs.createReadStream(filePath),
-        model: 'whisper-1',
-      });
-      res.send(translation);
-      console.log('file was sent to openai');
-    }
+    convertFile(filePath, filePathMp3, () => {
+      async function main() {
+        console.log('sending file to openai');
+        const translation = await openai.audio.translations.create({
+          file: fs.createReadStream(filePath),
+          model: 'whisper-1',
+        });
+        res.send(translation);
+        console.log('file was sent to openai');
+      }
 
-    main();
-  });
-});
+      main();
+    });
+  }
+);
 
-app.get('/ping', verifyAccessToken, (req, res) => {
+app.get('/api/ping', verifyAccessToken, (req, res) => {
   res.send({ message: 'pong' });
 });
 
-app.post('/logs', verifyAccessToken, async (req, res) => {
+app.post('/api/logs', verifyAccessToken, async (req, res) => {
   const log: IDiaryLog = {
     message: req.body.message,
     timestamp: Date.now(),
@@ -124,7 +129,7 @@ app.post('/logs', verifyAccessToken, async (req, res) => {
   res.status(200).send({ message: 'log submitted' });
 });
 
-app.get('/logs', verifyAccessToken, (_, res) => {
+app.get('/api/logs', verifyAccessToken, (_, res) => {
   client
     .db('lifeis')
     .collection('logs')
