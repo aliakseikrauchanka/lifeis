@@ -5,8 +5,18 @@ export const startRecording = (onStop: (blob: BLob) => void): void => {
   navigator.mediaDevices
     .getUserMedia({ audio: true })
     .then((stream) => {
-      alert(MediaRecorder.isTypeSupported('audio/webm; codecs=opus'));
-      mediaRecorder = new MediaRecorder(stream);
+      let options;
+      if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) {
+        options = { mimeType: 'video/webm; codecs=vp9' };
+      } else if (MediaRecorder.isTypeSupported('video/webm')) {
+        options = { mimeType: 'video/webm' };
+      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+        options = { mimeType: 'video/mp4', videoBitsPerSecond: 100000 };
+      } else {
+        console.error('no suitable mimetype found for this device');
+      }
+      alert(options?.mimeType);
+      mediaRecorder = new MediaRecorder(stream, options);
 
       mediaRecorder.start();
 
