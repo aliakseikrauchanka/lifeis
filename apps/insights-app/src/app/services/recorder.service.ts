@@ -14,7 +14,7 @@ export const startRecording = (onStop: (blob: BLob) => void): void => {
       };
 
       mediaRecorder.onstop = (e) => {
-        const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
+        const blob = new Blob(chunks, { type: 'audio/webm; codecs=opus' });
         chunks = [];
 
         onStop(blob);

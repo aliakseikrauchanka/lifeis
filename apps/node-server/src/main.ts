@@ -38,7 +38,7 @@ const storage = multer.diskStorage({
     cb(
       null,
       // file.fieldname + '-' + Date.now() + path.extname(file.originalname)
-      'record.ogg'
+      'record.webm'
     );
   },
 });
@@ -97,7 +97,7 @@ app.post(
     const files = fs.readdirSync(path.join(__dirname, 'uploads'));
     console.log('Files:', files);
 
-    const filePath = path.join(__dirname, 'uploads', 'record.ogg'); // replace 'yourfile.ext' with your file name
+    const filePath = path.join(__dirname, 'uploads', 'record.webm'); // replace 'yourfile.ext' with your file name
     const filePathMp3 = path.join(__dirname, 'uploads', 'record.mp3');
 
     convertFile(filePath, filePathMp3, () => {
