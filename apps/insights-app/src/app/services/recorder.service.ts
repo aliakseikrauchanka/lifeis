@@ -6,15 +6,15 @@ export const startRecording = (onStop: (blob: BLob) => void): void => {
     .getUserMedia({ audio: true })
     .then((stream) => {
       let options;
-      if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) {
-        options = { mimeType: 'video/webm; codecs=vp9' };
-      } else if (MediaRecorder.isTypeSupported('video/webm')) {
-        options = { mimeType: 'video/webm' };
-      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
-        options = { mimeType: 'video/mp4', videoBitsPerSecond: 100000 };
-      } else {
-        console.error('no suitable mimetype found for this device');
-      }
+      // if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) {
+      //   options = { mimeType: 'video/webm; codecs=vp9' };
+      // } else if (MediaRecorder.isTypeSupported('video/webm')) {
+      //   options = { mimeType: 'video/webm' };
+      // } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+      options = { mimeType: 'video/mp4', videoBitsPerSecond: 100000 };
+      // } else {
+      //   console.error('no suitable mimetype found for this device');
+      // }
       alert(options?.mimeType);
       mediaRecorder = new MediaRecorder(stream, options);
 
@@ -25,7 +25,7 @@ export const startRecording = (onStop: (blob: BLob) => void): void => {
       };
 
       mediaRecorder.onstop = (e) => {
-        const blob = new Blob(chunks, { type: 'audio/webm; codecs=opus' });
+        const blob = new Blob(chunks, { type: options.mimeType });
         chunks = [];
 
         onStop(blob);
