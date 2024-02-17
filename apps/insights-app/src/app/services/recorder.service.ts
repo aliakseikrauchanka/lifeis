@@ -5,6 +5,7 @@ export const startRecording = (onStop: (blob: BLob) => void): void => {
   navigator.mediaDevices
     .getUserMedia({ audio: true })
     .then((stream) => {
+      alert(MediaRecorder.isTypeSupported('audio/webm; codecs=opus'));
       mediaRecorder = new MediaRecorder(stream);
 
       mediaRecorder.start();
