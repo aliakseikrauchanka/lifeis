@@ -11,11 +11,12 @@ export const startRecording = (onStop: (blob: BLob) => void): void => {
       // } else if (MediaRecorder.isTypeSupported('video/webm')) {
       //   options = { mimeType: 'video/webm' };
       // } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+
+      // for IOS
       options = { mimeType: 'video/mp4', videoBitsPerSecond: 100000 };
       // } else {
       //   console.error('no suitable mimetype found for this device');
       // }
-      alert(options?.mimeType);
       mediaRecorder = new MediaRecorder(stream, options);
 
       mediaRecorder.start();
