@@ -97,7 +97,7 @@ app.post(
     const files = fs.readdirSync(path.join(__dirname, 'uploads'));
     console.log('Files:', files);
 
-    const filePath = path.join(__dirname, 'uploads', 'record.mmp');
+    const filePath = path.join(__dirname, 'uploads', 'record.mp4');
     const filePathMp3 = path.join(__dirname, 'uploads', 'record.mp3');
 
     convertFile(filePath, filePathMp3, () => {
