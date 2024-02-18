@@ -14,7 +14,7 @@ export function App() {
   const ref = useRef<HTMLAudioElement | null>(null);
 
   const handleRecord = () => {
-    startRecording(async (blob) => {
+    startRecording(async (blob: Blob) => {
       const accessToken = localStorage.getItem('accessToken');
       const formData = new FormData();
       formData.append('audio', blob);
@@ -24,6 +24,7 @@ export function App() {
         body: formData,
         headers: {
           Authorization: `Bearer ${accessToken}`,
+          MIME: blob.type,
         },
       });
 

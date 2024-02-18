@@ -26,6 +26,13 @@ const client = new MongoClient(uri, {
   },
 });
 
+const getFileName = (mime: string | string[]) => {
+  const mimeStr: string = Array.isArray(mime) ? mime[0] : mime;
+  const fileName =
+    mimeStr === 'audio/webm; codecs=opus' ? 'record.webm' : 'record.mp4';
+  return fileName;
+};
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const d = path.join(__dirname, 'uploads');
@@ -38,7 +45,7 @@ const storage = multer.diskStorage({
     cb(
       null,
       // file.fieldname + '-' + Date.now() + path.extname(file.originalname)
-      'record.mp4'
+      getFileName(req.headers.mime)
     );
   },
 });
@@ -49,7 +56,7 @@ async function run() {
     await client.connect();
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 });
-    console.log('You successfully connected to MongoDB!');
+    console.log('debug, you successfully connected to MongoDB!');
   } finally {
     // Ensures that the client will close when you finish/error
     // await client.close();
@@ -74,7 +81,7 @@ app.use(json());
 const upload = multer({ storage });
 
 function convertFile(inputPath, outputPath, onSuccess) {
-  console.log('input', inputPath, 'output', outputPath);
+  console.log('debug, input', inputPath, 'output', outputPath);
   ffmpeg(inputPath)
     .output(outputPath)
     .on('end', function () {
@@ -91,24 +98,31 @@ app.post(
   '/api/transcribe',
   verifyAccessToken,
   upload.single('audio'),
-  (_, res) => {
+  (req, res) => {
     const openai = new OpenAI();
 
-    const files = fs.readdirSync(path.join(__dirname, 'uploads'));
-    console.log('Files:', files);
+    console.log('debug', req.headers.mime);
+    const filePath = path.join(
+      __dirname,
+      'uploads',
+      getFileName(req.headers.mime)
+    );
+    const stats = fs.statSync(filePath);
+    console.log(`File size is of ${filePath} is ${stats.size} bytes`);
 
-    const filePath = path.join(__dirname, 'uploads', 'record.mp4');
     const filePathMp3 = path.join(__dirname, 'uploads', 'record.mp3');
-
     convertFile(filePath, filePathMp3, () => {
       async function main() {
         console.log('sending file to openai');
         const translation = await openai.audio.translations.create({
-          file: fs.createReadStream(filePath),
+          file: fs.createReadStream(filePathMp3),
           model: 'whisper-1',
         });
+        // remove files
+        fs.unlinkSync(filePath);
+        fs.unlinkSync(filePathMp3);
+        console.log('debug translations', translation);
         res.send(translation);
-        console.log('file was sent to openai');
       }
 
       main();

@@ -6,17 +6,12 @@ export const startRecording = (onStop: (blob: BLob) => void): void => {
     .getUserMedia({ audio: true })
     .then((stream) => {
       let options;
-      // if (MediaRecorder.isTypeSupported('video/webm; codecs=vp9')) {
-      //   options = { mimeType: 'video/webm; codecs=vp9' };
-      // } else if (MediaRecorder.isTypeSupported('video/webm')) {
-      //   options = { mimeType: 'video/webm' };
-      // } else if (MediaRecorder.isTypeSupported('video/mp4')) {
-
-      // for IOS
-      options = { mimeType: 'video/mp4', videoBitsPerSecond: 100000 };
-      // } else {
-      //   console.error('no suitable mimetype found for this device');
-      // }
+      if (MediaRecorder.isTypeSupported('audio/webm; codecs=opus')) {
+        options = { mimeType: 'audio/webm; codecs=opus' };
+      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
+        // for IOS
+        options = { mimeType: 'video/mp4', videoBitsPerSecond: 100000 };
+      }
       mediaRecorder = new MediaRecorder(stream, options);
 
       mediaRecorder.start();
