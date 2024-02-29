@@ -1,9 +1,17 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import viteTsConfigPaths from 'vite-tsconfig-paths';
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 
 export default defineConfig({
+  root: __dirname,
+  build: {
+    outDir: '../../dist/apps/insights-app',
+    reportCompressedSize: true,
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+  },
   cacheDir: '../../node_modules/.vite/insights-app',
   server: {
     port: 4200,
@@ -21,7 +29,7 @@ export default defineConfig({
     },
   },
 
-  plugins: [react(), viteTsConfigPaths()],
+  plugins: [react(), nxViteTsPaths()],
 
   // Uncomment this if you are using workers.
   // worker: {
@@ -33,6 +41,11 @@ export default defineConfig({
   // },
 
   test: {
+    reporters: ['default'],
+    coverage: {
+      reportsDirectory: '../../coverage/apps/insights-app',
+      provider: 'v8',
+    },
     globals: true,
     cache: {
       dir: '../../node_modules/.vitest',
