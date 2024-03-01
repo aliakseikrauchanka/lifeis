@@ -1,15 +1,15 @@
-let chunks = [];
-let mediaRecorder;
+let chunks: Array<Blob> = [];
+let mediaRecorder: MediaRecorder;
 
-export const startRecording = (onStop: (blob: BLob) => void): void => {
+export const startRecording = (onStop: (blob: Blob) => void): void => {
   navigator.mediaDevices
     .getUserMedia({ audio: true })
     .then((stream) => {
-      let options;
+      let options: MediaRecorderOptions | undefined;
       if (MediaRecorder.isTypeSupported('audio/webm; codecs=opus')) {
         options = { mimeType: 'audio/webm; codecs=opus' };
-      } else if (MediaRecorder.isTypeSupported('video/mp4')) {
-        // for IOS
+      } else {
+        // includes also MediaRecorder.isTypeSupported('video/mp4') for IOS
         options = { mimeType: 'video/mp4', videoBitsPerSecond: 100000 };
       }
       mediaRecorder = new MediaRecorder(stream, options);
@@ -21,7 +21,7 @@ export const startRecording = (onStop: (blob: BLob) => void): void => {
       };
 
       mediaRecorder.onstop = (e) => {
-        const blob = new Blob(chunks, { type: options.mimeType });
+        const blob = new Blob(chunks, { type: options?.mimeType });
         chunks = [];
 
         onStop(blob);
