@@ -8,30 +8,21 @@ import { UserSession } from './components/user-session/user-session';
 import { CONFIG } from '../config';
 import { LogForm } from './components/log-form/log-form';
 import { startRecording, stopRecording } from './services/recorder.service';
+import { transcipt } from './api/audio/audio.api';
+import { FileInput } from './components/audio-file/audio-file';
 
 export function App() {
+  const [assistantResponse, setAssistantResponse] = React.useState<string>('');
   const [transcription, setTranscription] = React.useState<string>('');
   const ref = useRef<HTMLAudioElement | null>(null);
 
   const handleRecord = () => {
     startRecording(async (blob: Blob) => {
-      const accessToken = localStorage.getItem('accessToken');
-      const formData = new FormData();
-      formData.append('audio', blob);
-
-      const data = await fetch(`${CONFIG.BE_URL}/transcribe`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          MIME: blob.type,
-        },
-      });
-
+      const data = await transcipt(blob);
       const t = await data.json();
+
       setTranscription(t.text);
 
-      console.log('recording stopped');
       if (ref.current) {
         ref.current.src = URL.createObjectURL(blob);
         ref.current.controls = true;
@@ -39,6 +30,51 @@ export function App() {
       }
     });
   };
+
+  const handleAssistant = async () => {
+    const accessToken = localStorage.getItem('accessToken');
+    const input = document.getElementById('assistant-input') as HTMLInputElement;
+    const text = input.value;
+    try {
+      // post message
+      await fetch(`${CONFIG.BE_URL}/check-polish-grammar`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: text }),
+      });
+
+      const threadId = 'thread_Iwq1QZmzuLFz9DzkYuf63j52';
+      const i = setInterval(async () => {
+        const statusesResponse = await fetch(`${CONFIG.BE_URL}/thread/runs-statuses?threadId=${threadId}`, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        const data = await statusesResponse.json();
+        console.log('status', data.statuses[0]);
+        if (data.statuses[0] === 'completed') {
+          clearInterval(i);
+          const response = await fetch(`${CONFIG.BE_URL}/thread/messages`, {
+            method: 'GET',
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            }
+          });
+          const data = await response.json();
+          setAssistantResponse(data.messages[0] && data.messages[0][0] && data.messages[0][0].text.value);
+        }
+
+      }, 2000);
+
+    } catch (e) {
+      console.log('error happened during fetch');
+    }
+  }
 
   const handleStop = () => {
     stopRecording();
@@ -71,8 +107,17 @@ export function App() {
         <h3>Audio of recording</h3>
         {transcription && <audio ref={ref}></audio>}
       </div>
+      <FileInput />
+
       <h3>Transcription</h3>
       <p>{transcription}</p>
+
+      <br/>
+      <br/>
+      <input id='assistant-input'/>
+      <button onClick={handleAssistant}>Send</button>
+      <div>assistant:</div>
+      <div>{assistantResponse}</div>
     </GoogleOAuthProvider>
   );
 }

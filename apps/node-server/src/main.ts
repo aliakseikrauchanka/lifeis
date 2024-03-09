@@ -1,7 +1,7 @@
 import express, { json } from 'express';
 import cors from 'cors';
 import multer from 'multer';
-import fs from 'fs';
+import fs, { unlinkSync } from 'fs';
 import path from 'path';
 import OpenAI from 'openai';
 import ffmpeg from 'fluent-ffmpeg';
@@ -10,6 +10,7 @@ import { verifyAccessToken } from './hooks/verify-access.middleware';
 
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import { IDiaryLog } from './domain';
+import { Translation } from 'openai/resources/audio/translations';
 
 // const uri = 'mongodb+srv://aliakseikrauchankadev:<password>@cluster0.5d0hu5r.mongodb.net/?retryWrites=true&w=majority';
 
@@ -26,8 +27,24 @@ const client = new MongoClient(uri, {
   },
 });
 
+const sendFileToTransribeOpenAI = async (filePath: string): Promise<Translation> => {
+  const openai = new OpenAI();
+  console.log('sending file to openai');
+  const transcription = await openai.audio.translations.create({
+    file: fs.createReadStream(filePath),
+    model: 'whisper-1',
+  });
+  // remove files
+  unlinkSync(filePath);
+  console.log('debug translations', transcription);
+  return transcription;
+}
+
 const getFileName = (mime: string | string[]) => {
   const mimeStr: string = Array.isArray(mime) ? mime[0] : mime;
+  if (mimeStr === 'audio/mp3;') {
+    return 'record.mp3';
+  }
   const fileName =
     mimeStr === 'audio/webm; codecs=opus' ? 'record.webm' : 'record.mp4';
   return fileName;
@@ -98,10 +115,7 @@ app.post(
   '/api/transcribe',
   verifyAccessToken,
   upload.single('audio'),
-  (req, res) => {
-    const openai = new OpenAI();
-
-    console.log('debug', req.headers.mime);
+  async (req, res) => {
     const filePath = path.join(
       __dirname,
       'uploads',
@@ -110,18 +124,16 @@ app.post(
     const stats = fs.statSync(filePath);
     console.log(`File size is of ${filePath} is ${stats.size} bytes`);
 
+    if (req.headers.mime === 'audio/mp3;') {
+      const translation = await sendFileToTransribeOpenAI(filePath);
+      unlinkSync(filePath);
+      res.send(translation);
+    }
     const filePathMp3 = path.join(__dirname, 'uploads', 'record.mp3');
     convertFile(filePath, filePathMp3, () => {
       async function main() {
-        console.log('sending file to openai');
-        const translation = await openai.audio.translations.create({
-          file: fs.createReadStream(filePathMp3),
-          model: 'whisper-1',
-        });
-        // remove files
-        fs.unlinkSync(filePath);
-        fs.unlinkSync(filePathMp3);
-        console.log('debug translations', translation);
+        const translation = await sendFileToTransribeOpenAI(filePathMp3);
+        unlinkSync(filePath);
         res.send(translation);
       }
 
@@ -129,6 +141,73 @@ app.post(
     });
   }
 );
+
+const threadId = 'thread_Iwq1QZmzuLFz9DzkYuf63j52';
+const assistantId = 'asst_xH1h4HyWEFulGnBrltEAGaJ9';
+
+app.post(
+  '/api/check-polish-grammar',
+  verifyAccessToken,
+  async (req, res) => {
+    const openai = new OpenAI();
+
+    const message = req.body.message;
+
+    // const newMessage = await openai.beta.threads.messages.create(
+    //   threadId,
+    //   { role: "user", content: message }
+    // );
+
+    // make run on latest message
+    // await openai.beta.threads.runs.create(
+    //   threadId,
+    //   { assistant_id: assistantId }
+    // );
+
+    await openai.beta.threads.createAndRun({
+      assistant_id: assistantId,
+      thread: {
+        messages: [
+          { role: "user", content: message },
+        ],
+      },
+    });
+
+    res.status(200).send({ ok: true});
+  }
+);
+
+app.get('/api/thread/runs-statuses', verifyAccessToken, async (req, res) => {
+  const openai = new OpenAI();
+  // get thread id from the query
+  const threadId = req.query.threadId as string;
+  const runs = await openai.beta.threads.runs.list(threadId);
+
+  res.status(200).send({ statuses: runs.data.map(run => run.status)});
+});
+
+app.post('/api/thread/messages', verifyAccessToken, async (req, res) => {
+  const openai = new OpenAI();
+  const message = req.body.message;
+  const response = await openai.beta.threads.messages.create(threadId, {
+    role: 'user',
+    content: message,
+  });
+  // make run on latest message
+  await openai.beta.threads.runs.create(
+    threadId,
+    { assistant_id: assistantId }
+  );
+  res.status(200).send({ message: response.content[0] });
+});
+
+app.get('/api/thread/messages', verifyAccessToken, async (req, res) => {
+  const openai = new OpenAI();
+  const threadId = 'thread_Iwq1QZmzuLFz9DzkYuf63j52';
+  const messages = await openai.beta.threads.messages.list(threadId);
+
+  res.status(200).send({ messages: messages.data.map(message => message.content) });
+});
 
 app.get('/api/ping', verifyAccessToken, (req, res) => {
   res.send({ message: 'pong' });
