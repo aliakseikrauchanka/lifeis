@@ -164,7 +164,7 @@ app.post(
     //   { assistant_id: assistantId }
     // );
 
-    await openai.beta.threads.createAndRun({
+    const run = await openai.beta.threads.createAndRun({
       assistant_id: assistantId,
       thread: {
         messages: [
@@ -173,17 +173,30 @@ app.post(
       },
     });
 
-    res.status(200).send({ ok: true});
+    res.status(200).send({ runId: run.id, threadId: run.thread_id });
   }
 );
 
-app.get('/api/thread/runs-statuses', verifyAccessToken, async (req, res) => {
+app.get('/api/thread/run', verifyAccessToken, async (req, res) => {
   const openai = new OpenAI();
   // get thread id from the query
   const threadId = req.query.threadId as string;
-  const runs = await openai.beta.threads.runs.list(threadId);
+  const runId = req.query.runId as string;
+  try {
+    const run = await openai.beta.threads.runs.retrieve(threadId, runId);
+    res.status(200).send(run);
+  } catch (e) {
+    console.log('error happened', e);
+  }
+});
 
-  res.status(200).send({ statuses: runs.data.map(run => run.status)});
+app.get('/api/thread/messages', verifyAccessToken, async (req, res) => {
+  const openai = new OpenAI();
+  const threadId = req.query.threadId as string;
+
+  const messages = await openai.beta.threads.messages.list(threadId);
+
+  res.status(200).send({ messages: messages.data.map(message => message.content) });
 });
 
 app.post('/api/thread/messages', verifyAccessToken, async (req, res) => {
@@ -199,14 +212,6 @@ app.post('/api/thread/messages', verifyAccessToken, async (req, res) => {
     { assistant_id: assistantId }
   );
   res.status(200).send({ message: response.content[0] });
-});
-
-app.get('/api/thread/messages', verifyAccessToken, async (req, res) => {
-  const openai = new OpenAI();
-  const threadId = 'thread_Iwq1QZmzuLFz9DzkYuf63j52';
-  const messages = await openai.beta.threads.messages.list(threadId);
-
-  res.status(200).send({ messages: messages.data.map(message => message.content) });
 });
 
 app.get('/api/ping', verifyAccessToken, (req, res) => {

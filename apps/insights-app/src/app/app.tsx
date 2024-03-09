@@ -37,7 +37,7 @@ export function App() {
     const text = input.value;
     try {
       // post message
-      await fetch(`${CONFIG.BE_URL}/check-polish-grammar`, {
+      const checkData = await fetch(`${CONFIG.BE_URL}/check-polish-grammar`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -45,29 +45,45 @@ export function App() {
         },
         body: JSON.stringify({ message: text }),
       });
+      const { threadId, runId } = await checkData.json();
 
-      const threadId = 'thread_Iwq1QZmzuLFz9DzkYuf63j52';
-      const i = setInterval(async () => {
-        const statusesResponse = await fetch(`${CONFIG.BE_URL}/thread/runs-statuses?threadId=${threadId}`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        const data = await statusesResponse.json();
-        console.log('status', data.statuses[0]);
-        if (data.statuses[0] === 'completed') {
-          clearInterval(i);
-          const response = await fetch(`${CONFIG.BE_URL}/thread/messages`, {
+      const intervalId = setInterval(async () => {
+        try {
+          const runResponse = await fetch(`${CONFIG.BE_URL}/thread/run?threadId=${threadId}&runId=${runId}`, {
             method: 'GET',
             headers: {
               Authorization: `Bearer ${accessToken}`,
-            }
+            },
           });
-          const data = await response.json();
-          setAssistantResponse(data.messages[0] && data.messages[0][0] && data.messages[0][0].text.value);
+
+          const run = await runResponse.json();
+          console.log('debug', 'run', run);
+          if (run.status === 'completed') {
+            clearInterval(intervalId);
+
+            try {
+              const messagesResponse = await fetch(`${CONFIG.BE_URL}/thread/messages?threadId=${threadId}`, {
+                method: 'GET',
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                }
+              });
+
+              const messagesData = await messagesResponse.json();
+              console.log('debug', 'messages', messagesData);
+              setAssistantResponse(messagesData.messages[0] && messagesData.messages[0][0] && messagesData.messages[0][0].text.value);
+            } catch (e) {
+              clearInterval(intervalId);
+              console.log('error happened during fetch');
+            }
+
+          }
+        } catch (e) {
+          console.log('error happened during fetch');
         }
+
+
+
 
       }, 2000);
 
