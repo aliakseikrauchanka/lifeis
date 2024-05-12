@@ -142,8 +142,32 @@ app.post(
   }
 );
 
-const threadId = 'thread_Iwq1QZmzuLFz9DzkYuf63j52';
 const assistantId = 'asst_xH1h4HyWEFulGnBrltEAGaJ9';
+
+app.post('/api/describe-image', verifyAccessToken, async (req, res) => {
+  const openai = new OpenAI();
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4-vision-preview",
+    max_tokens: 1500,
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: "Describe ingridients (just names) that are used in this meal in numerated list ranged by weight, no additional description required" },
+          {
+            type: "image_url",
+            image_url: {
+              "url": "https://images.immediate.co.uk/production/volatile/sites/30/2013/05/Aubergine-and-sesame-noodles-6138de6.jpg",
+            },
+          },
+        ],
+      },
+    ],
+  });
+
+  res.status(200).send(response);
+});
 
 app.post(
   '/api/check-polish-grammar',
@@ -199,21 +223,6 @@ app.get('/api/thread/messages', verifyAccessToken, async (req, res) => {
   res.status(200).send({ messages: messages.data.map(message => message.content) });
 });
 
-app.post('/api/thread/messages', verifyAccessToken, async (req, res) => {
-  const openai = new OpenAI();
-  const message = req.body.message;
-  const response = await openai.beta.threads.messages.create(threadId, {
-    role: 'user',
-    content: message,
-  });
-  // make run on latest message
-  await openai.beta.threads.runs.create(
-    threadId,
-    { assistant_id: assistantId }
-  );
-  res.status(200).send({ message: response.content[0] });
-});
-
 app.get('/api/ping', verifyAccessToken, (req, res) => {
   res.send({ message: 'pong' });
 });
@@ -244,9 +253,7 @@ app.get('/api/logs', verifyAccessToken, (_, res) => {
 });
 
 app.post('/api/auth/google', (req, res) => {
-  console.log(req, JSON.stringify(req.body, null, 2));
   const { code } = req.body;
-  console.log('code from client', code);
   const client_id = CLIENT_ID;
   const client_secret = CLIENT_SECRET;
   const redirect_uri = REDIRECT_URL;
@@ -259,6 +266,39 @@ app.post('/api/auth/google', (req, res) => {
     },
     body: new URLSearchParams({
       code,
+      client_id,
+      client_secret,
+      redirect_uri,
+      grant_type,
+    }),
+  })
+    .then((response) => response.json())
+    .then((tokens) => {
+      console.log('tokens', JSON.stringify(tokens, null, 2));
+      // Send the tokens back to the frontend, or store them securely and create a session
+      res.json(tokens);
+    })
+    .catch((error) => {
+      // Handle errors in the token exchange
+      console.error('Token exchange error:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
+    });
+});
+
+app.post('/api/auth/google/refresh', (req, res) => {
+  const { code } = req.body;
+  const client_id = CLIENT_ID;
+  const client_secret = CLIENT_SECRET;
+  const redirect_uri = REDIRECT_URL;
+  const grant_type = 'refresh_token';
+
+  fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: new URLSearchParams({
+      refresh_token: code,
       client_id,
       client_secret,
       redirect_uri,

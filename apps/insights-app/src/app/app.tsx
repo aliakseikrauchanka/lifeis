@@ -57,7 +57,7 @@ export function App() {
           });
 
           const run = await runResponse.json();
-          console.log('debug', 'run', run);
+
           if (run.status === 'completed') {
             clearInterval(intervalId);
 

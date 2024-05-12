@@ -9,9 +9,10 @@ import {
   removeAuthData,
   saveAuthData,
 } from '../../services/local-storage.service';
+import { refresAuthGoogle } from '../../api/auth/auth';
 
 export const UserSession = () => {
-  const [user, setUser] = useState<IUserState | null>(getAuthData());
+  const [user, setUser] = useState<IUserState>(getAuthData());
 
   const handleLoginSuccess = (response: AuthResponse): void => {
     setUser({
@@ -23,9 +24,21 @@ export const UserSession = () => {
   };
 
   const handleLogout = (): void => {
-    setUser(null);
     removeAuthData();
+    setUser(getAuthData());
   };
+
+  const handleRefresh = async () => {
+    const authResponse = await refresAuthGoogle(String(user?.refreshToken));
+
+    const authData = {
+      ...user,
+      accessToken: authResponse.access_token,
+    }
+
+    setUser(authData);
+    saveAuthData(authData);
+  }
 
   return (
     <div>
@@ -34,6 +47,7 @@ export const UserSession = () => {
           <h1>Welcome, User!</h1>
           <div>
             <button onClick={handleLogout}>Logout</button>
+            <button onClick={handleRefresh}>Refresh</button>
           </div>
         </div>
       ) : (
