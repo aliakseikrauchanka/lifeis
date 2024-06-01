@@ -13,6 +13,7 @@ import { FileInput } from './components/audio-file/audio-file';
 
 export function App() {
   const [assistantResponse, setAssistantResponse] = React.useState<string>('');
+  const [geminiAssistantResponse, setGeminiAssistantResponse] = React.useState<string>('');
   const [transcription, setTranscription] = React.useState<string>('');
   const ref = useRef<HTMLAudioElement | null>(null);
 
@@ -88,6 +89,27 @@ export function App() {
     }
   };
 
+  const handleGeminiAssistant = async () => {
+    const accessToken = localStorage.getItem('accessToken');
+    const input = document.getElementById('gemini-assistant-input') as HTMLInputElement;
+    const text = input.value;
+    try {
+      // post message
+      const checkData = await fetch(`${CONFIG.BE_URL}/translate-to-polish`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: text }),
+      });
+      const { translation } = await checkData.json();
+      setGeminiAssistantResponse(translation);
+    } catch (e) {
+      console.log(e);
+    }
+  };
+
   const handleStop = () => {
     stopRecording();
   };
@@ -123,13 +145,22 @@ export function App() {
 
       <h3>Transcription</h3>
       <p>{transcription}</p>
+      <br />
 
-      <br />
-      <br />
-      <input id="assistant-input" />
-      <button onClick={handleAssistant}>Send</button>
-      <div>assistant:</div>
-      <div>{assistantResponse}</div>
+      <p>
+        <input id="assistant-input" />
+        <button onClick={handleAssistant}>Send</button>
+
+        <div>assistant:</div>
+        <div>{assistantResponse}</div>
+      </p>
+
+      <p>
+        <input id="gemini-assistant-input" />
+        <button onClick={handleGeminiAssistant}>Translate to Polish with Gemini</button>
+        <div>gemini assistant:</div>
+        <div>{geminiAssistantResponse}</div>
+      </p>
     </GoogleOAuthProvider>
   );
 }

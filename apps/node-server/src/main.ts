@@ -11,8 +11,23 @@ import { verifyAccessToken } from './hooks/verify-access.middleware';
 import { MongoClient, ServerApiVersion } from 'mongodb';
 import { IDiaryLog } from './domain';
 import { Translation } from 'openai/resources/audio/translations';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // const uri = 'mongodb+srv://aliakseikrauchankadev:<password>@cluster0.5d0hu5r.mongodb.net/?retryWrites=true&w=majority';
+
+// Access your API key as an environment variable (see "Set up your API key" above)
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+
+async function getGeminiTranslationToPolish(text: string) {
+  // The Gemini 1.5 models are versatile and work with both text-only and multimodal prompts
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+  const prompt = `Translate to polish: ${text}`;
+
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  return response.text();
+}
 
 const uri =
   process.env.DB_URI ??
@@ -133,6 +148,11 @@ app.post('/api/transcribe', verifyAccessToken, upload.single('audio'), async (re
 });
 
 const assistantId = 'asst_xH1h4HyWEFulGnBrltEAGaJ9';
+
+app.post('/api/translate-to-polish', verifyAccessToken, async (req, res) => {
+  const translation = await getGeminiTranslationToPolish(req.body.message);
+  res.send({ translation });
+});
 
 app.post('/api/describe-image', verifyAccessToken, async (req, res) => {
   const openai = new OpenAI();
