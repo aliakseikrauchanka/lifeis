@@ -14,4 +14,4 @@ export const transcipt = async (blob: Blob): Promise<Response> => {
       MIME: blob.type,
     },
   });
-}
+};

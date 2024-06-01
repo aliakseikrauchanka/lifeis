@@ -38,15 +38,14 @@ const sendFileToTransribeOpenAI = async (filePath: string): Promise<Translation>
   unlinkSync(filePath);
   console.log('debug translations', transcription);
   return transcription;
-}
+};
 
 const getFileName = (mime: string | string[]) => {
   const mimeStr: string = Array.isArray(mime) ? mime[0] : mime;
   if (mimeStr === 'audio/mp3;') {
     return 'record.mp3';
   }
-  const fileName =
-    mimeStr === 'audio/webm; codecs=opus' ? 'record.webm' : 'record.mp4';
+  const fileName = mimeStr === 'audio/webm; codecs=opus' ? 'record.webm' : 'record.mp4';
   return fileName;
 };
 
@@ -62,7 +61,7 @@ const storage = multer.diskStorage({
     cb(
       null,
       // file.fieldname + '-' + Date.now() + path.extname(file.originalname)
-      getFileName(req.headers.mime)
+      getFileName(req.headers.mime),
     );
   },
 });
@@ -111,36 +110,27 @@ function convertFile(inputPath, outputPath, onSuccess) {
     .run();
 }
 
-app.post(
-  '/api/transcribe',
-  verifyAccessToken,
-  upload.single('audio'),
-  async (req, res) => {
-    const filePath = path.join(
-      __dirname,
-      'uploads',
-      getFileName(req.headers.mime)
-    );
-    const stats = fs.statSync(filePath);
-    console.log(`File size is of ${filePath} is ${stats.size} bytes`);
+app.post('/api/transcribe', verifyAccessToken, upload.single('audio'), async (req, res) => {
+  const filePath = path.join(__dirname, 'uploads', getFileName(req.headers.mime));
+  const stats = fs.statSync(filePath);
+  console.log(`File size is of ${filePath} is ${stats.size} bytes`);
 
-    if (req.headers.mime === 'audio/mp3;') {
-      const translation = await sendFileToTransribeOpenAI(filePath);
+  if (req.headers.mime === 'audio/mp3;') {
+    const translation = await sendFileToTransribeOpenAI(filePath);
+    unlinkSync(filePath);
+    res.send(translation);
+  }
+  const filePathMp3 = path.join(__dirname, 'uploads', 'record.mp3');
+  convertFile(filePath, filePathMp3, () => {
+    async function main() {
+      const translation = await sendFileToTransribeOpenAI(filePathMp3);
       unlinkSync(filePath);
       res.send(translation);
     }
-    const filePathMp3 = path.join(__dirname, 'uploads', 'record.mp3');
-    convertFile(filePath, filePathMp3, () => {
-      async function main() {
-        const translation = await sendFileToTransribeOpenAI(filePathMp3);
-        unlinkSync(filePath);
-        res.send(translation);
-      }
 
-      main();
-    });
-  }
-);
+    main();
+  });
+});
 
 const assistantId = 'asst_xH1h4HyWEFulGnBrltEAGaJ9';
 
@@ -148,17 +138,20 @@ app.post('/api/describe-image', verifyAccessToken, async (req, res) => {
   const openai = new OpenAI();
 
   const response = await openai.chat.completions.create({
-    model: "gpt-4-vision-preview",
+    model: 'gpt-4-vision-preview',
     max_tokens: 1500,
     messages: [
       {
-        role: "user",
+        role: 'user',
         content: [
-          { type: "text", text: "Describe ingridients (just names) that are used in this meal in numerated list ranged by weight, no additional description required" },
           {
-            type: "image_url",
+            type: 'text',
+            text: 'Describe ingridients (just names) that are used in this meal in numerated list ranged by weight, no additional description required',
+          },
+          {
+            type: 'image_url',
             image_url: {
-              "url": "https://images.immediate.co.uk/production/volatile/sites/30/2013/05/Aubergine-and-sesame-noodles-6138de6.jpg",
+              url: 'https://images.immediate.co.uk/production/volatile/sites/30/2013/05/Aubergine-and-sesame-noodles-6138de6.jpg',
             },
           },
         ],
@@ -169,37 +162,31 @@ app.post('/api/describe-image', verifyAccessToken, async (req, res) => {
   res.status(200).send(response);
 });
 
-app.post(
-  '/api/check-polish-grammar',
-  verifyAccessToken,
-  async (req, res) => {
-    const openai = new OpenAI();
+app.post('/api/check-polish-grammar', verifyAccessToken, async (req, res) => {
+  const openai = new OpenAI();
 
-    const message = req.body.message;
+  const message = req.body.message;
 
-    // const newMessage = await openai.beta.threads.messages.create(
-    //   threadId,
-    //   { role: "user", content: message }
-    // );
+  // const newMessage = await openai.beta.threads.messages.create(
+  //   threadId,
+  //   { role: "user", content: message }
+  // );
 
-    // make run on latest message
-    // await openai.beta.threads.runs.create(
-    //   threadId,
-    //   { assistant_id: assistantId }
-    // );
+  // make run on latest message
+  // await openai.beta.threads.runs.create(
+  //   threadId,
+  //   { assistant_id: assistantId }
+  // );
 
-    const run = await openai.beta.threads.createAndRun({
-      assistant_id: assistantId,
-      thread: {
-        messages: [
-          { role: "user", content: message },
-        ],
-      },
-    });
+  const run = await openai.beta.threads.createAndRun({
+    assistant_id: assistantId,
+    thread: {
+      messages: [{ role: 'user', content: message }],
+    },
+  });
 
-    res.status(200).send({ runId: run.id, threadId: run.thread_id });
-  }
-);
+  res.status(200).send({ runId: run.id, threadId: run.thread_id });
+});
 
 app.get('/api/thread/run', verifyAccessToken, async (req, res) => {
   const openai = new OpenAI();
@@ -220,7 +207,7 @@ app.get('/api/thread/messages', verifyAccessToken, async (req, res) => {
 
   const messages = await openai.beta.threads.messages.list(threadId);
 
-  res.status(200).send({ messages: messages.data.map(message => message.content) });
+  res.status(200).send({ messages: messages.data.map((message) => message.content) });
 });
 
 app.get('/api/ping', verifyAccessToken, (req, res) => {

@@ -10,4 +10,4 @@ export const checkGrammar = async (text: string): Promise<Response> => {
       'Content-Type': 'application/json',
     },
   });
-}
+};

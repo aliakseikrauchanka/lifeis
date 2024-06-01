@@ -66,31 +66,27 @@ export function App() {
                 method: 'GET',
                 headers: {
                   Authorization: `Bearer ${accessToken}`,
-                }
+                },
               });
 
               const messagesData = await messagesResponse.json();
               console.log('debug', 'messages', messagesData);
-              setAssistantResponse(messagesData.messages[0] && messagesData.messages[0][0] && messagesData.messages[0][0].text.value);
+              setAssistantResponse(
+                messagesData.messages[0] && messagesData.messages[0][0] && messagesData.messages[0][0].text.value,
+              );
             } catch (e) {
               clearInterval(intervalId);
               console.log('error happened during fetch');
             }
-
           }
         } catch (e) {
           console.log('error happened during fetch');
         }
-
-
-
-
       }, 2000);
-
     } catch (e) {
       console.log('error happened during fetch');
     }
-  }
+  };
 
   const handleStop = () => {
     stopRecording();
@@ -128,9 +124,9 @@ export function App() {
       <h3>Transcription</h3>
       <p>{transcription}</p>
 
-      <br/>
-      <br/>
-      <input id='assistant-input'/>
+      <br />
+      <br />
+      <input id="assistant-input" />
       <button onClick={handleAssistant}>Send</button>
       <div>assistant:</div>
       <div>{assistantResponse}</div>

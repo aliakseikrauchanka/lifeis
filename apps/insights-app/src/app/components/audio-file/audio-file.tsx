@@ -26,8 +26,8 @@ export const FileInput = () => {
 
   return (
     <>
-    <input type="file" accept="audio/mp3" onChange={handleFileChange} />
-    <div>{transcribe}</div>
+      <input type="file" accept="audio/mp3" onChange={handleFileChange} />
+      <div>{transcribe}</div>
     </>
   );
-}
+};

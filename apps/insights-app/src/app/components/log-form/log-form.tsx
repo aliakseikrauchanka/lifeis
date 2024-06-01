@@ -27,12 +27,7 @@ export const LogForm = () => {
   };
   return (
     <form method="post" onSubmit={handleSubmit}>
-      <textarea
-        value={message}
-        name="message"
-        placeholder="Enter your message here"
-        onChange={handleChange}
-      />
+      <textarea value={message} name="message" placeholder="Enter your message here" onChange={handleChange} />
       <button type="submit">Submit</button>
     </form>
   );

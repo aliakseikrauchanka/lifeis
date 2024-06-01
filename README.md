@@ -6,6 +6,10 @@
 
 ## Start the app 
 
+```
+docker-compose up
+```
+
 ## Generate code
 
 If you happen to use Nx plugins, you can leverage code generators that might come with it.

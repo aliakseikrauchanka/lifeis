@@ -24,6 +24,7 @@
     "@nx/esbuild": "18.0.5",
     "@nx/eslint": "18.0.5",
     "@nx/eslint-plugin": "18.0.5",
+    "eslint-plugin-prettier": "^4.0.0",
     "@nx/jest": "18.0.5",
     "@nx/js": "18.0.5",
     "@nx/node": "18.0.5",
