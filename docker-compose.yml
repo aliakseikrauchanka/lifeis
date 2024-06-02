@@ -9,6 +9,7 @@ services:
     command: npx nx run insights-app:serve --host=0.0.0.0
     ports:
       - ${CLIENT_PORT}:4200
+      - 42423:42423
     environment:
       - VITE_BE=${NGINX_DOMAIN}
       - VITE_CLIENT_ID=${CLIENT_ID}
@@ -28,6 +29,7 @@ services:
       - CLIENT_ID=${CLIENT_ID}
       - CLIENT_SECRET=${CLIENT_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
 
 volumes:
   mono-node-modules: null

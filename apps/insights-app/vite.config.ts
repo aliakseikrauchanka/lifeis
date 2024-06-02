@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import MillionLint from '@million/lint';
 
 export default defineConfig({
   root: __dirname,
@@ -29,7 +30,7 @@ export default defineConfig({
     },
   },
 
-  plugins: [react(), nxViteTsPaths()],
+  plugins: [react(), nxViteTsPaths(), MillionLint.vite()],
 
   // Uncomment this if you are using workers.
   // worker: {
