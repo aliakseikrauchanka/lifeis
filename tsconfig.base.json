@@ -15,8 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@lifeis/common-ui": ["libs/common-ui/src/index.ts"],
-      "#ia/*": ["apps/insights-app/src/*"]
+      "#ia/*": ["apps/entry-app/src/*"],
+      "@lifeis/common-ui": ["libs/common-ui/src/index.ts"]
     },
     "plugins": [
       {

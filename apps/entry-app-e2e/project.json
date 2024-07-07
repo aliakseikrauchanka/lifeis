@@ -1,22 +1,24 @@
 {
-  "name": "insights-app-e2e",
+  "name": "entry-app-e2e",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/insights-app-e2e/src",
+  "sourceRoot": "apps/entry-app-e2e/src",
   "projectType": "application",
+  "tags": [],
+  "implicitDependencies": ["entry-app"],
   "targets": {
     "e2e": {
       "executor": "@nx/cypress:cypress",
       "options": {
-        "cypressConfig": "apps/insights-app-e2e/cypress.config.ts",
-        "devServerTarget": "insights-app:serve:development",
+        "cypressConfig": "apps/entry-app-e2e/cypress.config.ts",
+        "devServerTarget": "entry-app:serve:development",
         "testingType": "e2e"
       },
       "configurations": {
         "production": {
-          "devServerTarget": "insights-app:serve:production"
+          "devServerTarget": "entry-app:serve:production"
         },
         "ci": {
-          "devServerTarget": "insights-app:serve-static"
+          "devServerTarget": "entry-app:serve-static"
         }
       }
     },
@@ -24,7 +26,5 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"]
     }
-  },
-  "tags": [],
-  "implicitDependencies": ["insights-app"]
+  }
 }

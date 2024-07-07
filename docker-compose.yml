@@ -1,12 +1,10 @@
-version: '3'
-
 services:
   # Client App
-  insights-app:
+  entry-app:
     extends:
       file: docker-compose.base.yml
       service: nx-app-base
-    command: npx nx run insights-app:serve --host=0.0.0.0
+    command: npx nx run entry-app:serve --host=0.0.0.0
     ports:
       - ${CLIENT_PORT}:4200
       - 42423:42423

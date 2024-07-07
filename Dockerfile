@@ -8,7 +8,7 @@ COPY package.json package-lock.json ./
 RUN npm install
 COPY . .
 
-RUN npx nx run insights-app:build
+RUN npx nx run entry-app:build
 
 FROM nginx:alpine
-COPY --from=build /app/dist/apps/insights-app /usr/share/nginx/html
+COPY --from=build /app/dist/apps/entry-app /usr/share/nginx/html

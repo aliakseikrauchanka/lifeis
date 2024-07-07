@@ -1,15 +1,16 @@
 {
-  "name": "insights-app",
+  "name": "entry-app",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/insights-app/src",
+  "sourceRoot": "apps/entry-app/src",
   "projectType": "application",
+  "tags": [],
   "targets": {
     "build": {
       "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "dist/apps/insights-app"
+        "outputPath": "dist/apps/entry-app"
       },
       "configurations": {
         "development": {
@@ -24,15 +25,15 @@
       "executor": "@nx/vite:dev-server",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "insights-app:build"
+        "buildTarget": "entry-app:build"
       },
       "configurations": {
         "development": {
-          "buildTarget": "insights-app:build:development",
+          "buildTarget": "entry-app:build:development",
           "hmr": true
         },
         "production": {
-          "buildTarget": "insights-app:build:production",
+          "buildTarget": "entry-app:build:production",
           "hmr": false
         }
       }
@@ -41,23 +42,23 @@
       "executor": "@nx/vite:preview-server",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "insights-app:build"
+        "buildTarget": "entry-app:build"
       },
       "configurations": {
         "development": {
-          "buildTarget": "insights-app:build:development"
+          "buildTarget": "entry-app:build:development"
         },
         "production": {
-          "buildTarget": "insights-app:build:production"
+          "buildTarget": "entry-app:build:production"
         }
       }
     },
     "test": {
       "executor": "@nx/vite:test",
-      "outputs": ["{workspaceRoot}/coverage/apps/insights-app"],
+      "outputs": ["{workspaceRoot}/coverage/apps/entry-app"],
       "options": {
         "passWithNoTests": true,
-        "reportsDirectory": "../../coverage/apps/insights-app"
+        "reportsDirectory": "../../coverage/apps/entry-app"
       }
     },
     "lint": {
@@ -67,9 +68,8 @@
     "serve-static": {
       "executor": "@nx/web:file-server",
       "options": {
-        "buildTarget": "insights-app:build"
+        "buildTarget": "entry-app:build"
       }
     }
-  },
-  "tags": []
+  }
 }

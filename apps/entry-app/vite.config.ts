@@ -7,13 +7,13 @@ import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
 export default defineConfig({
   root: __dirname,
   build: {
-    outDir: '../../dist/apps/insights-app',
+    outDir: '../../dist/apps/entry-app',
     reportCompressedSize: true,
     commonjsOptions: {
       transformMixedEsModules: true,
     },
   },
-  cacheDir: '../../node_modules/.vite/insights-app',
+  cacheDir: '../../node_modules/.vite/entry-app',
   server: {
     port: 4200,
     host: 'localhost',
@@ -44,7 +44,7 @@ export default defineConfig({
   test: {
     reporters: ['default'],
     coverage: {
-      reportsDirectory: '../../coverage/apps/insights-app',
+      reportsDirectory: '../../coverage/apps/entry-app',
       provider: 'v8',
     },
     globals: true,

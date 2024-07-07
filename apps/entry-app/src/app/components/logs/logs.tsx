@@ -1,4 +1,4 @@
-// import { CONFIG } from 'apps/insights-app/src/config';
+// import { CONFIG } from 'apps/entry-app/src/config';
 // import React, { useEffect, useState } from 'react';
 
 // export const Logs = () => {
