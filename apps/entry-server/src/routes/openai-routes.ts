@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { verifyAccessToken } from '../hooks/verify-access.middleware';
+import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { getFilePath, mp3FilePath, uploadMiddlewareFactory } from '../utils/audio-upload';
 import { Translation } from 'openai/resources/audio/translations';
 import fs, { unlinkSync } from 'fs';

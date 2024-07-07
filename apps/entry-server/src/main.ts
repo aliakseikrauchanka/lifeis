@@ -1,12 +1,12 @@
 import express, { json } from 'express';
 import cors from 'cors';
 
-import { verifyAccessToken } from './hooks/verify-access.middleware';
+import { verifyAccessToken } from './middlewares/verify-access.middleware';
 
 import authRoutes from './routes/auth-routes';
+import { createLogsRoutes } from './routes/logs-routes';
 import geminiRoutes from './routes/gemini-routes';
 import openaiRoutes from './routes/openai-routes';
-import { createLogsRoutes } from './routes/logs-routes';
 
 import { getMongoDbClient } from './db';
 

@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Router } from 'express';
-import { verifyAccessToken } from '../hooks/verify-access.middleware';
+import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });

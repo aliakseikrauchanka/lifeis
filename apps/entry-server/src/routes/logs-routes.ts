@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { verifyAccessToken } from '../hooks/verify-access.middleware';
+import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { IDiaryLog } from '../domain';
 import { MongoClient } from 'mongodb';
 
