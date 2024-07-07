@@ -30,5 +30,16 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
 
+  insights-app:
+    extends:
+      file: docker-compose.base.yml
+      service: nx-app-base
+    command: npx nx run insights-app:serve --host=0.0.0.0
+    ports:
+      - 4203:4200
+    # environment:
+    #   - VITE_BE=${NGINX_DOMAIN}
+    #   - VITE_CLIENT_ID=${CLIENT_ID}
+
 volumes:
   mono-node-modules: null
