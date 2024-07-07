@@ -1,6 +1,6 @@
 import { CONFIG } from '../../../config';
 
-export const transcipt = async (blob: Blob): Promise<Response> => {
+export const transcript = async (blob: Blob): Promise<Response> => {
   const accessToken = localStorage.getItem('accessToken');
 
   const formData = new FormData();

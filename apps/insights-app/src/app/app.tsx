@@ -8,7 +8,7 @@ import { UserSession } from './components/user-session/user-session';
 import { CONFIG } from '../config';
 import { LogForm } from './components/log-form/log-form';
 import { startRecording, stopRecording } from './services/recorder.service';
-import { transcipt } from './api/audio/audio.api';
+import { transcript } from './api/audio/audio.api';
 import { FileInput } from './components/audio-file/audio-file';
 
 export function App() {
@@ -19,7 +19,7 @@ export function App() {
 
   const handleRecord = () => {
     startRecording(async (blob: Blob) => {
-      const data = await transcipt(blob);
+      const data = await transcript(blob);
       const t = await data.json();
 
       setTranscription(t.text);
@@ -146,21 +146,17 @@ export function App() {
       <h3>Transcription</h3>
       <p>{transcription}</p>
       <br />
+      <input id="assistant-input" />
+      <button onClick={handleAssistant}>Send</button>
 
-      <p>
-        <input id="assistant-input" />
-        <button onClick={handleAssistant}>Send</button>
+      <div>OpenAI assistant:</div>
+      <div>{assistantResponse}</div>
 
-        <div>assistant:</div>
-        <div>{assistantResponse}</div>
-      </p>
-
-      <p>
-        <input id="gemini-assistant-input" />
-        <button onClick={handleGeminiAssistant}>Translate to Polish with Gemini</button>
-        <div>gemini assistant:</div>
-        <div>{geminiAssistantResponse}</div>
-      </p>
+      <br />
+      <input id="gemini-assistant-input" />
+      <button onClick={handleGeminiAssistant}>Translate to Polish with Gemini</button>
+      <div>gemini assistant:</div>
+      <div>{geminiAssistantResponse}</div>
     </GoogleOAuthProvider>
   );
 }
