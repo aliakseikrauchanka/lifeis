@@ -13,11 +13,11 @@ services:
       - VITE_CLIENT_ID=${CLIENT_ID}
 
   # Node.js Server App
-  node-server:
+  entry-server:
     extends:
       file: docker-compose.base.yml
       service: nx-app-base
-    command: npx nx run node-server:serve --host=0.0.0.0
+    command: npx nx run entry-server:serve --host=0.0.0.0
     ports:
       - ${SERVER_PORT}:3000
     environment:
