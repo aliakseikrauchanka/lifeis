@@ -6,7 +6,7 @@ export const transcript = async (blob: Blob): Promise<Response> => {
   const formData = new FormData();
   formData.append('audio', blob);
 
-  return fetch(`${CONFIG.BE_URL}/transcribe`, {
+  return fetch(`${CONFIG.BE_URL}/openai/transcribe`, {
     method: 'POST',
     body: formData,
     headers: {

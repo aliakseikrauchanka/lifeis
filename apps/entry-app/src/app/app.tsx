@@ -38,7 +38,7 @@ export function App() {
     const text = input.value;
     try {
       // post message
-      const checkData = await fetch(`${CONFIG.BE_URL}/check-polish-grammar`, {
+      const checkData = await fetch(`${CONFIG.BE_URL}/gemini/check-polish-grammar`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -50,7 +50,7 @@ export function App() {
 
       const intervalId = setInterval(async () => {
         try {
-          const runResponse = await fetch(`${CONFIG.BE_URL}/thread/run?threadId=${threadId}&runId=${runId}`, {
+          const runResponse = await fetch(`${CONFIG.BE_URL}/gemini/thread/run?threadId=${threadId}&runId=${runId}`, {
             method: 'GET',
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -63,7 +63,7 @@ export function App() {
             clearInterval(intervalId);
 
             try {
-              const messagesResponse = await fetch(`${CONFIG.BE_URL}/thread/messages?threadId=${threadId}`, {
+              const messagesResponse = await fetch(`${CONFIG.BE_URL}/gemini/?threadId=${threadId}`, {
                 method: 'GET',
                 headers: {
                   Authorization: `Bearer ${accessToken}`,
@@ -95,7 +95,7 @@ export function App() {
     const text = input.value;
     try {
       // post message
-      const checkData = await fetch(`${CONFIG.BE_URL}/translate-to-polish`, {
+      const checkData = await fetch(`${CONFIG.BE_URL}/gemini/translate-to-polish`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${accessToken}`,

@@ -16,7 +16,8 @@
     "baseUrl": ".",
     "paths": {
       "#ia/*": ["apps/entry-app/src/*"],
-      "@lifeis/common-ui": ["libs/common-ui/src/index.ts"]
+      "@lifeis/common-ui": ["libs/common-ui/src/index.ts"],
+      "@lifeis/node-server-utils": ["libs/node-server-utils/src/index.ts"]
     },
     "plugins": [
       {

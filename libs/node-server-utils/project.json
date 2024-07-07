@@ -1,0 +1,29 @@
+{
+  "name": "node-server-utils",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/node-server-utils/src",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/js:tsc",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/libs/node-server-utils",
+        "main": "libs/node-server-utils/src/index.ts",
+        "tsConfig": "libs/node-server-utils/tsconfig.lib.json",
+        "assets": ["libs/node-server-utils/*.md"]
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/node-server-utils/jest.config.ts"
+      }
+    }
+  }
+}
