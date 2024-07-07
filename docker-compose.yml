@@ -7,7 +7,8 @@ services:
     command: npx nx run entry-app:serve --host=0.0.0.0
     ports:
       - ${CLIENT_PORT}:4200
-      - 42423:42423
+      # PORT for million lint
+      # - 42423:42423
     environment:
       - VITE_BE=${NGINX_DOMAIN}
       - VITE_CLIENT_ID=${CLIENT_ID}
