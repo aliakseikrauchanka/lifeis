@@ -28,12 +28,13 @@
       "cache": true
     },
     "@nx/eslint:lint": {
-      "inputs": [
-        "default",
-        "{workspaceRoot}/.eslintrc.json",
-        "{workspaceRoot}/.eslintignore"
-      ],
+      "inputs": ["default", "{workspaceRoot}/.eslintrc.json", "{workspaceRoot}/.eslintignore"],
       "cache": true
+    },
+    "@nx/vite:build": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
     }
   },
   "namedInputs": {
@@ -50,10 +51,10 @@
   "generators": {
     "@nx/react": {
       "application": {
+        "babel": true,
         "style": "scss",
         "linter": "eslint",
-        "bundler": "vite",
-        "babel": true
+        "bundler": "vite"
       },
       "component": {
         "style": "scss"
