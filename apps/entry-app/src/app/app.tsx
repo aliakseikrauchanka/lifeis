@@ -10,6 +10,7 @@ import { LogForm } from './components/log-form/log-form';
 import { startRecording, stopRecording } from './services/recorder.service';
 import { transcript } from './api/audio/audio.api';
 import { FileInput } from './components/audio-file/audio-file';
+import { checkGrammar, translateToPolish } from './api/assistants/assistants.api';
 
 export function App() {
   const [assistantResponse, setAssistantResponse] = React.useState<string>('');
@@ -32,86 +33,23 @@ export function App() {
     });
   };
 
+  const handleStop = () => {
+    stopRecording();
+  };
+
   const handleAssistant = async () => {
-    const accessToken = localStorage.getItem('accessToken');
     const input = document.getElementById('assistant-input') as HTMLInputElement;
     const text = input.value;
-    try {
-      // post message
-      const checkData = await fetch(`${CONFIG.BE_URL}/gemini/check-polish-grammar`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: text }),
-      });
-      const { threadId, runId } = await checkData.json();
 
-      const intervalId = setInterval(async () => {
-        try {
-          const runResponse = await fetch(`${CONFIG.BE_URL}/gemini/thread/run?threadId=${threadId}&runId=${runId}`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
-
-          const run = await runResponse.json();
-
-          if (run.status === 'completed') {
-            clearInterval(intervalId);
-
-            try {
-              const messagesResponse = await fetch(`${CONFIG.BE_URL}/gemini/?threadId=${threadId}`, {
-                method: 'GET',
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              });
-
-              const messagesData = await messagesResponse.json();
-              console.log('debug', 'messages', messagesData);
-              setAssistantResponse(
-                messagesData.messages[0] && messagesData.messages[0][0] && messagesData.messages[0][0].text.value,
-              );
-            } catch (e) {
-              clearInterval(intervalId);
-              console.log('error happened during fetch');
-            }
-          }
-        } catch (e) {
-          console.log('error happened during fetch');
-        }
-      }, 2000);
-    } catch (e) {
-      console.log('error happened during fetch');
-    }
+    const response = await checkGrammar(text);
+    setAssistantResponse(response);
   };
 
   const handleGeminiAssistant = async () => {
-    const accessToken = localStorage.getItem('accessToken');
     const input = document.getElementById('gemini-assistant-input') as HTMLInputElement;
     const text = input.value;
-    try {
-      // post message
-      const checkData = await fetch(`${CONFIG.BE_URL}/gemini/translate-to-polish`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message: text }),
-      });
-      const { translation } = await checkData.json();
-      setGeminiAssistantResponse(translation);
-    } catch (e) {
-      console.log(e);
-    }
-  };
-
-  const handleStop = () => {
-    stopRecording();
+    const response = await translateToPolish(text);
+    setGeminiAssistantResponse(response);
   };
 
   const handleBEPing = async () => {
@@ -135,8 +73,8 @@ export function App() {
         <Button onClick={handleBEPing}>Ping BE</Button>
       </header>
       <LogForm />
-      <button onClick={handleRecord}>Record</button>
-      <button onClick={handleStop}>Stop Recording</button>
+      <Button onClick={handleRecord}>Record</Button>
+      <Button onClick={handleStop}>Stop Recording</Button>
       <div>
         <h3>Audio of recording</h3>
         {transcription && <audio ref={ref}></audio>}
@@ -146,16 +84,19 @@ export function App() {
       <h3>Transcription</h3>
       <p>{transcription}</p>
       <br />
-      <input id="assistant-input" />
-      <button onClick={handleAssistant}>Send</button>
 
-      <div>OpenAI assistant:</div>
+      <h3>Open AI</h3>
+      <input id="assistant-input" />
+      <Button onClick={handleAssistant}>Send</Button>
+      <div>OpenAI assistant response:</div>
       <div>{assistantResponse}</div>
 
       <br />
+
+      <h3>Gemini</h3>
       <input id="gemini-assistant-input" />
-      <button onClick={handleGeminiAssistant}>Translate to Polish with Gemini</button>
-      <div>gemini assistant:</div>
+      <Button onClick={handleGeminiAssistant}>Translate to Polish with Gemini</Button>
+      <div>Gemini assistant response:</div>
       <div>{geminiAssistantResponse}</div>
     </GoogleOAuthProvider>
   );

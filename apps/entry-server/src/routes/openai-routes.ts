@@ -68,7 +68,6 @@ routes.post('/describe-image', verifyAccessToken, async (req, res) => {
 });
 
 const assistantId = 'asst_xH1h4HyWEFulGnBrltEAGaJ9';
-
 routes.post('/check-polish-grammar', verifyAccessToken, async (req, res) => {
   // const openai = new OpenAI();
 
