@@ -10,7 +10,7 @@ import { LogForm } from './components/log-form/log-form';
 import { startRecording, stopRecording } from './services/recorder.service';
 import { transcript } from './api/audio/audio.api';
 import { FileInput } from './components/audio-file/audio-file';
-import { checkGrammar, translateToPolish } from './api/assistants/assistants.api';
+import { checkPolishGrammar, translateToPolish } from './api/assistants/assistants.api';
 
 export function App() {
   const [assistantResponse, setAssistantResponse] = React.useState<string>('');
@@ -41,7 +41,7 @@ export function App() {
     const input = document.getElementById('assistant-input') as HTMLInputElement;
     const text = input.value;
 
-    const response = await checkGrammar(text);
+    const response = await checkPolishGrammar(text);
     setAssistantResponse(response);
   };
 

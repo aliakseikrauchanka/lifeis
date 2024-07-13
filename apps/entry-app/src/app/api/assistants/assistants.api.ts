@@ -1,6 +1,6 @@
 import { CONFIG } from '../../../config';
 
-export const checkGrammar = async (text: string): Promise<string> => {
+export const checkPolishGrammar = async (text: string): Promise<string> => {
   const accessToken = localStorage.getItem('accessToken');
 
   try {
@@ -31,22 +31,15 @@ export const checkGrammar = async (text: string): Promise<string> => {
           if (run.status === 'completed') {
             clearInterval(intervalId);
 
-            try {
-              const messagesResponse = await fetch(`${CONFIG.BE_URL}/openai/thread/messages?threadId=${threadId}`, {
-                method: 'GET',
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              });
+            const messagesResponse = await fetch(`${CONFIG.BE_URL}/openai/thread/messages?threadId=${threadId}`, {
+              method: 'GET',
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            });
 
-              const messagesData = await messagesResponse.json();
-              resolve(
-                messagesData.messages[0] && messagesData.messages[0][0] && messagesData.messages[0][0].text.value,
-              );
-            } catch (e) {
-              clearInterval(intervalId);
-              console.log('error happened during fetch');
-            }
+            const messagesData = await messagesResponse.json();
+            resolve(messagesData.messages[0] && messagesData.messages[0][0] && messagesData.messages[0][0].text.value);
           }
         } catch (e) {
           console.log('error happened during fetch');
