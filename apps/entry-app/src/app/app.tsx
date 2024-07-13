@@ -3,7 +3,8 @@ import React, { useRef } from 'react';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-import { Button } from '@lifeis/common-ui';
+import { OwnButton } from '@lifeis/common-ui';
+import Button from '@mui/joy/Button';
 import { UserSession } from './components/user-session/user-session';
 import { CONFIG } from '../config';
 import { LogForm } from './components/log-form/log-form';
@@ -70,11 +71,11 @@ export function App() {
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
       <header>
         <UserSession />
-        <Button onClick={handleBEPing}>Ping BE</Button>
+        <OwnButton onClick={handleBEPing}>Ping BE</OwnButton>
       </header>
       <LogForm />
-      <Button onClick={handleRecord}>Record</Button>
-      <Button onClick={handleStop}>Stop Recording</Button>
+      <OwnButton onClick={handleRecord}>Record</OwnButton>
+      <OwnButton onClick={handleStop}>Stop Recording</OwnButton>
       <div>
         <h3>Audio of recording</h3>
         {transcription && <audio ref={ref}></audio>}
@@ -87,7 +88,7 @@ export function App() {
 
       <h3>Open AI</h3>
       <input id="assistant-input" />
-      <Button onClick={handleAssistant}>Send</Button>
+      <OwnButton onClick={handleAssistant}>Send</OwnButton>
       <div>OpenAI assistant response:</div>
       <div>{assistantResponse}</div>
 
@@ -95,7 +96,7 @@ export function App() {
 
       <h3>Gemini</h3>
       <input id="gemini-assistant-input" />
-      <Button onClick={handleGeminiAssistant}>Translate to Polish with Gemini</Button>
+      <OwnButton onClick={handleGeminiAssistant}>Translate to Polish with Gemini</OwnButton>
       <div>Gemini assistant response:</div>
       <div>{geminiAssistantResponse}</div>
     </GoogleOAuthProvider>
