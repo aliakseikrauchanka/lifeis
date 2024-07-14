@@ -5,7 +5,7 @@ import css from './user-session.module.scss';
 import { AuthResponse } from '../../domains/auth.domain';
 import { IUserState } from '../../domains/user.domain';
 import { getAuthData, removeAuthData, saveAuthData } from '../../services/local-storage.service';
-import { refresAuthGoogle } from '../../api/auth/auth';
+import { refreshAuthGoogle } from '../../api/auth/auth';
 
 export const UserSession = () => {
   const [user, setUser] = useState<IUserState>(getAuthData());
@@ -25,7 +25,7 @@ export const UserSession = () => {
   };
 
   const handleRefresh = async () => {
-    const authResponse = await refresAuthGoogle(String(user?.refreshToken));
+    const authResponse = await refreshAuthGoogle(String(user?.refreshToken));
 
     const authData = {
       ...user,

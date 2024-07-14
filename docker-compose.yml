@@ -38,9 +38,9 @@ services:
     command: npx nx run insights-app:serve --host=0.0.0.0
     ports:
       - 4203:4200
-    # environment:
-    #   - VITE_BE=${NGINX_DOMAIN}
-    #   - VITE_CLIENT_ID=${CLIENT_ID}
+    environment:
+      - VITE_BE=${NGINX_DOMAIN}
+      - VITE_CLIENT_ID=${CLIENT_ID}
 
 volumes:
   mono-node-modules: null
