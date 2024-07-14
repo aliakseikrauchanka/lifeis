@@ -9,6 +9,8 @@ import geminiRoutes from './routes/gemini-routes';
 import openaiRoutes from './routes/openai-routes';
 
 import { getMongoDbClient } from './db';
+import insightsRoutes from './routes/insights-routes';
+import { createAgentsRoutes } from './routes/agents-routes';
 
 const client = getMongoDbClient();
 
@@ -21,8 +23,10 @@ app.use(json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/logs', createLogsRoutes(client));
+app.use('/api/agents/', createAgentsRoutes(client));
 app.use('/api/gemini', geminiRoutes);
 app.use('/api/openai', openaiRoutes);
+app.use('/api/insights', insightsRoutes);
 
 app.get('/api/ping', verifyAccessToken, (req, res) => {
   res.send({ message: 'pong' });

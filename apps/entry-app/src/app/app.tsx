@@ -12,6 +12,8 @@ import { startRecording, stopRecording } from './services/recorder.service';
 import { transcript } from './api/audio/audio.api';
 import { FileInput } from './components/audio-file/audio-file';
 import { checkPolishGrammar, translateToPolish } from './api/assistants/assistants.api';
+import { Insights } from './components/insights/insights';
+import { AllAgents } from './components/agents/all-agents';
 
 export function App() {
   const [assistantResponse, setAssistantResponse] = React.useState<string>('');
@@ -99,6 +101,12 @@ export function App() {
       <OwnButton onClick={handleGeminiAssistant}>Translate to Polish with Gemini</OwnButton>
       <div>Gemini assistant response:</div>
       <div>{geminiAssistantResponse}</div>
+
+      <br />
+      <AllAgents />
+
+      <br />
+      <Insights />
     </GoogleOAuthProvider>
   );
 }

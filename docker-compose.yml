@@ -29,6 +29,7 @@ services:
       - CLIENT_SECRET=${CLIENT_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - NOTION_API_KEY=${NOTION_API_KEY}
 
   insights-app:
     extends:
