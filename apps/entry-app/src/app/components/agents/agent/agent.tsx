@@ -37,7 +37,7 @@ export const Agent = ({ id, name, prefix, focused, number, onRemove }: IAgentPro
   };
 
   const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && e.ctrlKey) {
       submit();
     }
   };
@@ -72,7 +72,6 @@ export const Agent = ({ id, name, prefix, focused, number, onRemove }: IAgentPro
       </div>
       <div>
         <h4>Response:</h4>
-        {/* <p>{answer}</p> */}
         <ReactMarkdown>{answer}</ReactMarkdown>
       </div>
     </form>
