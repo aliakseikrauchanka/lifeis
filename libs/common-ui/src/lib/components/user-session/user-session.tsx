@@ -54,9 +54,9 @@ export const UserSession = () => {
   };
 
   return (
-    <div>
+    <div className={css.userSession}>
       {user?.accessToken && user?.refreshToken ? (
-        <div className={css.userSession}>
+        <div className={css.userSessionContent}>
           <h1>Welcome, User!</h1>
           <div>
             <button onClick={handleLogout}>Logout</button>

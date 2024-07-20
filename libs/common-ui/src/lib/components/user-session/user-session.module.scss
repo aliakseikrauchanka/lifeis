@@ -1,5 +1,10 @@
 .user-session {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  background-color: blanchedalmond;
+
+  &-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 }
+

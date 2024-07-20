@@ -1,6 +1,7 @@
 import React, { ChangeEventHandler, FormEventHandler, useState } from 'react';
 import { OwnButton } from '@lifeis/common-ui';
-import { createAgent } from '../../api/agents/agents';
+import { createAgent } from '../../../api/agents/agents';
+import css from './agent-create.module.scss';
 
 interface IAgentFormProps {
   onCreate: () => void;
@@ -14,7 +15,7 @@ const AgentForm = ({ onCreate }: IAgentFormProps) => {
     setName(e.target.value);
   };
 
-  const handlePrefixChange: ChangeEventHandler<HTMLInputElement> = (e) => {
+  const handlePrefixChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
     setPrefix(e.target.value);
   };
 
@@ -29,14 +30,21 @@ const AgentForm = ({ onCreate }: IAgentFormProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className={css.agentCreate}>
+      <h2>Create agent</h2>
       <div>
         <label htmlFor="name">Name:</label>
-        <input type="text" id="name" value={name} onChange={handleNameChange} />
+        <input
+          type="text"
+          id="name"
+          value={name}
+          onChange={handleNameChange}
+          className={css.agentCreateInputFullWidth}
+        />
       </div>
       <div>
         <label htmlFor="prefix">Instructions (Prefix):</label>
-        <input type="text" id="prefix" value={prefix} onChange={handlePrefixChange} />
+        <textarea id="prefix" value={prefix} onChange={handlePrefixChange} className={css.agentCreateInputFullWidth} />
       </div>
       <OwnButton type="submit">Create Agent</OwnButton>
     </form>

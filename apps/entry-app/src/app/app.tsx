@@ -13,6 +13,7 @@ import { AgentsPage } from './pages/agents.page';
 import { ExperimentsPage } from './pages/experiments.page';
 import { LogsPage } from './pages/logs.page';
 import { init } from '@lifeis/common-ui';
+import './styles/reset.css';
 
 export default function App() {
   useEffect(() => {

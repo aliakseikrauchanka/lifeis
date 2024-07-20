@@ -1,7 +1,10 @@
 import { getAllAgents } from '../../api/agents/agents';
 import React, { useEffect, useState } from 'react';
-import { Agent } from './agent';
-import AgentForm from './agent-form';
+import { Agent } from './agent/agent';
+import AgentForm from './agent-create/agent-create';
+import css from './all-agents.module.scss';
+
+const AVAILABLE_KEYS = ['1', '2', '3', '4'];
 
 export const AllAgents = () => {
   const [agents, setAgents] = useState([]);
@@ -11,6 +14,25 @@ export const AllAgents = () => {
     const agents = (response as any).agents;
     setAgents(agents);
   };
+
+  const [focusedAgentIndex, setFocusedAgentIndex] = useState(0);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.ctrlKey && event.metaKey && AVAILABLE_KEYS.includes(event.key)) {
+        const index = parseInt(event.key) - 1;
+        if (index < agents.length) {
+          setFocusedAgentIndex(index);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [agents.length]);
 
   useEffect(() => {
     getAgents();
@@ -26,19 +48,26 @@ export const AllAgents = () => {
 
   return (
     <div>
-      <h1>AllAgents</h1>
+      <div className={css.agentsWrapper}>
+        <h2>agents</h2>
+        {!!agents.length && (
+          <div className={css.agents}>
+            {agents.map((agent: any, i: number) => (
+              // TODO: get rid of any type
+              <Agent
+                id={agent._id}
+                name={agent.name}
+                prefix={agent.prefix}
+                key={agent._id}
+                onRemove={handleOnAgentRemove}
+                number={AVAILABLE_KEYS.includes(String(i + 1)) ? i + 1 : undefined}
+                focused={i === focusedAgentIndex}
+              />
+            ))}
+          </div>
+        )}
+      </div>
       <AgentForm onCreate={handleCreate} />
-
-      {!!agents.length && (
-        <ul>
-          {agents.map((agent: any) => (
-            // TODO: get rid of any type
-            <li key={agent._id}>
-              <Agent id={agent._id} name={agent.name} key={agent._id} onRemove={handleOnAgentRemove} />
-            </li>
-          ))}
-        </ul>
-      )}
     </div>
   );
 };
