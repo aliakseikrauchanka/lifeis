@@ -29,7 +29,7 @@ export const AllAgents = () => {
         <ul>
           {agents.map((agent: any) => (
             // TODO: get rid of any type
-            <li id={agent._id}>
+            <li key={agent._id}>
               <Agent id={agent._id} name={agent.name} key={agent._id} />
             </li>
           ))}

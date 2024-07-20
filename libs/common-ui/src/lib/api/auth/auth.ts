@@ -1,4 +1,4 @@
-import { CONFIG } from '../../config';
+import { CONFIG } from '../../../main';
 import { AuthRawResponse } from './domain/auth.domain';
 
 export const authGoogle = async (code: string): Promise<AuthRawResponse> => {
