@@ -51,7 +51,7 @@ export const Agent = ({ id, name, prefix, focused, number, onRemove }: IAgentPro
   };
 
   return (
-    <form onSubmit={handleSubmitForm} className={css.agent} tabIndex={-1}>
+    <form onSubmit={handleSubmitForm} className={css.agent}>
       <h3>
         Agent {number}: {name}
       </h3>
