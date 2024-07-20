@@ -20,6 +20,10 @@ export const AllAgents = () => {
     getAgents();
   };
 
+  const handleOnAgentRemove = () => {
+    getAgents();
+  };
+
   return (
     <div>
       <h1>AllAgents</h1>
@@ -30,7 +34,7 @@ export const AllAgents = () => {
           {agents.map((agent: any) => (
             // TODO: get rid of any type
             <li key={agent._id}>
-              <Agent id={agent._id} name={agent.name} key={agent._id} />
+              <Agent id={agent._id} name={agent.name} key={agent._id} onRemove={handleOnAgentRemove} />
             </li>
           ))}
         </ul>

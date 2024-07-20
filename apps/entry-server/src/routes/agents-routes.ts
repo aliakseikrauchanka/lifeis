@@ -53,6 +53,33 @@ export const createAgentsRoutes = (client: MongoClient) => {
     res.send({ answer: responseText });
   });
 
+  router.delete('/:id', verifyAccessToken, async (req, res) => {
+    const agentId = req.params.id;
+
+    // const collection = );
+
+    // const foundAgent = collection.findOne({ _id: new ObjectId(agentId) });
+
+    // if (!foundAgent) {
+    //   return res.status(404).send({ message: 'agent not found' });
+    // }
+
+    const deleteResult = await client
+      .db('lifeis')
+      .collection('gemini_agents')
+      .deleteOne({ _id: new ObjectId(agentId) });
+
+    if (deleteResult.deletedCount == 0) {
+      return res.status(404).send({ message: 'agent not found' });
+    }
+
+    if (deleteResult.deletedCount > 1) {
+      return res.status(500).send({ message: 'something went wrong' });
+    }
+
+    res.status(200).send({ message: 'agent deleted' });
+  });
+
   router.post('/', verifyAccessToken, async (req, res) => {
     const { name, prefix } = req.body;
 

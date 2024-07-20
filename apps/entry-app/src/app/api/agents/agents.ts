@@ -19,6 +19,22 @@ export const createAgent = async (data: { name: string; prefix: string }): Promi
   return await response.json();
 };
 
+export const removeAgent = async (id: string): Promise<void> => {
+  const response = await fetch(`${CONFIG.BE_URL}/agents/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${getAuthData().accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to remove agent');
+  }
+
+  return await response.json();
+};
+
 export const getAllAgents = async (): Promise<ILog[]> => {
   const response = await fetch(`${CONFIG.BE_URL}/agents`, {
     headers: {
