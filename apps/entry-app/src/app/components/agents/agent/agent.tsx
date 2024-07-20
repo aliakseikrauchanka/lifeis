@@ -63,6 +63,7 @@ export const Agent = ({ id, name, prefix, focused, number, onRemove }: IAgentPro
         onChange={(e) => setMessage(e.target.value)}
         onKeyPress={handleKeyPress}
         className={css.agentInput}
+        spellCheck={true}
       />
       <div className={css.agentButtons}>
         <OwnButton type="submit">Submit message</OwnButton>
