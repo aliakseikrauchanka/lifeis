@@ -7,7 +7,7 @@ import { IUserState } from '../../domains/user.domain';
 import { getAuthData, removeAuthData, saveAuthData } from '../../services/local-storage.service';
 import { refreshAuthGoogle } from '../../api/auth/auth';
 import OwnButton from '../button/button';
-import { CONFIG } from '../../config';
+import { CONFIG } from '../../../main';
 
 export const UserSession = () => {
   const [user, setUser] = useState<IUserState>(getAuthData());

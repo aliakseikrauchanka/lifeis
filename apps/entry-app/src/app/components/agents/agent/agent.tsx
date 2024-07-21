@@ -36,7 +36,7 @@ export const Agent = ({ id, name, prefix, focused, number, onRemove }: IAgentPro
     submit();
   };
 
-  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyPress = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && e.ctrlKey) {
       submit();
     }

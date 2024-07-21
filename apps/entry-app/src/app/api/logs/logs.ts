@@ -1,4 +1,4 @@
-import { getAuthData } from '../../services/local-storage.service';
+import { getAuthData } from '@lifeis/common-ui';
 import { ILog } from '../../domains/log.domain';
 import { CONFIG } from '../../../../src/config';
 
