@@ -1,13 +1,12 @@
-import { getAuthData } from '@lifeis/common-ui';
+import { utilFetch } from '@lifeis/common-ui';
 import { ILog } from '../../domains/log.domain';
 import { CONFIG } from '../../../../src/config';
 
 export const createAgent = async (data: { name: string; prefix: string }): Promise<void> => {
-  const response = await fetch(`${CONFIG.BE_URL}/agents`, {
+  const response = await utilFetch(`${CONFIG.BE_URL}/agents`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${getAuthData().accessToken}`,
     },
     body: JSON.stringify(data),
   });
@@ -20,11 +19,10 @@ export const createAgent = async (data: { name: string; prefix: string }): Promi
 };
 
 export const removeAgent = async (id: string): Promise<void> => {
-  const response = await fetch(`${CONFIG.BE_URL}/agents/${id}`, {
+  const response = await utilFetch(`${CONFIG.BE_URL}/agents/${id}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${getAuthData().accessToken}`,
     },
   });
 
@@ -36,11 +34,7 @@ export const removeAgent = async (id: string): Promise<void> => {
 };
 
 export const getAllAgents = async (): Promise<ILog[]> => {
-  const response = await fetch(`${CONFIG.BE_URL}/agents`, {
-    headers: {
-      Authorization: `Bearer ${getAuthData().accessToken}`,
-    },
-  });
+  const response = await utilFetch(`${CONFIG.BE_URL}/agents`);
 
   if (!response.ok) {
     throw new Error('Failed to get agents');
@@ -58,11 +52,10 @@ export const submitMessage = async ({
 }): Promise<{
   answer: string;
 }> => {
-  const response = await fetch(`${CONFIG.BE_URL}/agents/${id}`, {
+  const response = await utilFetch(`${CONFIG.BE_URL}/agents/${id}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${getAuthData().accessToken}`,
     },
     body: JSON.stringify({
       message,

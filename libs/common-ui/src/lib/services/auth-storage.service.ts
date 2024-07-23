@@ -16,3 +16,8 @@ export const removeAuthData = () => {
   localStorage.removeItem('accessToken');
   localStorage.removeItem('refreshToken');
 };
+
+export const isUserLoggedIn = (): boolean => {
+  const authData = getAuthData();
+  return !!authData.accessToken && !!authData.refreshToken;
+};

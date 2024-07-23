@@ -1,5 +1,5 @@
-import { CONFIG } from '../../../../src/config';
 import React from 'react';
+import { createLog } from '../../api/logs/logs.api';
 
 export const LogForm = () => {
   const [message, setMessage] = React.useState('');
@@ -9,17 +9,9 @@ export const LogForm = () => {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const accessToken = localStorage.getItem('accessToken');
 
     try {
-      await fetch(`${CONFIG.BE_URL}/logs`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ message }),
-      });
+      await createLog(message);
       setMessage('');
     } catch (e) {
       console.log('error happened during fetch');

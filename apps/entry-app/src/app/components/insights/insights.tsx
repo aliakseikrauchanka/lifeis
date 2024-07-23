@@ -1,24 +1,13 @@
-import { CONFIG } from '../../../config';
 import React, { useEffect, useState } from 'react';
+import { getAllInsights } from '../../api/insights/insights.api';
 
-export const Insights = () => {
-  const [insights, setInsights] = useState([]);
+export const AllInsights = () => {
+  const [insights, setInsights] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchLogs = async () => {
-      const accessToken = localStorage.getItem('accessToken');
-      try {
-        const data = await fetch(`${CONFIG.BE_URL}/insights`, {
-          method: 'GET',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        setInsights(await data.json());
-      } catch (e) {
-        console.log('error happened during fetch');
-      }
+      const insights = await getAllInsights();
+      setInsights(insights);
     };
     fetchLogs();
   }, []);

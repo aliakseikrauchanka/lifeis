@@ -42,7 +42,7 @@ router.post('/google', (req, res) => {
 });
 
 router.post('/google/refresh', (req, res) => {
-  const { code } = req.body;
+  const { refreshToken } = req.body;
   const client_id = CLIENT_ID;
   const client_secret = CLIENT_SECRET;
   const redirect_uri = REDIRECT_URL;
@@ -54,7 +54,7 @@ router.post('/google/refresh', (req, res) => {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
-      refresh_token: code,
+      refresh_token: refreshToken,
       client_id,
       client_secret,
       redirect_uri,

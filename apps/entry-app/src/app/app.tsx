@@ -1,9 +1,9 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-import { UserSession } from '@lifeis/common-ui';
+import { isUserLoggedIn, UserSession } from '@lifeis/common-ui';
 import { CONFIG } from '../config';
 
 import { Route, Routes } from 'react-router-dom';
@@ -16,6 +16,8 @@ import { init } from '@lifeis/common-ui';
 import './styles/reset.css';
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
+
   useEffect(() => {
     init({
       beUrl: CONFIG.BE_URL,
@@ -26,7 +28,11 @@ export default function App() {
   return (
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
       <header>
-        <UserSession />
+        <UserSession
+          isLoggedIn={isLoggedIn}
+          onLoginSuccess={() => setIsLoggedIn(true)}
+          onLogOut={() => setIsLoggedIn(false)}
+        />
       </header>
 
       <Routes>

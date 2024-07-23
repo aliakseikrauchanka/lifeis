@@ -1,3 +1,4 @@
+import { utilFetch } from '@lifeis/common-ui';
 import { CONFIG } from '../../../config';
 
 export const checkPolishGrammar = async (text: string): Promise<string> => {
@@ -5,7 +6,7 @@ export const checkPolishGrammar = async (text: string): Promise<string> => {
 
   try {
     // post message
-    const checkData = await fetch(`${CONFIG.BE_URL}/openai/check-polish-grammar`, {
+    const checkData = await utilFetch(`${CONFIG.BE_URL}/openai/check-polish-grammar`, {
       method: 'POST',
       body: JSON.stringify({ message: text }),
       headers: {
@@ -19,23 +20,20 @@ export const checkPolishGrammar = async (text: string): Promise<string> => {
     return new Promise((resolve, reject) => {
       const intervalId = setInterval(async () => {
         try {
-          const runResponse = await fetch(`${CONFIG.BE_URL}/openai/thread/run?threadId=${threadId}&runId=${runId}`, {
-            method: 'GET',
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
+          const runResponse = await utilFetch(
+            `${CONFIG.BE_URL}/openai/thread/run?threadId=${threadId}&runId=${runId}`,
+            {
+              method: 'GET',
             },
-          });
+          );
 
           const run = await runResponse.json();
 
           if (run.status === 'completed') {
             clearInterval(intervalId);
 
-            const messagesResponse = await fetch(`${CONFIG.BE_URL}/openai/thread/messages?threadId=${threadId}`, {
+            const messagesResponse = await utilFetch(`${CONFIG.BE_URL}/openai/thread/messages?threadId=${threadId}`, {
               method: 'GET',
-              headers: {
-                Authorization: `Bearer ${accessToken}`,
-              },
             });
 
             const messagesData = await messagesResponse.json();
@@ -53,14 +51,11 @@ export const checkPolishGrammar = async (text: string): Promise<string> => {
 };
 
 export const translateToPolish = async (text: string): Promise<string> => {
-  const accessToken = localStorage.getItem('accessToken');
-
   try {
     // post message
-    const checkData = await fetch(`${CONFIG.BE_URL}/gemini/translate-to-polish`, {
+    const checkData = await utilFetch(`${CONFIG.BE_URL}/gemini/translate-to-polish`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ message: text }),
