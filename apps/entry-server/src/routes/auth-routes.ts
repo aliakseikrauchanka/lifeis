@@ -29,14 +29,10 @@ router.post('/google', (req, res) => {
     }),
   })
     .then((response) => response.json())
-    .then((tokens) => {
-      console.log('tokens', JSON.stringify(tokens, null, 2));
-      // Send the tokens back to the frontend, or store them securely and create a session
-      res.json(tokens);
-    })
-    .catch((error) => {
+    .then((tokens) => res.json(tokens))
+    .catch(() => {
       // Handle errors in the token exchange
-      console.error('Token exchange error:', error);
+      console.error('Token exchange error');
       res.status(500).json({ error: 'Internal Server Error' });
     });
 });
@@ -63,13 +59,11 @@ router.post('/google/refresh', (req, res) => {
   })
     .then((response) => response.json())
     .then((tokens) => {
-      console.log('tokens', JSON.stringify(tokens, null, 2));
-      // Send the tokens back to the frontend, or store them securely and create a session
       res.json(tokens);
     })
-    .catch((error) => {
+    .catch(() => {
       // Handle errors in the token exchange
-      console.error('Token exchange error:', error);
+      console.error('Token refresh error');
       res.status(500).json({ error: 'Internal Server Error' });
     });
 });
