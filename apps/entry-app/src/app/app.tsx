@@ -35,13 +35,15 @@ export default function App() {
         />
       </header>
 
-      <Routes>
-        <Route path="/" element={<MainPage />} />
-        <Route path="/insights" element={<InsightsPage />} />
-        <Route path="/agents" element={<AgentsPage />} />
-        <Route path="/logs" element={<LogsPage />} />
-        <Route path="/experiments" element={<ExperimentsPage />} />
-      </Routes>
+      {isLoggedIn && (
+        <Routes>
+          <Route path="/" element={<MainPage />} />
+          <Route path="/agents" element={<AgentsPage />} />
+          <Route path="/experiments" element={<ExperimentsPage />} />
+          <Route path="/logs" element={<LogsPage />} />
+          <Route path="/insights" element={<InsightsPage />} />
+        </Routes>
+      )}
     </GoogleOAuthProvider>
   );
 }
