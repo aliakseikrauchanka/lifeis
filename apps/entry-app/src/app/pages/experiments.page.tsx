@@ -1,35 +1,16 @@
-import React, { useRef } from 'react';
-import { startRecording, stopRecording } from '../services/recorder.service';
-import { transcript } from '../api/audio/audio.api';
+import React from 'react';
 import { FileInput } from '../components/audio-file/audio-file';
 import { checkPolishGrammar, translateToPolish } from '../api/assistants/assistants.api';
 import { OwnButton } from '@lifeis/common-ui';
 import { Link } from 'react-router-dom';
+import { Recording } from '../components/recording/recording';
+import { transcriptDeepgram, transcriptOpenAi } from '../api/audio/audio.api';
 
 export const ExperimentsPage = () => {
   const [assistantResponse, setAssistantResponse] = React.useState<string>('');
   const [geminiAssistantResponse, setGeminiAssistantResponse] = React.useState<string>('');
-  const [transcription, setTranscription] = React.useState<string>('');
-  const ref = useRef<HTMLAudioElement | null>(null);
-
-  const handleRecord = () => {
-    startRecording(async (blob: Blob) => {
-      const data = await transcript(blob);
-      const t = await data.json();
-
-      setTranscription(t.text);
-
-      if (ref.current) {
-        ref.current.src = URL.createObjectURL(blob);
-        ref.current.controls = true;
-        ref.current.autoplay = true;
-      }
-    });
-  };
-
-  const handleStop = () => {
-    stopRecording();
-  };
+  const [openAiTranscript, setOpenAiTranscript] = React.useState<string>('');
+  const [deepgramTranscript, setDeepgramTranscript] = React.useState<string>('');
 
   const handleAssistant = async () => {
     const input = document.getElementById('assistant-input') as HTMLInputElement;
@@ -45,25 +26,37 @@ export const ExperimentsPage = () => {
     const response = await translateToPolish(text);
     setGeminiAssistantResponse(response);
   };
+
+  const handleOpenAiTranscript = async (blob: Blob) => {
+    const data = await transcriptOpenAi(blob);
+    const t = await data.json();
+
+    setOpenAiTranscript(t.text);
+  };
+
+  const handleDeepgramTranscript = async (blob: Blob) => {
+    const data = await transcriptDeepgram(blob);
+    const response = await data.json();
+
+    setDeepgramTranscript(response?.results?.channels[0]?.alternatives[0]?.transcript);
+  };
+
   return (
     <main>
       <div>
         <Link to="/">Click here to go back to root page.</Link>
       </div>
 
-      <OwnButton onClick={handleRecord}>Record</OwnButton>
-      <OwnButton onClick={handleStop}>Stop Recording</OwnButton>
-      <div>
-        <h3>Audio of recording</h3>
-        {transcription && <audio ref={ref}></audio>}
-      </div>
-      <FileInput />
+      <h3>Audio Recorder OpenAI</h3>
+      <Recording requestTranscript={handleOpenAiTranscript} transcription={openAiTranscript} />
 
-      <h3>Transcription</h3>
-      <p>{transcription}</p>
+      <h3>Audio Recorder Deepgram</h3>
+      <Recording requestTranscript={handleDeepgramTranscript} transcription={deepgramTranscript} />
+
+      <FileInput />
       <br />
 
-      <h3>Open AI</h3>
+      <h3>Open AI Assistant</h3>
       <input id="assistant-input" />
       <OwnButton onClick={handleAssistant}>Send</OwnButton>
       <div>OpenAI assistant response:</div>

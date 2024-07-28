@@ -1,0 +1,7 @@
+.audio {
+  visibility: hidden;
+
+  &--visible {
+    visibility: visible;
+  }
+}

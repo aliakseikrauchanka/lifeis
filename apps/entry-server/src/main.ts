@@ -14,6 +14,7 @@ import openaiRoutes from './routes/openai-routes';
 import { getMongoDbClient } from './db';
 import insightsRoutes from './routes/insights-routes';
 import { createAgentsRoutes } from './routes/agents-routes';
+import deepgramRoutes from './routes/deepgram-routes';
 
 const client = getMongoDbClient();
 
@@ -37,9 +38,10 @@ app.use(helmet());
 app.use('/api/auth', authRoutes);
 app.use('/api/logs', createLogsRoutes(client));
 app.use('/api/agents/', createAgentsRoutes(client));
+app.use('/api/insights', insightsRoutes);
 app.use('/api/gemini', geminiRoutes);
 app.use('/api/openai', openaiRoutes);
-app.use('/api/insights', insightsRoutes);
+app.use('/api/deepgram', deepgramRoutes);
 
 app.get('/api/ping', verifyAccessToken, (req, res) => {
   res.send({ message: 'pong' });

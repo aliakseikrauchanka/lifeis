@@ -1,4 +1,4 @@
-import { transcript } from '../../api/audio/audio.api';
+import { transcriptOpenAi } from '../../api/audio/audio.api';
 import React, { useCallback } from 'react';
 
 export const FileInput = () => {
@@ -13,7 +13,7 @@ export const FileInput = () => {
 
     reader.onloadend = async () => {
       const blob = new Blob([reader.result as ArrayBuffer], { type: 'audio/mp3' });
-      const data = await transcript(blob);
+      const data = await transcriptOpenAi(blob);
       const t = await data.json();
 
       setTranscribe(t.text);

@@ -11,7 +11,10 @@ export const createLogsRoutes = (client: MongoClient) => {
       message: req.body.message,
       timestamp: Date.now(),
     };
-    await client.db('lifeis').collection('logs').insertOne(log);
+
+    const logsCollection = await client.db('lifeis').collection('logs');
+    logsCollection.insertOne(log);
+
     res.status(200).send({ message: 'log submitted' });
   });
 
