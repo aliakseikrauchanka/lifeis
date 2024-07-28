@@ -3,3 +3,7 @@ export interface ILog {
   message: string;
   timestamp: string;
 }
+
+export interface IDiaryLog extends ILog {
+  basket_name: string;
+}

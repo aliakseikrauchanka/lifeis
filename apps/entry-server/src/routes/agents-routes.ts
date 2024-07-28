@@ -1,12 +1,9 @@
 import { Router } from 'express';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { MongoClient, ObjectId, WithId } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
+import { GenerativeModel } from '@google/generative-ai';
 
 const router = Router();
-
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 // TODO: pass mongodb agent and return routes with it's help
 
@@ -16,7 +13,7 @@ interface IAgent {
 }
 
 // TODO: need to add gemini model as a parameter
-export const createAgentsRoutes = (client: MongoClient) => {
+export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeModel) => {
   const router = Router();
 
   // TODO: create separate endpoint to submit message

@@ -8,15 +8,22 @@ import { verifyAccessToken } from './middlewares/verify-access.middleware';
 
 import authRoutes from './routes/auth-routes';
 import { createLogsRoutes } from './routes/logs-routes';
-import geminiRoutes from './routes/gemini-routes';
+import { createGeminiRoutes } from './routes/gemini-routes';
 import openaiRoutes from './routes/openai-routes';
 
 import { getMongoDbClient } from './db';
 import insightsRoutes from './routes/insights-routes';
 import { createAgentsRoutes } from './routes/agents-routes';
 import deepgramRoutes from './routes/deepgram-routes';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getBasketRoutes } from './routes/baskets-routes';
 
+// create mongo db client
 const client = getMongoDbClient();
+
+// create gemini model
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
 const host = process.env.HOST ?? '0.0.0.0';
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -36,12 +43,13 @@ app.use(json());
 app.use(helmet());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/logs', createLogsRoutes(client));
-app.use('/api/agents/', createAgentsRoutes(client));
+app.use('/api/logs', createLogsRoutes(client, geminiModel));
+app.use('/api/agents/', createAgentsRoutes(client, geminiModel));
 app.use('/api/insights', insightsRoutes);
-app.use('/api/gemini', geminiRoutes);
+app.use('/api/gemini', createGeminiRoutes(geminiModel));
 app.use('/api/openai', openaiRoutes);
 app.use('/api/deepgram', deepgramRoutes);
+app.use('/api/baskets', getBasketRoutes(client));
 
 app.get('/api/ping', verifyAccessToken, (req, res) => {
   res.send({ message: 'pong' });

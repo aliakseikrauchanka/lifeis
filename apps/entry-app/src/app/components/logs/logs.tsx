@@ -1,25 +1,18 @@
-// import { CONFIG } from 'apps/entry-app/src/config';
-// import React, { useEffect, useState } from 'react';
+import { IDiaryLog } from '../../domains/log.domain';
 
-// export const Logs = () => {
-//   const [logs, setLogs] = useState([]);
+interface ILogsProps {
+  logs: IDiaryLog[] | undefined;
+}
 
-//   useEffect(() => {
-//     const fetchLogs = async () => {
-//       const accessToken = localStorage.getItem('accessToken');
-//       try {
-//         const data = await fetch(`${CONFIG.BE_URL}/logs`, {
-//           method: 'GET',
-//           headers: {
-//             Authorization: `Bearer ${accessToken}`,
-//           },
-//         });
-//       } catch (e) {
-//         console.log('error happened during fetch');
-//       }
-//     };
-//     fetchLogs();
-//   }, []);
-
-//   return <div>logs</div>;
-// };
+export const Logs = ({ logs }: ILogsProps) => {
+  return (
+    <ul>
+      {!!logs?.length &&
+        logs.map((log) => (
+          <li>
+            {log.message}, {log.basket_name}
+          </li>
+        ))}
+    </ul>
+  );
+};

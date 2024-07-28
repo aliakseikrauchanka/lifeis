@@ -1,7 +1,11 @@
 import React from 'react';
 import { createLog } from '../../api/logs/logs.api';
 
-export const LogForm = () => {
+interface ILogFormProps {
+  onSubmit: () => void;
+}
+
+export const LogForm = ({ onSubmit }: ILogFormProps) => {
   const [message, setMessage] = React.useState('');
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(event.target.value);
@@ -13,6 +17,7 @@ export const LogForm = () => {
     try {
       await createLog(message);
       setMessage('');
+      onSubmit();
     } catch (e) {
       console.log('error happened during fetch');
     }
