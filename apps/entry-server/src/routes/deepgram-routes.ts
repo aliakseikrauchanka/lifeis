@@ -21,6 +21,8 @@ routes.post('/transcribe', verifyAccessToken, uploadMiddlewareFactory.single('au
       {
         model: 'nova-2',
         smart_format: true,
+        language: 'ru',
+        detect_language: true,
       },
     );
 

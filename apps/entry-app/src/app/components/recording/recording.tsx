@@ -30,22 +30,19 @@ export const Recording = ({ transcription, requestTranscript }: IRecordingProps)
     <div>
       <OwnButton onClick={handleRecordStart}>Record </OwnButton>
       <OwnButton onClick={handleStop}>Stop Recording</OwnButton>
-      {transcription && (
+      {!!transcription && (
         <div>
-          <div>
-            <h3>Audio of recording:</h3>
-          </div>
           <h3>Transcription from recording:</h3>
           <p>{transcription}</p>
         </div>
       )}
+      <h3>Audio of recording:</h3>
       <audio
         className={classNames(css.audio, {
           [css.audioVisible]: !!transcription,
         })}
-        ref={transcription ? audioRef : undefined}
+        ref={audioRef}
         controls
-        autoPlay
       ></audio>
 
       <br />

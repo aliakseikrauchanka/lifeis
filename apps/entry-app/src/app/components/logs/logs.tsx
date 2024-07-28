@@ -6,13 +6,16 @@ interface ILogsProps {
 
 export const Logs = ({ logs }: ILogsProps) => {
   return (
-    <ul>
-      {!!logs?.length &&
-        logs.map((log) => (
-          <li>
-            {log.message}, {log.basket_name}
-          </li>
-        ))}
-    </ul>
+    <>
+      <h2>Logs</h2>
+      <ul>
+        {!!logs?.length &&
+          logs.map((log) => (
+            <li id={log.id}>
+              {log.message}, {log.basket_name}
+            </li>
+          ))}
+      </ul>
+    </>
   );
 };

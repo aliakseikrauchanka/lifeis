@@ -49,14 +49,17 @@ export const ExperimentsPage = () => {
 
       <h3>Audio Recorder OpenAI</h3>
       <Recording requestTranscript={handleOpenAiTranscript} transcription={openAiTranscript} />
+      <br />
 
       <h3>Audio Recorder Deepgram</h3>
       <Recording requestTranscript={handleDeepgramTranscript} transcription={deepgramTranscript} />
+      <br />
 
+      <h3>Audio file OpenAI</h3>
       <FileInput />
       <br />
 
-      <h3>Open AI Assistant</h3>
+      <h3>OpenAI Assistant</h3>
       <input id="assistant-input" />
       <OwnButton onClick={handleAssistant}>Send</OwnButton>
       <div>OpenAI assistant response:</div>
