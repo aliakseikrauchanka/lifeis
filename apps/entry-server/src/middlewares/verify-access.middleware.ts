@@ -1,3 +1,5 @@
+const CLIENT_ID = process.env.CLIENT_ID;
+
 export const verifyAccessToken = (req, res, next) => {
   const accessToken = req.headers.authorization?.split(' ')[1];
 
@@ -11,6 +13,10 @@ export const verifyAccessToken = (req, res, next) => {
       if (data.error) {
         // The access token is invalid
         return res.status(401).json({ error: 'Invalid access token' });
+      }
+
+      if (data.audience !== CLIENT_ID) {
+        return res.status(401).json({ error: 'Token not issued for this application' });
       }
 
       // The access token is valid, continue processing the request
