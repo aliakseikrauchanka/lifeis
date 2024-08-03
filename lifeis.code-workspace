@@ -8,6 +8,6 @@
 		}
 	],
 	"settings": {
-		"typescript.tsdk": "node_modules/typescript/lib"
+		"typescript.tsdk": "lifeis/node_modules/typescript/lib"
 	}
 }

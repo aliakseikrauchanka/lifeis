@@ -50,6 +50,26 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     return res.send({ answer: responseText });
   });
 
+  router.put('/:id', verifyAccessToken, async (req: Request, res) => {
+    const agentId = req.params.id;
+
+    const { name, prefix } = req.body;
+
+    const updatedAgent = await client
+      .db('lifeis')
+      .collection<IAgentDocument>('gemini_agents')
+      .updateOne(
+        { _id: new ObjectId(agentId), ownerId: res.locals.userId },
+        { $set: { name, prefix, ownerId: res.locals.userId } },
+      );
+
+    if (!updatedAgent) {
+      return res.status(404).send({ message: 'agent not found' });
+    }
+
+    return res.status(200).send({ agent: updatedAgent });
+  });
+
   router.delete('/:id', verifyAccessToken, async (req, res) => {
     const agentId = req.params.id;
 

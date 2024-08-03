@@ -1,9 +1,12 @@
 import { OwnButton } from '@lifeis/common-ui';
-import { removeAgent, submitMessage } from '../../../api/agents/agents';
+import { removeAgent, submitMessage, updateAgent } from '../../../api/agents/agents.api';
 import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect } from 'react';
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
+import { IconButton, Textarea, Typography } from '@mui/joy';
+import { Delete } from '@mui/icons-material';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface IAgentProps {
   id: string;
@@ -11,13 +14,27 @@ interface IAgentProps {
   prefix: string;
   focused: boolean;
   number?: number;
-  onRemove?: () => void;
 }
 
-export const Agent = ({ id, name, prefix, focused, number, onRemove }: IAgentProps) => {
+export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [message, setMessage] = useState('');
   const [answer, setAnswer] = useState<string>('');
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  const queryClient = useQueryClient();
+  const removeMutation = useMutation({
+    mutationFn: removeAgent,
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    },
+  });
+  const updateMutation = useMutation({
+    mutationFn: updateAgent,
+    onSuccess: () => {
+      // Invalidate and refetch
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    },
+  });
 
   useEffect(() => {
     if (textAreaRef.current && focused) {
@@ -45,17 +62,60 @@ export const Agent = ({ id, name, prefix, focused, number, onRemove }: IAgentPro
   const handleRemoveAgent = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (window.confirm('Are you sure you want to remove this agent?')) {
-      await removeAgent(id);
-      onRemove?.();
+      removeMutation.mutate(id);
+    }
+  };
+
+  // const [isEditingPrefix, setIsEditing] = useState(false);
+  // const [agentName, setAgentName] = useState(name);
+  const [isEditingPrefix, setIsEditing] = useState(false);
+  const [agentPrefix, setAgentPrefix] = useState(prefix);
+
+  const handleEditPrefix = () => {
+    setIsEditing(true);
+  };
+
+  const handleBlurPrefix = async () => {
+    setIsEditing(false);
+    if (agentPrefix !== prefix) {
+      try {
+        updateMutation.mutate({ id, name, prefix: agentPrefix });
+        // await updateAgent(id, { name: agentName });
+      } catch (error) {
+        console.error('Failed to update agent name:', error);
+      }
     }
   };
 
   return (
     <form onSubmit={handleSubmitForm} className={css.agent}>
+      <div className={css.agentDeleteBtnContainer}>
+        <IconButton aria-label="Delete" size="sm" color="danger" onClick={handleRemoveAgent}>
+          <Delete />
+        </IconButton>
+      </div>
       <h3>
         Agent {number}: {name}
       </h3>
-      <h5>{prefix}</h5>
+
+      <div className={css.agentPrefixContainer}>
+        {isEditingPrefix ? (
+          <Textarea
+            value={agentPrefix}
+            onChange={(e) => setAgentPrefix(e.target.value)}
+            onBlur={handleBlurPrefix}
+            autoFocus
+          />
+        ) : (
+          <Typography
+            noWrap
+            onClick={handleEditPrefix}
+            sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
+          >
+            {agentPrefix}
+          </Typography>
+        )}
+      </div>
 
       <textarea
         ref={textAreaRef}
@@ -66,10 +126,7 @@ export const Agent = ({ id, name, prefix, focused, number, onRemove }: IAgentPro
         spellCheck={true}
       />
       <div className={css.agentButtons}>
-        <OwnButton type="submit">Submit message</OwnButton>
-        <OwnButton style={{ backgroundColor: 'red' }} onClick={handleRemoveAgent}>
-          Remove agent
-        </OwnButton>
+        <OwnButton type="submit">Submit</OwnButton>
       </div>
       <div>
         <h4>Response:</h4>

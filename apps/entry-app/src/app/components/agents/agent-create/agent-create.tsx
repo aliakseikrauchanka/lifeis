@@ -1,15 +1,20 @@
 import React, { ChangeEventHandler, FormEventHandler, useState } from 'react';
 import { OwnButton } from '@lifeis/common-ui';
-import { createAgent } from '../../../api/agents/agents';
+import { createAgent } from '../../../api/agents/agents.api';
 import css from './agent-create.module.scss';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-interface IAgentFormProps {
-  onCreate: () => void;
-}
-
-const AgentForm = ({ onCreate }: IAgentFormProps) => {
+const AgentForm = () => {
   const [name, setName] = useState('');
   const [prefix, setPrefix] = useState('');
+
+  const queryClient = useQueryClient();
+  const createMutation = useMutation({
+    mutationFn: createAgent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    },
+  });
 
   const handleNameChange: ChangeEventHandler<HTMLInputElement> = (e) => {
     setName(e.target.value);
@@ -21,12 +26,7 @@ const AgentForm = ({ onCreate }: IAgentFormProps) => {
 
   const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    try {
-      await createAgent({ name, prefix });
-      onCreate();
-    } catch (error) {
-      console.error('Failed to create agent', error);
-    }
+    await createMutation.mutateAsync({ name, prefix });
   };
 
   return (
