@@ -1,13 +1,11 @@
-import React, { ChangeEventHandler, FormEventHandler, useState } from 'react';
-import { OwnButton } from '@lifeis/common-ui';
+import React from 'react';
+import { Formik, Form, Field, ErrorMessage } from 'formik';
+import Button from '@mui/joy/Button';
 import { createAgent } from '../../../api/agents/agents.api';
 import css from './agent-create.module.scss';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 const AgentForm = () => {
-  const [name, setName] = useState('');
-  const [prefix, setPrefix] = useState('');
-
   const queryClient = useQueryClient();
   const createMutation = useMutation({
     mutationFn: createAgent,
@@ -16,38 +14,33 @@ const AgentForm = () => {
     },
   });
 
-  const handleNameChange: ChangeEventHandler<HTMLInputElement> = (e) => {
-    setName(e.target.value);
-  };
-
-  const handlePrefixChange: ChangeEventHandler<HTMLTextAreaElement> = (e) => {
-    setPrefix(e.target.value);
-  };
-
-  const handleSubmit: FormEventHandler<HTMLFormElement> = async (e) => {
-    e.preventDefault();
-    await createMutation.mutateAsync({ name, prefix });
-  };
-
   return (
-    <form onSubmit={handleSubmit} className={css.agentCreate}>
-      <h2>Create agent</h2>
-      <div>
-        <label htmlFor="name">Name:</label>
-        <input
-          type="text"
-          id="name"
-          value={name}
-          onChange={handleNameChange}
-          className={css.agentCreateInputFullWidth}
-        />
-      </div>
-      <div>
-        <label htmlFor="prefix">Instructions (Prefix):</label>
-        <textarea id="prefix" value={prefix} onChange={handlePrefixChange} className={css.agentCreateInputFullWidth} />
-      </div>
-      <OwnButton type="submit">Create Agent</OwnButton>
-    </form>
+    <Formik
+      initialValues={{ name: '', prefix: '' }}
+      onSubmit={async (values, { resetForm }) => {
+        await createMutation.mutateAsync(values);
+        resetForm();
+      }}
+    >
+      {({ isSubmitting }) => (
+        <Form className={css.agentCreate}>
+          <h2>Create agent</h2>
+          <div>
+            <label htmlFor="name">Name:</label>
+            <Field type="text" id="name" name="name" className={css.agentCreateInputFullWidth} />
+            <ErrorMessage name="name" component="div" />
+          </div>
+          <div>
+            <label htmlFor="prefix">Instructions (Prefix):</label>
+            <Field as="textarea" id="prefix" name="prefix" className={css.agentCreateInputFullWidth} />
+            <ErrorMessage name="prefix" component="div" />
+          </div>
+          <Button type="submit" disabled={isSubmitting}>
+            Create Agent
+          </Button>
+        </Form>
+      )}
+    </Formik>
   );
 };
 
