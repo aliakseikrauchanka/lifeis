@@ -1,13 +1,12 @@
-import { OwnButton } from '@lifeis/common-ui';
+import { EditableInput, OwnButton } from '@lifeis/common-ui';
 import { removeAgent, submitMessage, updateAgent } from '../../../api/agents/agents.api';
 import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect } from 'react';
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
-import { IconButton, Textarea } from '@mui/joy';
+import { IconButton } from '@mui/joy';
 import { Delete } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { EditableInput } from './components/editable-input';
 
 interface IAgentProps {
   id: string;
@@ -20,7 +19,7 @@ interface IAgentProps {
 export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [message, setMessage] = useState('');
   const [answer, setAnswer] = useState<string>('');
-  const textAreaRef = useRef<Textarea | null>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const queryClient = useQueryClient();
   const removeMutation = useMutation({
     mutationFn: removeAgent,

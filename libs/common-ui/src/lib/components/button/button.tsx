@@ -1,19 +1,25 @@
 import { CSSProperties, ReactNode, MouseEvent } from 'react';
-import styles from './button.module.scss';
+import Button from '@mui/joy/Button';
 
-/* eslint-disable-next-line */
 export interface IOwnButtonProps {
   type?: 'button' | 'submit' | 'reset';
   style?: CSSProperties | undefined;
   children: ReactNode;
+  disabled?: boolean;
   onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
 }
 
-export function OwnButton({ children, type, onClick, style }: IOwnButtonProps) {
+export function OwnButton({ children, type, onClick, style, disabled }: IOwnButtonProps) {
   return (
-    <button className={styles.buttonCommon} onClick={onClick} type={type} style={style}>
+    <Button
+      type={type}
+      disabled={disabled}
+      sx={{ padding: '0.2rem', minHeight: 'initial' }}
+      onClick={onClick}
+      style={style}
+    >
       {children}
-    </button>
+    </Button>
   );
 }
 

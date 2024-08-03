@@ -14,11 +14,24 @@ export const EditableInput: React.FC<EditableInputProps> = ({ initialValue, onVa
 
   const handleBlurTextarea = () => {
     setIsEditing(false);
-    onValueChange(prefix);
+    if (prefix) {
+      onValueChange(prefix);
+    } else {
+      setPrefix(initialValue);
+    }
   };
 
   return isEditing ? (
-    <Textarea value={prefix} onChange={(e) => setPrefix(e.target.value)} onBlur={handleBlurTextarea} autoFocus />
+    <Textarea
+      value={prefix}
+      onChange={(e) => setPrefix(e.target.value)}
+      onBlur={handleBlurTextarea}
+      autoFocus
+      sx={{
+        padding: '0rem',
+        minHeight: 'initial',
+      }}
+    />
   ) : (
     <Typography
       noWrap

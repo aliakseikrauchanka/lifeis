@@ -1,9 +1,9 @@
 import React from 'react';
 import { Formik, Form, Field, ErrorMessage } from 'formik';
-import Button from '@mui/joy/Button';
 import { createAgent } from '../../../api/agents/agents.api';
 import css from './agent-create.module.scss';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { OwnButton } from '@lifeis/common-ui';
 
 const AgentForm = () => {
   const queryClient = useQueryClient();
@@ -35,9 +35,9 @@ const AgentForm = () => {
             <Field as="textarea" id="prefix" name="prefix" className={css.agentCreateInputFullWidth} />
             <ErrorMessage name="prefix" component="div" />
           </div>
-          <Button type="submit" disabled={isSubmitting}>
+          <OwnButton type="submit" disabled={isSubmitting}>
             Create
-          </Button>
+          </OwnButton>
         </Form>
       )}
     </Formik>
