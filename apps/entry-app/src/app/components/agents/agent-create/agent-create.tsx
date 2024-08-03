@@ -36,7 +36,7 @@ const AgentForm = () => {
             <ErrorMessage name="prefix" component="div" />
           </div>
           <Button type="submit" disabled={isSubmitting}>
-            Create Agent
+            Create
           </Button>
         </Form>
       )}

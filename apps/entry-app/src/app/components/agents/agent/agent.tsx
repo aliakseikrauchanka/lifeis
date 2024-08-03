@@ -4,9 +4,10 @@ import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect } fro
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
-import { IconButton, Textarea, Typography } from '@mui/joy';
+import { IconButton, Textarea } from '@mui/joy';
 import { Delete } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { EditableInput } from './components/editable-input';
 
 interface IAgentProps {
   id: string;
@@ -19,7 +20,7 @@ interface IAgentProps {
 export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [message, setMessage] = useState('');
   const [answer, setAnswer] = useState<string>('');
-  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  const textAreaRef = useRef<Textarea | null>(null);
   const queryClient = useQueryClient();
   const removeMutation = useMutation({
     mutationFn: removeAgent,
@@ -66,21 +67,10 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
     }
   };
 
-  // const [isEditingPrefix, setIsEditing] = useState(false);
-  // const [agentName, setAgentName] = useState(name);
-  const [isEditingPrefix, setIsEditing] = useState(false);
-  const [agentPrefix, setAgentPrefix] = useState(prefix);
-
-  const handleEditPrefix = () => {
-    setIsEditing(true);
-  };
-
-  const handleBlurPrefix = async () => {
-    setIsEditing(false);
-    if (agentPrefix !== prefix) {
+  const handleBlurPrefix = (newValue: string) => {
+    if (prefix !== newValue) {
       try {
-        updateMutation.mutate({ id, name, prefix: agentPrefix });
-        // await updateAgent(id, { name: agentName });
+        updateMutation.mutate({ id, name, prefix: newValue });
       } catch (error) {
         console.error('Failed to update agent name:', error);
       }
@@ -99,23 +89,19 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
       </h3>
 
       <div className={css.agentPrefixContainer}>
-        {isEditingPrefix ? (
-          <Textarea
-            value={agentPrefix}
-            onChange={(e) => setAgentPrefix(e.target.value)}
-            onBlur={handleBlurPrefix}
-            autoFocus
-          />
-        ) : (
-          <Typography
-            noWrap
-            onClick={handleEditPrefix}
-            sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
-          >
-            {agentPrefix}
-          </Typography>
-        )}
+        <EditableInput initialValue={prefix} onValueChange={handleBlurPrefix} />
       </div>
+
+      {/* <Textarea
+        ref={textAreaRef}
+        value={message}
+        onChange={(e) => {
+          setMessage(e.target.value);
+        }}
+        // onKeyPress={handleKeyPress}
+        className={css.agentInput}
+        minRows={3}
+      /> */}
 
       <textarea
         ref={textAreaRef}
@@ -123,7 +109,6 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         onChange={(e) => setMessage(e.target.value)}
         onKeyPress={handleKeyPress}
         className={css.agentInput}
-        spellCheck={true}
       />
       <div className={css.agentButtons}>
         <OwnButton type="submit">Submit</OwnButton>
