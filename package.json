@@ -6,7 +6,7 @@
     "build": "npx nx run entry-server:build --configuration=production",
     "start": "node ./dist/apps/entry-server/src/main.js"
   },
-  "private": true,
+  "private": true, 
   "engines": {
     "node": ">=v20.5.1"
   },

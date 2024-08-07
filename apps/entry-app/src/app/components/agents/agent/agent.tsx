@@ -5,7 +5,7 @@ import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
 import { IconButton } from '@mui/joy';
-import { Delete } from '@mui/icons-material';
+import { CopyAll, Delete } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface IAgentProps {
@@ -20,6 +20,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [message, setMessage] = useState('');
   const [answer, setAnswer] = useState<string>('');
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  const responseRef = useRef<HTMLDivElement | null>(null);
   const queryClient = useQueryClient();
   const removeMutation = useMutation({
     mutationFn: removeAgent,
@@ -76,6 +77,14 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
     }
   };
 
+  const handleClearText = () => {
+    setMessage('');
+  };
+
+  const handleCopyResponse = () => {
+    navigator.clipboard.writeText(responseRef.current?.textContent || '');
+  };
+
   return (
     <form onSubmit={handleSubmitForm} className={css.agent}>
       <div className={css.agentDeleteBtnContainer}>
@@ -110,11 +119,21 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         className={css.agentInput}
       />
       <div className={css.agentButtons}>
+        <OwnButton type="button" color="danger" onClick={handleClearText}>
+          Clear
+        </OwnButton>
         <OwnButton type="submit">Submit</OwnButton>
       </div>
-      <div>
-        <h4>Response:</h4>
-        <ReactMarkdown>{answer}</ReactMarkdown>
+      <div className={css.agentResponse}>
+        <h4 className={css.agentResponseTitle}>
+          Response:{' '}
+          {answer && (
+            <IconButton aria-label="Copy" size="sm" color="primary" onClick={handleCopyResponse}>
+              <CopyAll />
+            </IconButton>
+          )}
+        </h4>
+        <div ref={responseRef}>{<ReactMarkdown>{answer}</ReactMarkdown>}</div>
       </div>
     </form>
   );
