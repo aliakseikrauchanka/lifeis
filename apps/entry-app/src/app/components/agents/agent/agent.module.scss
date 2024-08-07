@@ -30,14 +30,14 @@
     top: 0;
   }
 
-  &-copy-btn {
-    position: absolute;
-    top: 0
-  }
-
   &-response {
     margin-top: 10px;
     min-height: 50px;
+
+    &-delete-btn {
+      position: absolute;
+      top: 0
+    }
 
     &-title {
       display: flex;

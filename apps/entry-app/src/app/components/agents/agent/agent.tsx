@@ -5,7 +5,7 @@ import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
 import { IconButton } from '@mui/joy';
-import { CopyAll, Delete } from '@mui/icons-material';
+import { CopyAll, Delete, DeleteForever } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface IAgentProps {
@@ -85,6 +85,10 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
     navigator.clipboard.writeText(responseRef.current?.textContent || '');
   };
 
+  const handleResponseDelete = () => {
+    setAnswer('');
+  };
+
   return (
     <form onSubmit={handleSubmitForm} className={css.agent}>
       <div className={css.agentDeleteBtnContainer}>
@@ -128,9 +132,23 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         <h4 className={css.agentResponseTitle}>
           Response:{' '}
           {answer && (
-            <IconButton aria-label="Copy" size="sm" color="primary" onClick={handleCopyResponse}>
-              <CopyAll />
-            </IconButton>
+            <>
+              <IconButton aria-label="Copy" size="sm" color="primary" onClick={handleCopyResponse}>
+                <CopyAll />
+              </IconButton>
+              <IconButton
+                aria-label="Delete"
+                size="sm"
+                color="primary"
+                onClick={handleResponseDelete}
+                className={css.agentResponseDeleteBtn}
+                style={{
+                  marginLeft: 'auto',
+                }}
+              >
+                <Delete />
+              </IconButton>
+            </>
           )}
         </h4>
         <div ref={responseRef}>{<ReactMarkdown>{answer}</ReactMarkdown>}</div>
