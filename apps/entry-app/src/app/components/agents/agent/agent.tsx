@@ -5,8 +5,9 @@ import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
 import { IconButton } from '@mui/joy';
-import { CopyAll, Delete, DeleteForever } from '@mui/icons-material';
+import { CopyAll, Delete, DeleteForever, DragHandle } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import classNames from 'classnames';
 
 interface IAgentProps {
   id: string;
@@ -77,6 +78,16 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
     }
   };
 
+  const handleDragStart = (e: React.DragEvent<HTMLAnchorElement>) => {
+    e.dataTransfer.setData('text/plain', responseRef.current?.textContent || '');
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
+    const data = e.dataTransfer.getData('text/plain');
+    setMessage(data);
+  };
+
   const handleClearText = () => {
     setMessage('');
   };
@@ -115,13 +126,17 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         minRows={3}
       /> */}
 
-      <textarea
-        ref={textAreaRef}
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyPress={handleKeyPress}
-        className={css.agentInput}
-      />
+      <div className={css.agentInputWrapper}>
+        <textarea
+          onDrop={handleDrop}
+          ref={textAreaRef}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyPress={handleKeyPress}
+          className={css.agentInput}
+        />
+        <div className={css.agentDragIcon}></div>
+      </div>
       <div className={css.agentButtons}>
         <OwnButton type="button" color="danger" onClick={handleClearText}>
           Clear
@@ -135,6 +150,17 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
             <>
               <IconButton aria-label="Copy" size="sm" color="primary" onClick={handleCopyResponse}>
                 <CopyAll />
+              </IconButton>
+
+              <IconButton
+                aria-label="Copy"
+                size="sm"
+                color="primary"
+                onClick={handleCopyResponse}
+                draggable
+                onDragStart={handleDragStart}
+              >
+                <DragHandle />
               </IconButton>
               <IconButton
                 aria-label="Delete"
