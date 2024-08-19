@@ -5,6 +5,7 @@ import { DefaultColorPalette } from '@mui/joy/styles/types';
 export interface IOwnButtonProps {
   type?: 'button' | 'submit' | 'reset';
   color?: DefaultColorPalette;
+  // TODO: understand how to override styels better History
   style?: CSSProperties | undefined;
   children: ReactNode;
   disabled?: boolean;

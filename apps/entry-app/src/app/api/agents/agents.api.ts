@@ -1,6 +1,6 @@
 import { utilFetch } from '@lifeis/common-ui';
 import { CONFIG } from '../../../config';
-import { IAgentsResponse } from '../../domains/agent.domain';
+import { IAgentHistory, IAgentsResponse } from '../../domains/agent.domain';
 
 export const createAgent = async (data: { name: string; prefix: string }): Promise<void> => {
   const response = await utilFetch(`${CONFIG.BE_URL}/agents`, {
@@ -76,6 +76,18 @@ export const submitMessage = async ({
     body: JSON.stringify({
       message,
     }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to create log');
+  }
+
+  return await response.json();
+};
+
+export const getAgentHistory = async (agentId: string): Promise<{ history: IAgentHistory[] }> => {
+  const response = await utilFetch(`${CONFIG.BE_URL}/agents/${agentId}/history`, {
+    method: 'GET',
   });
 
   if (!response.ok) {

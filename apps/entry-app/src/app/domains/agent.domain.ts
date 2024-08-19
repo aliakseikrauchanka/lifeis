@@ -8,3 +8,11 @@ export interface IAgentResponse {
 export interface IAgentsResponse {
   agents: IAgentResponse[];
 }
+
+export interface IAgentHistory {
+  _id: string;
+  agentId: string;
+  prompt: string;
+  response: string;
+  timestamp: Date;
+}
