@@ -13,6 +13,10 @@
     min-width: 300px;
     min-height: 200px;
     padding: 5px;
+
+    &-minimized {
+      min-height: 100px;
+    }
   }
 
   &-input {

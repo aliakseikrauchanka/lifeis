@@ -4,10 +4,12 @@ import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect } fro
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
-import { IconButton } from '@mui/joy';
+import { IconButton, useTheme } from '@mui/joy';
 import { CopyAll, Delete, DragHandle } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { AgentHistoryModal } from './components/agent-history';
+import classNames from 'classnames';
+import { useMediaQuery } from '@mui/material';
 
 interface IAgentProps {
   id: string;
@@ -22,6 +24,8 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [answer, setAnswer] = useState<string>('');
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const responseRef = useRef<HTMLDivElement | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const queryClient = useQueryClient();
   const removeMutation = useMutation({
     mutationFn: removeAgent,
@@ -132,7 +136,11 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         minRows={3}
       /> */}
 
-      <div className={css.agentInputWrapper}>
+      <div
+        className={classNames(css.agentInputWrapper, {
+          [css.agentInputWrapperMinimized]: isMobile,
+        })}
+      >
         <textarea
           onDrop={handleDrop}
           ref={textAreaRef}
