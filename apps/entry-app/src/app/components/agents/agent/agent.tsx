@@ -1,14 +1,13 @@
 import { EditableInput, OwnButton } from '@lifeis/common-ui';
-import { getAgentHistory, removeAgent, submitMessage, updateAgent } from '../../../api/agents/agents.api';
+import { removeAgent, submitMessage, updateAgent } from '../../../api/agents/agents.api';
 import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect } from 'react';
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
 import { IconButton } from '@mui/joy';
-import { CopyAll, Delete, DeleteForever, DragHandle } from '@mui/icons-material';
+import { CopyAll, Delete, DragHandle } from '@mui/icons-material';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import classNames from 'classnames';
-import { HistoryModal } from './components/agent-history';
+import { AgentHistoryModal } from './components/agent-history';
 
 interface IAgentProps {
   id: string;
@@ -189,7 +188,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         </h4>
         <div ref={responseRef}>{<ReactMarkdown>{answer}</ReactMarkdown>}</div>
       </div>
-      <HistoryModal open={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} agentId={id} />
+      <AgentHistoryModal open={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} agentId={id} />
     </form>
   );
 };

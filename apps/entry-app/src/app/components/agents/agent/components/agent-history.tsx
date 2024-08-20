@@ -9,22 +9,24 @@ import {
   ListItem,
   ListItemContent,
   CircularProgress,
+  useTheme,
 } from '@mui/joy';
 import { IAgentHistory } from '../../../../domains/agent.domain';
 import { getAgentHistory } from '../../../../api/agents/agents.api';
 import ReactMarkdown from 'react-markdown';
 
-interface HistoryModalProps {
+interface IAgentHistoryModalProps {
   open: boolean;
   onClose: () => void;
   agentId: string;
 }
 
-export const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, agentId }) => {
+export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onClose, agentId }) => {
   const [history, setHistory] = useState<IAgentHistory[]>([]);
   const [filteredHistory, setFilteredHistory] = useState<IAgentHistory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const theme = useTheme();
 
   useEffect(() => {
     if (open) {
@@ -62,6 +64,9 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, agent
     <Modal open={open} onClose={onClose}>
       <ModalDialog
         sx={{
+          [theme.breakpoints.down('sm')]: {
+            padding: '5px', // Reduced padding for mobile
+          },
           width: {
             xs: '90%',
             sm: '80%',
@@ -81,16 +86,34 @@ export const HistoryModal: React.FC<HistoryModalProps> = ({ open, onClose, agent
           placeholder="Search history..."
           value={searchTerm}
           onChange={handleSearchChange}
-          sx={{ mb: 2, width: '100%' }}
+          sx={{ mb: 2, width: '100%', position: 'sticky', top: 0, zIndex: 1 }}
         />
         {loading ? (
           <CircularProgress />
         ) : (
           <List>
             {filteredHistory.map((item, index) => (
-              <ListItem key={index}>
+              <ListItem
+                key={index}
+                sx={{
+                  [theme.breakpoints.down('sm')]: {
+                    padding: '0',
+                  },
+                }}
+              >
                 <ListItemContent>
-                  <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 'sm', p: 2, mb: 2 }}>
+                  <Box
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 'sm',
+                      p: 2,
+                      mb: 2,
+                      [theme.breakpoints.down('sm')]: {
+                        padding: '5px',
+                      },
+                    }}
+                  >
                     <Typography>
                       <Typography level="title-md" color={'primary'}>
                         Prompt:
