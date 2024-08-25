@@ -1,6 +1,6 @@
 import { utilFetch } from '@lifeis/common-ui';
 import { CONFIG } from '../../../config';
-import { IAgentHistory, IAgentsResponse } from '../../domains/agent.domain';
+import { IAgentHistoryItem, IAgentHistoryResponse, IAgentsResponse } from '../../domains/agent.domain';
 
 export const createAgent = async (data: { name: string; prefix: string }): Promise<void> => {
   const response = await utilFetch(`${CONFIG.BE_URL}/agents`, {
@@ -85,7 +85,7 @@ export const submitMessage = async ({
   return await response.json();
 };
 
-export const getAgentHistory = async (agentId: string): Promise<{ history: IAgentHistory[] }> => {
+export const getAgentHistory = async (agentId: string): Promise<IAgentHistoryResponse> => {
   const response = await utilFetch(`${CONFIG.BE_URL}/agents/${agentId}/history`, {
     method: 'GET',
   });

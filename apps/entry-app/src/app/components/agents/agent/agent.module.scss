@@ -27,10 +27,15 @@
     height: 100%;
   }
 
-  &-drag-icon {
+  &-history-navigation {
     position: absolute;
     right: 0;
     top: 0;
+    opacity: 0.5;
+
+    &:hover {
+      opacity: 1;
+    }
   }
 
   &-buttons {

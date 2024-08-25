@@ -1,15 +1,16 @@
 import { EditableInput, OwnButton } from '@lifeis/common-ui';
-import { removeAgent, submitMessage, updateAgent } from '../../../api/agents/agents.api';
+import { getAgentHistory, removeAgent, submitMessage, updateAgent } from '../../../api/agents/agents.api';
 import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect } from 'react';
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
 import { IconButton, useTheme } from '@mui/joy';
 import { CopyAll, Delete, DragHandle } from '@mui/icons-material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AgentHistoryModal } from './components/agent-history';
 import classNames from 'classnames';
 import { useMediaQuery } from '@mui/material';
+import { AgentHistoryNavigation } from './components/agent-history-navigation/agent-history-navigation';
 
 interface IAgentProps {
   id: string;
@@ -20,6 +21,7 @@ interface IAgentProps {
 }
 
 export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
+  const [historyCurrentIndex, setHistoryCurrentIndex] = useState(0);
   const [message, setMessage] = useState('');
   const [answer, setAnswer] = useState<string>('');
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -30,17 +32,32 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const removeMutation = useMutation({
     mutationFn: removeAgent,
     onSuccess: () => {
-      // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ['agents'] });
     },
   });
   const updateMutation = useMutation({
     mutationFn: updateAgent,
     onSuccess: () => {
-      // Invalidate and refetch
       queryClient.invalidateQueries({ queryKey: ['agents'] });
     },
   });
+  const submitMutation = useMutation({
+    mutationFn: submitMessage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents-history', id] });
+    },
+  });
+
+  const { data: agentHistory } = useQuery({
+    queryKey: ['agents-history', id],
+    queryFn: () => getAgentHistory(id),
+    select: (data) => data.history,
+  });
+  useEffect(() => {
+    if (agentHistory) {
+      setHistoryCurrentIndex(0);
+    }
+  }, [agentHistory]);
 
   useEffect(() => {
     if (textAreaRef.current && focused) {
@@ -51,8 +68,12 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const submitPrompt = async () => {
-    const response = await submitMessage({ id, message });
+    // const response = await submitMessage({ id, message });
+    const response = await submitMutation.mutateAsync({ id, message });
     const purifiedDom = domPurify.sanitize(response.answer);
+    // queryClient.invalidateQueries({ queryKey: ['agents'] }); // TODO: one by one invalidation?
+    // queryClient.invalidateQueries({ queryKey: ['agents-history'] });
+    // queryClient.invalidateQueries({ queryKey: ['agents-history', id] });
     setAnswer(purifiedDom);
   };
 
@@ -100,14 +121,11 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
 
   const handleClearText = () => {
     setMessage('');
+    setAnswer('');
   };
 
   const handleCopyResponse = () => {
     navigator.clipboard.writeText(responseRef.current?.textContent || '');
-  };
-
-  const handleResponseDelete = () => {
-    setAnswer('');
   };
 
   return (
@@ -149,14 +167,24 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
           onKeyPress={handleKeyPress}
           className={css.agentInput}
         />
-        <div className={css.agentDragIcon}></div>
+        <AgentHistoryNavigation
+          historyItems={agentHistory}
+          className={css.agentHistoryNavigation}
+          index={historyCurrentIndex}
+          onIndexChange={(index) => {
+            setHistoryCurrentIndex(index);
+            const historyItem = agentHistory?.[index];
+            setMessage(historyItem?.message || '');
+            setAnswer(historyItem?.response || '');
+          }}
+        />
       </div>
       <div className={css.agentButtons}>
-        <OwnButton type="button" color="danger" onClick={handleClearText}>
+        <OwnButton type="submit">Submit</OwnButton>
+        <OwnButton type="button" color="danger" onClick={handleClearText} style={{ marginLeft: 'auto' }}>
           Clear
         </OwnButton>
-        <OwnButton type="submit">Submit</OwnButton>
-        <OwnButton type="button" onClick={handleOpenAgentHistory} color="neutral" style={{ marginLeft: 'auto' }}>
+        <OwnButton type="button" onClick={handleOpenAgentHistory} color="neutral">
           History
         </OwnButton>
       </div>
@@ -178,18 +206,6 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
                 onDragStart={handleDragStart}
               >
                 <DragHandle />
-              </IconButton>
-              <IconButton
-                aria-label="Delete"
-                size="sm"
-                color="primary"
-                onClick={handleResponseDelete}
-                className={css.agentResponseDeleteBtn}
-                style={{
-                  marginLeft: 'auto',
-                }}
-              >
-                <Delete />
               </IconButton>
             </>
           )}

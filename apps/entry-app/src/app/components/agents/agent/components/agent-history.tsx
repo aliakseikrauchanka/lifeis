@@ -11,9 +11,10 @@ import {
   CircularProgress,
   useTheme,
 } from '@mui/joy';
-import { IAgentHistory } from '../../../../domains/agent.domain';
+import { IAgentHistoryItem, IAgentHistoryResponse } from '../../../../domains/agent.domain';
 import { getAgentHistory } from '../../../../api/agents/agents.api';
 import ReactMarkdown from 'react-markdown';
+import { useQuery } from '@tanstack/react-query';
 
 interface IAgentHistoryModalProps {
   open: boolean;
@@ -22,11 +23,27 @@ interface IAgentHistoryModalProps {
 }
 
 export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onClose, agentId }) => {
-  const [history, setHistory] = useState<IAgentHistory[]>([]);
-  const [filteredHistory, setFilteredHistory] = useState<IAgentHistory[]>([]);
+  // const [history, setHistory] = useState<IAgentHistoryItem[]>([]);
+  const [filteredHistory, setFilteredHistory] = useState<IAgentHistoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const theme = useTheme();
+  const fetchHistory = async (): Promise<IAgentHistoryResponse | undefined> => {
+    setLoading(true);
+    try {
+      return await getAgentHistory(agentId);
+    } catch (error) {
+      console.error('Failed to fetch agent history:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const query = useQuery({
+    queryKey: ['agents-history', agentId],
+    queryFn: fetchHistory,
+    enabled: open,
+    select: (data) => data?.history,
+  });
 
   useEffect(() => {
     if (open) {
@@ -35,26 +52,13 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
   }, [open, agentId]);
 
   useEffect(() => {
-    const filtered = history.filter(
+    const filtered = query.data?.filter(
       (item) =>
         item.prompt.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.response.toLowerCase().includes(searchTerm.toLowerCase()),
     );
-    setFilteredHistory(filtered);
-  }, [searchTerm, history]);
-
-  const fetchHistory = async () => {
-    setLoading(true);
-    try {
-      const response = await getAgentHistory(agentId);
-      setHistory(response.history);
-      setFilteredHistory(response.history);
-    } catch (error) {
-      console.error('Failed to fetch agent history:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    setFilteredHistory(filtered ?? []);
+  }, [query.data, searchTerm]);
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(event.target.value);

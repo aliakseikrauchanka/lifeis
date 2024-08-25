@@ -15,5 +15,5 @@
     "src/**/*.spec.jsx",
     "src/**/*.test.jsx"
   ],
-  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "../../libs/common-ui/src/lib/components/editable-input/editable-input.tsx"]
+  "include": ["src/**/*.js", "src/**/*.jsx", "src/**/*.ts", "src/**/*.tsx", "../../libs/common-ui/src/lib/components/editable-input/editable-input.tsx", "src/app/components/agents/agent/components/agent-history-navigation"]
 }

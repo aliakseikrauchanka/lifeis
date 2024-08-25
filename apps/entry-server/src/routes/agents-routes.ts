@@ -54,6 +54,8 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
       .insertOne({
         agentId: new ObjectId(agentId),
         prompt,
+        prefix: prefix,
+        message: req.body.message,
         response: responseText,
         timestamp: new Date(),
       });
