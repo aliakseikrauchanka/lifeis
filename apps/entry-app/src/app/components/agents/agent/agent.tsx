@@ -21,6 +21,16 @@ interface IAgentProps {
   number?: number;
 }
 
+const emptyHistoryItem: IAgentHistoryItem = {
+  _id: '',
+  agentId: '',
+  prefix: '',
+  message: '',
+  prompt: '',
+  response: '',
+  timestamp: new Date(),
+} as const;
+
 export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [historyCurrentIndex, setHistoryCurrentIndex] = useState(0);
   const [initLoad, setInitLoad] = useState(true);
@@ -62,16 +72,6 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
       setHistoryCurrentIndex(0);
     }
   }, [agentHistory]);
-
-  const emptyHistoryItem: IAgentHistoryItem = {
-    _id: '',
-    agentId: '',
-    prefix: '',
-    message: '',
-    prompt: '',
-    response: '',
-    timestamp: new Date(),
-  };
 
   const clientHistoryItems = initLoad ? (agentHistory ? [emptyHistoryItem, ...agentHistory] : []) : agentHistory;
   console.log('debug', clientHistoryItems);

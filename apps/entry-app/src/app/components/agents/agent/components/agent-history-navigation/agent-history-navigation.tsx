@@ -1,4 +1,4 @@
-import { ForkLeft, ForkRight, RampRight } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, LastPage } from '@mui/icons-material';
 import { IconButton } from '@mui/joy';
 import { IAgentHistoryItem } from '../../../../../domains/agent.domain';
 
@@ -33,13 +33,13 @@ export const AgentHistoryNavigation = ({
         disabled={index > (historyItems?.length ?? 0) - 1}
         onClick={handlePreviousClick}
       >
-        <ForkLeft />
+        <ChevronLeft />
       </IconButton>
       <IconButton aria-label="Copy" size="sm" color="primary" disabled={index === 0} onClick={handleNextClick}>
-        <ForkRight />
+        <ChevronRight />
       </IconButton>
       <IconButton aria-label="Copy" size="sm" color="primary" disabled={index === 0} onClick={handleReset}>
-        <RampRight />
+        <LastPage />
       </IconButton>
     </div>
   );
