@@ -11,6 +11,7 @@ import { AgentHistoryModal } from './components/agent-history';
 import classNames from 'classnames';
 import { useMediaQuery } from '@mui/material';
 import { AgentHistoryNavigation } from './components/agent-history-navigation/agent-history-navigation';
+import { IAgentHistoryItem } from '../../../domains/agent.domain';
 
 interface IAgentProps {
   id: string;
@@ -22,6 +23,7 @@ interface IAgentProps {
 
 export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [historyCurrentIndex, setHistoryCurrentIndex] = useState(0);
+  const [initLoad, setInitLoad] = useState(true);
   const [message, setMessage] = useState('');
   const [answer, setAnswer] = useState<string>('');
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -45,6 +47,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
     mutationFn: submitMessage,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agents-history', id] });
+      setInitLoad(false);
     },
   });
 
@@ -53,11 +56,25 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
     queryFn: () => getAgentHistory(id),
     select: (data) => data.history,
   });
+
   useEffect(() => {
     if (agentHistory) {
       setHistoryCurrentIndex(0);
     }
   }, [agentHistory]);
+
+  const emptyHistoryItem: IAgentHistoryItem = {
+    _id: '',
+    agentId: '',
+    prefix: '',
+    message: '',
+    prompt: '',
+    response: '',
+    timestamp: new Date(),
+  };
+
+  const clientHistoryItems = initLoad ? (agentHistory ? [emptyHistoryItem, ...agentHistory] : []) : agentHistory;
+  console.log('debug', clientHistoryItems);
 
   useEffect(() => {
     if (textAreaRef.current && focused) {
@@ -68,12 +85,8 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const submitPrompt = async () => {
-    // const response = await submitMessage({ id, message });
     const response = await submitMutation.mutateAsync({ id, message });
     const purifiedDom = domPurify.sanitize(response.answer);
-    // queryClient.invalidateQueries({ queryKey: ['agents'] }); // TODO: one by one invalidation?
-    // queryClient.invalidateQueries({ queryKey: ['agents-history'] });
-    // queryClient.invalidateQueries({ queryKey: ['agents-history', id] });
     setAnswer(purifiedDom);
   };
 
@@ -143,17 +156,6 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         <EditableInput initialValue={prefix} onValueChange={handleBlurPrefix} />
       </div>
 
-      {/* <Textarea
-        ref={textAreaRef}
-        value={message}
-        onChange={(e) => {
-          setMessage(e.target.value);
-        }}
-        // onKeyPress={handleKeyPress}
-        className={css.agentInput}
-        minRows={3}
-      /> */}
-
       <div
         className={classNames(css.agentInputWrapper, {
           [css.agentInputWrapperMinimized]: isMobile,
@@ -168,12 +170,12 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
           className={css.agentInput}
         />
         <AgentHistoryNavigation
-          historyItems={agentHistory}
+          historyItems={clientHistoryItems}
           className={css.agentHistoryNavigation}
           index={historyCurrentIndex}
           onIndexChange={(index) => {
             setHistoryCurrentIndex(index);
-            const historyItem = agentHistory?.[index];
+            const historyItem = clientHistoryItems?.[index];
             setMessage(historyItem?.message || '');
             setAnswer(historyItem?.response || '');
           }}
