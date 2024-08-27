@@ -184,7 +184,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
       <div className={css.agentButtons}>
         <OwnButton type="submit">Submit</OwnButton>
         <OwnButton type="button" color="danger" onClick={handleClearText} style={{ marginLeft: 'auto' }}>
-          Clear
+          Clear input
         </OwnButton>
         <OwnButton type="button" onClick={handleOpenAgentHistory} color="neutral">
           History
