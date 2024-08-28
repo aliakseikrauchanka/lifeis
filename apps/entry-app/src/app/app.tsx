@@ -14,6 +14,7 @@ import { ExperimentsPage } from './pages/experiments.page';
 import { LogsPage } from './pages/logs.page';
 import { init } from '@lifeis/common-ui';
 import './styles/reset.css';
+import { StorageProvider } from './contexts/storage.context';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
@@ -38,7 +39,14 @@ export default function App() {
       {isLoggedIn && (
         <Routes>
           <Route path="/" element={<MainPage />} />
-          <Route path="/agents" element={<AgentsPage />} />
+          <Route
+            path="/agents"
+            element={
+              <StorageProvider>
+                <AgentsPage />
+              </StorageProvider>
+            }
+          />
           <Route path="/experiments" element={<ExperimentsPage />} />
           <Route path="/logs" element={<LogsPage />} />
           <Route path="/insights" element={<InsightsPage />} />

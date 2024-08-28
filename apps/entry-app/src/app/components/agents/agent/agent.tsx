@@ -5,13 +5,14 @@ import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
 import { IconButton, useTheme } from '@mui/joy';
-import { CopyAll, Delete, DragHandle } from '@mui/icons-material';
+import { CopyAll, Delete, DragHandle, Pin, PinDrop, PushPin, PushPinOutlined } from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AgentHistoryModal } from './components/agent-history';
 import classNames from 'classnames';
 import { useMediaQuery } from '@mui/material';
 import { AgentHistoryNavigation } from './components/agent-history-navigation/agent-history-navigation';
 import { IAgentHistoryItem } from '../../../domains/agent.domain';
+import { useStorageContext } from '../../../contexts/storage.context';
 
 interface IAgentProps {
   id: string;
@@ -73,8 +74,9 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
     }
   }, [agentHistory]);
 
+  const { pinnedAgentsIds: pinnedAgents, pinAgent, unpinAgent } = useStorageContext();
+
   const clientHistoryItems = initLoad ? (agentHistory ? [emptyHistoryItem, ...agentHistory] : []) : agentHistory;
-  console.log('debug', clientHistoryItems);
 
   useEffect(() => {
     if (textAreaRef.current && focused) {
@@ -143,14 +145,23 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
 
   return (
     <form onSubmit={handleSubmitForm} className={css.agent}>
-      <div className={css.agentDeleteBtnContainer}>
-        <IconButton aria-label="Delete" size="sm" color="danger" onClick={handleRemoveAgent}>
-          <Delete />
+      <header className={css.agentHeader}>
+        <IconButton size="sm" color="primary">
+          {pinnedAgents.includes(id) ? (
+            <PushPin onClick={() => unpinAgent(id)} />
+          ) : (
+            <PushPinOutlined onClick={() => pinAgent(id)} />
+          )}
         </IconButton>
-      </div>
-      <h3>
-        Agent {number}: {name}
-      </h3>
+        <h3 className={css.agentHeaderName} title={name}>
+          {name}
+        </h3>
+        <div className={css.agentDeleteBtnContainer}>
+          <IconButton aria-label="Delete" size="sm" color="danger" onClick={handleRemoveAgent}>
+            <Delete />
+          </IconButton>
+        </div>
+      </header>
 
       <div className={css.agentPrefixContainer}>
         <EditableInput initialValue={prefix} onValueChange={handleBlurPrefix} />

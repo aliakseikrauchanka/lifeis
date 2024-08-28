@@ -5,11 +5,14 @@ import AgentForm from './agent-create/agent-create';
 import css from './all-agents.module.scss';
 import { useQuery } from '@tanstack/react-query';
 import { IAgentResponse } from '../../domains/agent.domain';
+import { useStorageContext } from '../../contexts/storage.context';
 
 const AVAILABLE_KEYS = ['1', '2', '3', '4'];
 
 export const AllAgents = () => {
   const query = useQuery({ queryKey: ['agents'], queryFn: getAllAgents, select: (data) => data.agents });
+
+  const { pinnedAgentsIds } = useStorageContext();
 
   const [focusedAgentIndex, setFocusedAgentIndex] = useState(0);
 
@@ -33,25 +36,36 @@ export const AllAgents = () => {
     };
   }, [query.data?.length]);
 
+  // array of agents where pinnedAgents are first and then the rest but that need to save the order of the pinned agents
+  // order of pinned agents should be saved
+
+  if (!query.data) {
+    return <div>Loading...</div>;
+  }
+
+  const pinnedAgents = pinnedAgentsIds
+    .map((id) => query.data.find((agent) => agent._id === id))
+    .filter((agent) => !!agent) as IAgentResponse[]; // TODO: ???
+  const nonPinnedAgents = query.data.filter((agent) => !pinnedAgentsIds.includes(agent._id));
+  const sortedAgents = [...pinnedAgents, ...nonPinnedAgents];
+
   return (
     <div>
       <div className={css.agentsWrapper}>
         <h2>agents</h2>
-        {!!query.data?.length && (
-          <div className={css.agents}>
-            {query.data?.map((agent: IAgentResponse, i: number) => (
-              // TODO: get rid of any type
-              <Agent
-                id={agent._id}
-                name={agent.name}
-                prefix={agent.prefix}
-                key={agent._id}
-                number={AVAILABLE_KEYS.includes(String(i + 1)) ? i + 1 : undefined}
-                focused={i === focusedAgentIndex}
-              />
-            ))}
-          </div>
-        )}
+        <div className={css.agents}>
+          {sortedAgents.map((agent: IAgentResponse, i: number) => (
+            // TODO: get rid of any type
+            <Agent
+              id={agent._id}
+              name={agent.name}
+              prefix={agent.prefix}
+              key={agent._id}
+              number={AVAILABLE_KEYS.includes(String(i + 1)) ? i + 1 : undefined}
+              focused={i === focusedAgentIndex}
+            />
+          ))}
+        </div>
       </div>
       <AgentForm />
     </div>
