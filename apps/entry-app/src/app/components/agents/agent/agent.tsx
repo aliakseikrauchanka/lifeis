@@ -203,7 +203,9 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         />
       </div>
       <div className={css.agentButtons}>
-        <OwnButton type="submit">Submit</OwnButton>
+        <OwnButton type="submit" disabled={!message}>
+          Submit
+        </OwnButton>
         <OwnButton type="button" color="danger" onClick={handleClearText} style={{ marginLeft: 'auto' }}>
           Clear input
         </OwnButton>
