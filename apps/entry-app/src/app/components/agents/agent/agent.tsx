@@ -119,6 +119,16 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
       try {
         updateMutation.mutate({ id, name, prefix: newValue });
       } catch (error) {
+        console.error('Failed to update agent prefix:', error);
+      }
+    }
+  };
+
+  const handleBlurName = (newValue: string) => {
+    if (name !== newValue) {
+      try {
+        updateMutation.mutate({ id, name: newValue, prefix });
+      } catch (error) {
         console.error('Failed to update agent name:', error);
       }
     }
@@ -154,7 +164,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
           )}
         </IconButton>
         <h3 className={css.agentHeaderName} title={name}>
-          {name}
+          <EditableInput initialValue={name} onValueChange={handleBlurName} />
         </h3>
         <div className={css.agentDeleteBtnContainer}>
           <IconButton aria-label="Delete" size="sm" color="danger" onClick={handleRemoveAgent}>

@@ -8,23 +8,23 @@ interface EditableInputProps {
 
 export const EditableInput: React.FC<EditableInputProps> = ({ initialValue, onValueChange }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [prefix, setPrefix] = useState(initialValue);
+  const [inputValue, setInputValue] = useState(initialValue);
 
   const handleInputClick = () => setIsEditing(true);
 
   const handleBlurTextarea = () => {
     setIsEditing(false);
-    if (prefix) {
-      onValueChange(prefix);
+    if (inputValue) {
+      onValueChange(inputValue);
     } else {
-      setPrefix(initialValue);
+      setInputValue(initialValue);
     }
   };
 
   return isEditing ? (
     <Textarea
-      value={prefix}
-      onChange={(e) => setPrefix(e.target.value)}
+      value={inputValue}
+      onChange={(e) => setInputValue(e.target.value)}
       onBlur={handleBlurTextarea}
       autoFocus
       sx={{
@@ -37,8 +37,9 @@ export const EditableInput: React.FC<EditableInputProps> = ({ initialValue, onVa
       noWrap
       onClick={handleInputClick}
       sx={{ cursor: 'pointer', '&:hover': { backgroundColor: 'action.hover' } }}
+      title={inputValue}
     >
-      {prefix}
+      {inputValue}
     </Typography>
   );
 };

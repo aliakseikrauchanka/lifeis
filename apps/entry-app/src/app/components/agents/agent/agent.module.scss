@@ -11,6 +11,9 @@
     display: flex;
 
     &-name {
+      flex: 1;
+      display: flex;
+      align-items: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
