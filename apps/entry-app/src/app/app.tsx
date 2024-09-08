@@ -15,6 +15,9 @@ import { LogsPage } from './pages/logs.page';
 import { init } from '@lifeis/common-ui';
 import './styles/reset.css';
 import { StorageProvider } from './contexts/storage.context';
+import { DeepgramContextProvider } from './contexts/deepgram.context';
+import { MicrophoneContextProvider } from './contexts/microphone.context';
+import { SpeechToTextContextProvider } from './contexts/speech-to-text.context';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
@@ -43,7 +46,13 @@ export default function App() {
             path="/agents"
             element={
               <StorageProvider>
-                <AgentsPage />
+                <MicrophoneContextProvider>
+                  <DeepgramContextProvider>
+                    <SpeechToTextContextProvider>
+                      <AgentsPage />
+                    </SpeechToTextContextProvider>
+                  </DeepgramContextProvider>
+                </MicrophoneContextProvider>
               </StorageProvider>
             }
           />

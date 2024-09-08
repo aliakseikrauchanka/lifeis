@@ -13,6 +13,7 @@ import { useMediaQuery } from '@mui/material';
 import { AgentHistoryNavigation } from './components/agent-history-navigation/agent-history-navigation';
 import { IAgentHistoryItem } from '../../../domains/agent.domain';
 import { useStorageContext } from '../../../contexts/storage.context';
+import { SpeechToText } from '../../speech-to-text/speech-to-text';
 
 interface IAgentProps {
   id: string;
@@ -209,6 +210,8 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         <OwnButton type="button" color="danger" onClick={handleClearText} style={{ marginLeft: 'auto' }}>
           Clear input
         </OwnButton>
+        <SpeechToText onCaption={(caption) => setMessage(caption)} id={id} />
+
         <OwnButton type="button" onClick={handleOpenAgentHistory} color="neutral">
           History
         </OwnButton>

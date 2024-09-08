@@ -4,10 +4,51 @@ import { getFilePath, mp3FilePath, uploadMiddlewareFactory } from '../utils/audi
 import fs, { unlinkSync } from 'fs';
 import { convertFile } from '../utils/ffmpeg-converter';
 
-import { createClient } from '@deepgram/sdk';
+import { createClient, DeepgramError } from '@deepgram/sdk';
 
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 const routes = Router();
+
+routes.get('/authenticate', async (req, res) => {
+  // exit early so we don't request 70000000 keys while in devmode
+  console.log('ENV', process.env.ENV);
+  if (process.env.ENV === 'development') {
+    return res.json({
+      key: process.env.DEEPGRAM_API_KEY ?? '',
+    });
+  }
+
+  const url = req.url;
+
+  try {
+    const { result: projectsResult } = await deepgram.manage.getProjects();
+
+    const project = projectsResult?.projects[0];
+
+    if (!project) {
+      return res.json(new DeepgramError('Cannot find a Deepgram project. Please create a project first.'));
+    }
+
+    const { result: newKeyResult } = await deepgram.manage.createProjectKey(project.project_id, {
+      comment: 'Temporary API key',
+      scopes: ['usage:write'],
+      tags: ['express'],
+      time_to_live_in_seconds: 60,
+    });
+
+    console.log({ newKeyResult });
+
+    res.set({
+      'Surrogate-Control': 'no-store',
+      'Cache-Control': 's-maxage=0, no-store, no-cache, must-revalidate, proxy-revalidate',
+      Expires: '0',
+    });
+
+    res.json({ ...newKeyResult, url });
+  } catch (error) {
+    res.json(error);
+  }
+});
 
 routes.post('/transcribe', verifyAccessToken, uploadMiddlewareFactory.single('audio'), async (req, res) => {
   const transcribeFile = async (filePath: string) => {
