@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useSpeechToText } from '../../contexts/speech-to-text.context';
+import { OwnButton } from '@lifeis/common-ui';
 
 interface ISpeechToTextProps {
   id: string;
@@ -17,22 +18,13 @@ export const SpeechToText = ({ id, onCaption }: ISpeechToTextProps) => {
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() => {
-          startListening(id);
-        }}
-      >
+      <OwnButton type="button" color="success" onClick={() => startListening(id)}>
         Record
-      </button>
-      <button
-        type="button"
-        onClick={() => {
-          stopListening();
-        }}
-      >
+      </OwnButton>
+
+      <OwnButton type="button" color="success" onClick={() => stopListening()}>
         Pause
-      </button>
+      </OwnButton>
     </div>
   );
 };
