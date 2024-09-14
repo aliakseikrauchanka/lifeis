@@ -1,76 +1,137 @@
+'use client';
+
 import {
-  createClient,
+  CreateProjectKeyResponse,
   LiveClient,
-  LiveConnectionState,
+  LiveSchema,
   LiveTranscriptionEvents,
-  type LiveSchema,
-  type LiveTranscriptionEvent,
+  SpeakSchema,
+  createClient,
 } from '@deepgram/sdk';
+import { Dispatch, SetStateAction, createContext, useCallback, useContext, useEffect, useState } from 'react';
+// import { useToast } from './Toast';
+// import { useLocalStorage } from '../lib/hooks/useLocalStorage';
+
 import { CONFIG, utilFetch } from '@lifeis/common-ui';
 
-import { createContext, useContext, useState, ReactNode, FunctionComponent } from 'react';
+type DeepgramContext = {
+  // ttsOptions: SpeakSchema | undefined;
+  // setTtsOptions: (value: SpeakSchema) => void;
+  sttOptions: LiveSchema | undefined;
+  setSttOptions: (value: LiveSchema) => void;
+  connection: LiveClient | undefined;
+  connectionReady: boolean;
+};
 
-interface DeepgramContextType {
-  connection: LiveClient | null;
-  connectToDeepgram: (options: LiveSchema, endpoint?: string) => Promise<void>;
-  disconnectFromDeepgram: () => void;
-  connectionState: LiveConnectionState;
+interface DeepgramContextInterface {
+  children: React.ReactNode;
 }
 
-const DeepgramContext = createContext<DeepgramContextType | undefined>(undefined);
+const DeepgramContext = createContext({} as DeepgramContext);
 
-interface DeepgramContextProviderProps {
-  children: ReactNode;
-}
+const DEFAULT_STT_MODEL = 'nova-2';
+
+const defaultSttsOptions: SpeakSchema = {
+  model: DEFAULT_STT_MODEL,
+  interim_results: true,
+  smart_format: true,
+  endpointing: 550,
+  utterance_end_ms: 1500,
+  filler_words: true,
+  language: 'ru-RU',
+};
 
 const getApiKey = async (): Promise<string> => {
   const response = await utilFetch(`${CONFIG.BE_URL}/deepgram/authenticate`, { cache: 'no-store' });
-  const result = await response.json();
+  const result: CreateProjectKeyResponse = await response.json();
   return result.key;
 };
 
-const DeepgramContextProvider: FunctionComponent<DeepgramContextProviderProps> = ({ children }) => {
-  const [connection, setConnection] = useState<LiveClient | null>(null);
-  const [connectionState, setConnectionState] = useState<LiveConnectionState>(LiveConnectionState.CLOSED);
+const DeepgramContextProvider = ({ children }: DeepgramContextInterface) => {
+  // const [ttsOptions, setTtsOptions] = useLocalStorage<SpeakSchema | undefined>('ttsModel');
+  const [sttOptions, setSttOptions] = useState<LiveSchema | undefined>();
+  const [connection, setConnection] = useState<LiveClient>();
+  const [connecting, setConnecting] = useState<boolean>(false);
+  const [connectionReady, setConnectionReady] = useState<boolean>(false);
 
-  /**
-   * Connects to the Deepgram speech recognition service and sets up a live transcription session.
-   *
-   * @param options - The configuration options for the live transcription session.
-   * @param endpoint - The optional endpoint URL for the Deepgram service.
-   * @returns A Promise that resolves when the connection is established.
-   */
-  const connectToDeepgram = async (options: LiveSchema, endpoint?: string) => {
-    const key = await getApiKey();
-    const deepgram = createClient(key);
+  const connect = useCallback(
+    async (defaultSttsOptions: SpeakSchema) => {
+      if (!connection && !connecting) {
+        setConnecting(true);
 
-    const conn = deepgram.listen.live(options, endpoint);
+        const deepgram = createClient(await getApiKey());
 
-    conn.addListener(LiveTranscriptionEvents.Open, () => {
-      setConnectionState(LiveConnectionState.OPEN);
-    });
+        const connection = deepgram.listen.live(defaultSttsOptions);
 
-    conn.addListener(LiveTranscriptionEvents.Close, () => {
-      setConnectionState(LiveConnectionState.CLOSED);
-    });
+        setConnection(connection);
+        setConnecting(false);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    },
+    [connecting, connection],
+  );
 
-    setConnection(conn);
-  };
+  useEffect(() => {
+    // it must be the first open of the page, let's set up the defaults
 
-  const disconnectFromDeepgram = async () => {
-    if (connection) {
-      connection.finish();
-      setConnection(null);
+    // Why this is needed?, the requestTtsAudio of Conversation is wrapped in useCallback
+    // which has a dependency of ttsOptions model
+    // but the player inside the Nowplaying provider is set on mount, means
+    // the when the startAudio is called the player is undefined.
+
+    // This can be fixed in 3 ways:
+    // 1. set player as a dependency inside the useCallback of requestTtsAudio
+    // 2. change the code of react-nowplaying to use the ref mechanism
+    // 3. follow the old code to avoid any risk i.e., first ttsOptions is undefined
+    // and later when it gets set, it also update the requestTtsAudio callback.
+    // if (ttsOptions === undefined) {
+    // setTtsOptions(defaultTtsOptions);
+    // }
+
+    if (!sttOptions === undefined) {
+      setSttOptions(defaultSttsOptions);
     }
-  };
+    if (connection === undefined) {
+      connect(defaultSttsOptions);
+    }
+  }, [connect, connection, setSttOptions, sttOptions]);
+
+  useEffect(() => {
+    if (connection && connection?.getReadyState() !== undefined) {
+      connection.addListener(LiveTranscriptionEvents.Open, () => {
+        setConnectionReady(true);
+      });
+
+      connection.addListener(LiveTranscriptionEvents.Close, () => {
+        console.log("The connection to Deepgram closed, we'll attempt to reconnect.");
+        setConnectionReady(false);
+        connection.removeAllListeners();
+        setConnection(undefined);
+      });
+
+      connection.addListener(LiveTranscriptionEvents.Error, () => {
+        console.log("An unknown error occured. We'll attempt to reconnect to Deepgram.");
+        setConnectionReady(false);
+        connection.removeAllListeners();
+        setConnection(undefined);
+      });
+    }
+
+    return () => {
+      setConnectionReady(false);
+      connection?.removeAllListeners();
+    };
+  }, [connection]);
 
   return (
     <DeepgramContext.Provider
       value={{
+        // ttsOptions,
+        // setTtsOptions,
+        sttOptions,
+        setSttOptions,
         connection,
-        connectToDeepgram,
-        disconnectFromDeepgram,
-        connectionState,
+        connectionReady,
       }}
     >
       {children}
@@ -78,18 +139,8 @@ const DeepgramContextProvider: FunctionComponent<DeepgramContextProviderProps> =
   );
 };
 
-function useDeepgram(): DeepgramContextType {
-  const context = useContext(DeepgramContext);
-  if (context === undefined) {
-    throw new Error('useDeepgram must be used within a DeepgramContextProvider');
-  }
-  return context;
+function useDeepgram() {
+  return useContext(DeepgramContext);
 }
 
-export {
-  DeepgramContextProvider,
-  useDeepgram,
-  LiveConnectionState,
-  LiveTranscriptionEvents,
-  type LiveTranscriptionEvent,
-};
+export { DeepgramContextProvider, useDeepgram };

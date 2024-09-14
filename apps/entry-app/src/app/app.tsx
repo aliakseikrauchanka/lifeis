@@ -18,6 +18,7 @@ import { StorageProvider } from './contexts/storage.context';
 import { DeepgramContextProvider } from './contexts/deepgram.context';
 import { MicrophoneContextProvider } from './contexts/microphone.context';
 import { SpeechToTextContextProvider } from './contexts/speech-to-text.context';
+import AudioProvider from './components/audio-provider/audio-provider';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
@@ -48,9 +49,11 @@ export default function App() {
               <StorageProvider>
                 <MicrophoneContextProvider>
                   <DeepgramContextProvider>
-                    <SpeechToTextContextProvider>
-                      <AgentsPage />
-                    </SpeechToTextContextProvider>
+                    <AudioProvider>
+                      <SpeechToTextContextProvider>
+                        <AgentsPage />
+                      </SpeechToTextContextProvider>
+                    </AudioProvider>
                   </DeepgramContextProvider>
                 </MicrophoneContextProvider>
               </StorageProvider>

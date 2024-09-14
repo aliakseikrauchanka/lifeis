@@ -210,7 +210,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         <OwnButton type="button" color="danger" onClick={handleClearText} style={{ marginLeft: 'auto' }}>
           Clear input
         </OwnButton>
-        <SpeechToText onCaption={(caption) => setMessage(caption)} id={id} />
+        <SpeechToText onCaption={(caption) => setMessage(caption?.join(' ') || '')} id={id} />
 
         <OwnButton type="button" onClick={handleOpenAgentHistory} color="neutral">
           History

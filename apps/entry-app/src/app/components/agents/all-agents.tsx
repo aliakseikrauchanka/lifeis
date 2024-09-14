@@ -55,7 +55,6 @@ export const AllAgents = () => {
         <h2>agents</h2>
         <div className={css.agents}>
           {sortedAgents.map((agent: IAgentResponse, i: number) => (
-            // TODO: get rid of any type
             <Agent
               id={agent._id}
               name={agent.name}

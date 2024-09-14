@@ -1,13 +1,19 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState, ReactNode } from 'react';
+import { createContext, useCallback, useContext, useState, ReactNode, useEffect } from 'react';
+import { useQueue } from '@uidotdev/usehooks';
 
 interface MicrophoneContextType {
   microphone: MediaRecorder | null;
+  stream: MediaStream | undefined;
   startMicrophone: () => void;
   stopMicrophone: () => void;
-  setupMicrophone: () => void;
   microphoneState: MicrophoneState | null;
+  enqueueBlob: (element: Blob) => void;
+  removeBlob: () => Blob | undefined;
+  firstBlob: Blob | undefined;
+  queueSize: number;
+  queue: Blob[];
 }
 
 export enum MicrophoneEvents {
@@ -39,32 +45,36 @@ interface MicrophoneContextProviderProps {
 const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ children }) => {
   const [microphoneState, setMicrophoneState] = useState<MicrophoneState>(MicrophoneState.NotSetup);
   const [microphone, setMicrophone] = useState<MediaRecorder | null>(null);
+  const [stream, setStream] = useState<MediaStream>();
 
-  const setupMicrophone = async () => {
-    if (microphoneState === MicrophoneState.Ready) {
-      return;
-    }
+  const {
+    add: enqueueBlob, // addMicrophoneBlob,
+    remove: removeBlob, // removeMicrophoneBlob,
+    first: firstBlob, // firstMicrophoneBlob,
+    size: queueSize, // countBlobs,
+    queue, // : microphoneBlobs,
+  } = useQueue<Blob>([]);
 
-    setMicrophoneState(MicrophoneState.SettingUp);
-
-    try {
-      const userMedia = await navigator.mediaDevices.getUserMedia({
+  useEffect(() => {
+    async function setupMicrophone() {
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           noiseSuppression: true,
           echoCancellation: true,
         },
       });
 
-      const microphone = new MediaRecorder(userMedia);
+      setStream(stream);
 
-      setMicrophoneState(MicrophoneState.Ready);
+      const microphone = new MediaRecorder(stream);
+
       setMicrophone(microphone);
-    } catch (err: any) {
-      console.error(err);
-
-      throw err;
     }
-  };
+
+    if (!microphone) {
+      setupMicrophone();
+    }
+  }, [enqueueBlob, microphone, microphoneState]);
 
   const stopMicrophone = useCallback(() => {
     setMicrophoneState(MicrophoneState.Pausing);
@@ -87,14 +97,41 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
     setMicrophoneState(MicrophoneState.Open);
   }, [microphone]);
 
+  useEffect(() => {
+    if (!microphone) return;
+
+    microphone.ondataavailable = (e) => {
+      if (microphoneState === MicrophoneState.Open) enqueueBlob(e.data);
+    };
+
+    return () => {
+      microphone.ondataavailable = null;
+    };
+  }, [enqueueBlob, microphone, microphoneState]);
+
+  // useEffect(() => {
+  //   const eventer = () => document.visibilityState !== 'visible' && stopMicrophone();
+
+  //   window.addEventListener('visibilitychange', eventer);
+
+  //   return () => {
+  //     window.removeEventListener('visibilitychange', eventer);
+  //   };
+  // }, [stopMicrophone]);
+
   return (
     <MicrophoneContext.Provider
       value={{
         microphone,
         startMicrophone,
         stopMicrophone,
-        setupMicrophone,
         microphoneState,
+        stream,
+        enqueueBlob,
+        removeBlob,
+        firstBlob,
+        queueSize,
+        queue,
       }}
     >
       {children}

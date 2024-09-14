@@ -1,13 +1,20 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from 'react';
 import { useMicrophone, MicrophoneState, MicrophoneEvents } from './microphone.context';
-import { useDeepgram, LiveConnectionState, LiveTranscriptionEvents, LiveTranscriptionEvent } from './deepgram.context';
-import { LiveClient } from '@deepgram/sdk';
+import { useDeepgram } from './deepgram.context';
+import { useQueue } from '@uidotdev/usehooks';
+import { LiveClient, LiveTranscriptionEvent, LiveTranscriptionEvents } from '@deepgram/sdk';
+import { useMicVAD } from '../hooks/use-mic-vad';
 
 interface SpeechToTextContextType {
-  caption: { [activeId: string]: string };
+  caption: { [activeId: string]: string[] };
   startListening: (id: string) => void;
   stopListening: () => void;
 }
+
+const utteranceText = (event: LiveTranscriptionEvent) => {
+  const words = event.channel.alternatives[0].words;
+  return words.map((word: any) => word.punctuated_word ?? word.word).join(' ');
+};
 
 const SpeechToTextContext = createContext<SpeechToTextContextType | undefined>(undefined);
 
@@ -17,98 +24,231 @@ interface SpeechToTextContextProviderProps {
 
 const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = ({ children }) => {
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
-  const [caption, setCaption] = useState({});
-  const { connection, connectToDeepgram, connectionState } = useDeepgram();
-  const { setupMicrophone, microphone, startMicrophone, microphoneState, stopMicrophone } = useMicrophone();
-  const captionTimeout = useRef<any>();
+  const [caption, setCaption] = useState<{ [activeId: string]: string[] }>({});
+  // console.log('caption', caption);
+  const { connection, connectionReady } = useDeepgram();
+  // const { setupMicrophone, microphone, startMicrophone, microphoneState, stopMicrophone } = useMicrophone();
+  const {
+    add: addTranscriptPart,
+    queue: transcriptParts,
+    clear: clearTranscriptParts,
+  } = useQueue<{ is_final: boolean; speech_final: boolean; text: string }>([]);
+
+  const [isProcessing, setProcessing] = useState(false);
+
+  const {
+    microphoneState,
+    queue: microphoneQueue,
+    queueSize: microphoneQueueSize,
+    firstBlob,
+    removeBlob,
+    startMicrophone,
+    stopMicrophone,
+    stream,
+  } = useMicrophone();
+  // const captionTimeout = useRef<any>();
   const keepAliveInterval = useRef<any>();
 
-  useEffect(() => {
-    setupMicrophone();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const [currentUtterance, setCurrentUtterance] = useState<string>();
+  const [failsafeTimeout, setFailsafeTimeout] = useState<NodeJS.Timeout>();
+  const [failsafeTriggered, setFailsafeTriggered] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (microphoneState === MicrophoneState.Ready) {
-      connectToDeepgram({
-        model: 'nova-2',
-        interim_results: true,
-        smart_format: true,
-        filler_words: true,
-        utterance_end_ms: 5000,
-        language: 'ru-RU',
-      });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [microphoneState]);
+  const onSpeechEnd = useCallback(() => {
+    /**
+     * We have the audio data context available in VAD
+     * even before we start sending it to deepgram.
+     * So ignore any VAD events before we "open" the mic.
+     */
+    if (microphoneState !== MicrophoneState.Open) return;
 
-  useEffect(() => {
-    if (!microphone) return;
-    if (!connection) return;
+    setFailsafeTimeout(
+      setTimeout(() => {
+        if (currentUtterance) {
+          console.log('failsafe fires! pew pew!!');
+          setFailsafeTriggered(true);
+          // TODO: invoke here
+          setCaption((prevCaption) => {
+            if (activeId === undefined) {
+              return prevCaption;
+            }
+            return {
+              ...prevCaption,
+              [activeId]: [...(prevCaption[activeId] || []), currentUtterance],
+            };
+          });
+          clearTranscriptParts();
+          setCurrentUtterance(undefined);
+        }
+      }, 1500),
+    );
 
-    const onData = (e: BlobEvent) => {
-      // iOS SAFARI FIX:
-      // Prevent packetZero from being sent. If sent at size 0, the connection will close.
-      if (e.data.size > 0) {
-        connection?.send(e.data);
-      }
+    return () => {
+      clearTimeout(failsafeTimeout);
     };
 
-    const onTranscript = (data: LiveTranscriptionEvent) => {
-      const { is_final: isFinal, speech_final: speechFinal } = data;
-      const thisCaption = data.channel.alternatives[0].transcript;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [microphoneState, currentUtterance]);
 
-      console.log('thisCaption', thisCaption);
-      if (thisCaption) {
-        setCaption((prevCaption) => {
-          if (activeId === undefined) {
-            return prevCaption;
-          }
-          return {
-            ...prevCaption,
-            [activeId]: thisCaption,
-          };
+  const onSpeechStart = () => {
+    /**
+     * We have the audio data context available in VAD
+     * even before we start sending it to deepgram.
+     * So ignore any VAD events before we "open" the mic.
+     */
+    if (microphoneState !== MicrophoneState.Open) return;
+
+    /**
+     * We we're talking again, we want to wait for a transcript.
+     */
+
+    console.log('speech start!');
+    setFailsafeTriggered(false);
+
+    // if (!player?.ended) {
+    //   stopAudio();
+    //   console.log('barging in! SHH!');
+    // }
+  };
+
+  useMicVAD({
+    startOnLoad: true,
+    stream,
+    onSpeechStart,
+    onSpeechEnd,
+    positiveSpeechThreshold: 0.6,
+    negativeSpeechThreshold: 0.6 - 0.15,
+  });
+
+  useEffect(() => {
+    const onTranscript = (data: LiveTranscriptionEvent) => {
+      const content = utteranceText(data);
+
+      // i only want an empty transcript part if it is speech_final
+      if (content !== '' || data.speech_final) {
+        /**
+         * use an outbound message queue to build up the unsent utterance
+         */
+        addTranscriptPart({
+          is_final: data.is_final as boolean,
+          speech_final: data.speech_final as boolean,
+          text: content,
         });
       }
-
-      if (isFinal && speechFinal) {
-        clearTimeout(captionTimeout.current);
-        captionTimeout.current = setTimeout(() => {
-          // setCaption((prevCaption) => {
-          //   if (activeId === undefined) {
-          //     return prevCaption;
-          //   }
-          //   return {
-          //     ...prevCaption,
-          //     [activeId]: undefined,
-          //   };
-          // });
-          // setActiveId(undefined);
-          clearTimeout(captionTimeout.current);
-        }, 3000);
-      }
     };
 
-    if (connectionState === LiveConnectionState.OPEN) {
+    const onOpen = (connection: LiveClient) => {
       connection.addListener(LiveTranscriptionEvents.Transcript, onTranscript);
-      microphone.addEventListener(MicrophoneEvents.DataAvailable, onData);
+    };
 
-      // startMicrophone();
+    if (connection) {
+      connection.addListener(LiveTranscriptionEvents.Open, onOpen);
     }
 
     return () => {
-      // prettier-ignore
-      connection.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
-      microphone.removeEventListener(MicrophoneEvents.DataAvailable, onData);
-      clearTimeout(captionTimeout.current);
+      connection?.removeListener(LiveTranscriptionEvents.Open, onOpen);
+      connection?.removeListener(LiveTranscriptionEvents.Transcript, onTranscript);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [connectionState, activeId]);
+  }, [addTranscriptPart, connection]);
+
+  const getCurrentUtterance = useCallback(() => {
+    return transcriptParts.filter(({ is_final, speech_final }, i, arr) => {
+      return is_final || speech_final || (!is_final && i === arr.length - 1);
+    });
+  }, [transcriptParts]);
+
+  const [lastUtterance, setLastUtterance] = useState<number>();
+
+  useEffect(() => {
+    const parts = getCurrentUtterance();
+    const last = parts[parts.length - 1];
+    const content = parts
+      .map(({ text }) => text)
+      .join(' ')
+      .trim();
+
+    /**
+     * if the entire utterance is empty, don't go any further
+     * for example, many many many empty transcription responses
+     */
+    if (!content) return;
+
+    /**
+     * failsafe was triggered since we last sent a message to TTS
+     */
+    if (failsafeTriggered) {
+      clearTranscriptParts();
+      setCurrentUtterance(undefined);
+      return;
+    }
+
+    /**
+     * display the concatenated utterances
+     */
+    setCurrentUtterance(content);
+
+    /**
+     * record the last time we recieved a word
+     */
+    if (last.text !== '') {
+      setLastUtterance(Date.now());
+    }
+
+    /**
+     * if the last part of the utterance, empty or not, is speech_final, send to the LLM.
+     */
+    if (last && last.speech_final) {
+      clearTimeout(failsafeTimeout);
+      // append({
+      //   role: 'user',
+      //   content,
+      // });
+      setCaption((prevCaption) => {
+        if (activeId === undefined) {
+          return prevCaption;
+        }
+        return {
+          ...prevCaption,
+          [activeId]: [...(prevCaption[activeId] || []), content],
+        };
+      });
+
+      clearTranscriptParts();
+      setCurrentUtterance(undefined);
+    }
+  }, [getCurrentUtterance, clearTranscriptParts, failsafeTimeout, failsafeTriggered]);
+
+  /**
+   * magic microphone audio queue processing
+   */
+  useEffect(() => {
+    const processQueue = async () => {
+      if (microphoneQueueSize > 0 && !isProcessing) {
+        setProcessing(true);
+
+        if (connectionReady) {
+          const nextBlob = firstBlob;
+
+          if (nextBlob && nextBlob?.size > 0) {
+            connection?.send(nextBlob);
+          }
+
+          removeBlob();
+        }
+
+        const waiting = setTimeout(() => {
+          clearTimeout(waiting);
+          setProcessing(false);
+        }, 200);
+      }
+    };
+
+    processQueue();
+  }, [connection, microphoneQueue, removeBlob, firstBlob, microphoneQueueSize, isProcessing, connectionReady]);
 
   useEffect(() => {
     if (!connection) return;
 
-    if (microphoneState !== MicrophoneState.Open && connectionState === LiveConnectionState.OPEN) {
+    if (microphoneState !== MicrophoneState.Open && connectionReady) {
       connection.keepAlive();
 
       keepAliveInterval.current = setInterval(() => {
@@ -122,7 +262,7 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
       clearInterval(keepAliveInterval.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [microphoneState, connectionState]);
+  }, [microphoneState, connectionReady]);
 
   const startListening = useCallback(
     (id: string) => {

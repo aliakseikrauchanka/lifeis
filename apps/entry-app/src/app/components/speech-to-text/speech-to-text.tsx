@@ -5,7 +5,7 @@ import { useSpeechToText } from '../../contexts/speech-to-text.context';
 
 interface ISpeechToTextProps {
   id: string;
-  onCaption: (caption: string) => void;
+  onCaption: (caption: string[] | undefined) => void;
 }
 
 export const SpeechToText = ({ id, onCaption }: ISpeechToTextProps) => {
