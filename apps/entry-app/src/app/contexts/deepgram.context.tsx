@@ -12,7 +12,8 @@ import { Dispatch, SetStateAction, createContext, useCallback, useContext, useEf
 // import { useToast } from './Toast';
 // import { useLocalStorage } from '../lib/hooks/useLocalStorage';
 
-import { CONFIG, utilFetch } from '@lifeis/common-ui';
+import { utilFetch } from '@lifeis/common-ui';
+import { CONFIG } from '../../config';
 
 type DeepgramContext = {
   // ttsOptions: SpeakSchema | undefined;
