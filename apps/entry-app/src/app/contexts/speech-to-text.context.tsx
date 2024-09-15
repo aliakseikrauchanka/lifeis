@@ -25,9 +25,8 @@ interface SpeechToTextContextProviderProps {
 const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = ({ children }) => {
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [caption, setCaption] = useState<{ [activeId: string]: string[] }>({});
-  // console.log('caption', caption);
+
   const { connection, connectionReady } = useDeepgram();
-  // const { setupMicrophone, microphone, startMicrophone, microphoneState, stopMicrophone } = useMicrophone();
   const {
     add: addTranscriptPart,
     queue: transcriptParts,
@@ -66,7 +65,6 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
         if (currentUtterance) {
           console.log('failsafe fires! pew pew!!');
           setFailsafeTriggered(true);
-          // TODO: invoke here
           setCaption((prevCaption) => {
             if (activeId === undefined) {
               return prevCaption;
@@ -103,11 +101,6 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
 
     console.log('speech start!');
     setFailsafeTriggered(false);
-
-    // if (!player?.ended) {
-    //   stopAudio();
-    //   console.log('barging in! SHH!');
-    // }
   };
 
   useMicVAD({
@@ -115,8 +108,8 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
     stream,
     onSpeechStart,
     onSpeechEnd,
-    positiveSpeechThreshold: 0.6,
-    negativeSpeechThreshold: 0.6 - 0.15,
+    positiveSpeechThreshold: 0.5,
+    negativeSpeechThreshold: 0.5 - 0.15,
   });
 
   useEffect(() => {
@@ -156,8 +149,6 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
     });
   }, [transcriptParts]);
 
-  const [lastUtterance, setLastUtterance] = useState<number>();
-
   useEffect(() => {
     const parts = getCurrentUtterance();
     const last = parts[parts.length - 1];
@@ -187,21 +178,10 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
     setCurrentUtterance(content);
 
     /**
-     * record the last time we recieved a word
-     */
-    if (last.text !== '') {
-      setLastUtterance(Date.now());
-    }
-
-    /**
      * if the last part of the utterance, empty or not, is speech_final, send to the LLM.
      */
     if (last && last.speech_final) {
       clearTimeout(failsafeTimeout);
-      // append({
-      //   role: 'user',
-      //   content,
-      // });
       setCaption((prevCaption) => {
         if (activeId === undefined) {
           return prevCaption;
@@ -215,7 +195,7 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
       clearTranscriptParts();
       setCurrentUtterance(undefined);
     }
-  }, [getCurrentUtterance, clearTranscriptParts, failsafeTimeout, failsafeTriggered]);
+  }, [getCurrentUtterance, clearTranscriptParts, failsafeTimeout, failsafeTriggered, activeId, setCaption]);
 
   /**
    * magic microphone audio queue processing
