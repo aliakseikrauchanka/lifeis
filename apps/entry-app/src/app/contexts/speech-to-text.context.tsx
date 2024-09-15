@@ -108,7 +108,6 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
     stream,
     onSpeechStart,
     onSpeechEnd,
-
     positiveSpeechThreshold: 0.5,
     negativeSpeechThreshold: 0.5 - 0.15,
   });

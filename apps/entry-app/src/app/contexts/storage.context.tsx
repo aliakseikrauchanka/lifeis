@@ -1,22 +1,30 @@
 import { ReactNode, createContext, useContext, useState } from 'react';
 
-const key = 'pinnedAgents';
+const pinnedAgentsKey = 'pinnedAgents';
+const audioEnabledKey = 'audio';
 
 export interface StorageContextType {
   pinnedAgentsIds: string[];
   pinAgent: (agentId: string) => void;
   unpinAgent: (agentId: string) => void;
+  audioEnabled: boolean;
+  setAudioEnabled: (enabled: boolean) => void;
 }
 
 export const StorageContext = createContext<StorageContextType | undefined>(undefined);
 
 export const StorageProvider = ({ children }: { children: ReactNode }) => {
+  const [audioEnabled, setAudioEnabled] = useState<boolean>(() => {
+    const storedValue = localStorage.getItem(audioEnabledKey);
+    return storedValue ? JSON.parse(storedValue) : false;
+  });
+
   const [pinnedAgentsIds, setPinnedAgents] = useState<string[]>(() => {
-    const storedValue = localStorage.getItem(key);
+    const storedValue = localStorage.getItem(pinnedAgentsKey);
     return storedValue ? JSON.parse(storedValue) : [];
   });
 
-  const returnValue = {
+  const returnValue: StorageContextType = {
     pinnedAgentsIds,
     pinAgent: (agentId: string) => {
       setPinnedAgents((prevPinnedAgents) => {
@@ -24,16 +32,21 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
           return prevPinnedAgents;
         }
         const newValue = [...prevPinnedAgents, agentId];
-        localStorage.setItem(key, JSON.stringify(newValue));
+        localStorage.setItem(pinnedAgentsKey, JSON.stringify(newValue));
         return newValue;
       });
     },
     unpinAgent: (agentId: string) => {
       setPinnedAgents((prevPinnedAgents) => {
         const newValue = prevPinnedAgents.filter((id) => id !== agentId);
-        localStorage.setItem(key, JSON.stringify(newValue));
+        localStorage.setItem(pinnedAgentsKey, JSON.stringify(newValue));
         return newValue;
       });
+    },
+    audioEnabled,
+    setAudioEnabled: (value: boolean) => {
+      setAudioEnabled(value);
+      localStorage.setItem(audioEnabledKey, JSON.stringify(value));
     },
   };
 

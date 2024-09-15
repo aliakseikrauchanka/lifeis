@@ -43,6 +43,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const queryClient = useQueryClient();
+  const { audioEnabled } = useStorageContext();
   const removeMutation = useMutation({
     mutationFn: removeAgent,
     onSuccess: () => {
@@ -210,7 +211,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         <OwnButton type="button" color="danger" onClick={handleClearText} style={{ marginLeft: 'auto' }}>
           Clear input
         </OwnButton>
-        <SpeechToText onCaption={(caption) => setMessage(caption?.join(' ') || '')} id={id} />
+        {audioEnabled && <SpeechToText onCaption={(caption) => setMessage(caption?.join(' ') || '')} id={id} />}
 
         <OwnButton type="button" onClick={handleOpenAgentHistory} color="neutral">
           History

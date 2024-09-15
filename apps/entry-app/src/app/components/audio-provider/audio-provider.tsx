@@ -28,7 +28,6 @@ const AudioProvider: React.FC<AudioProviderProps> = ({ children }) => {
           initORT();
         }}
       />
-
       <Conditioned is={ortLoaded}>
         <Script
           src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.7/dist/bundle.min.js"
