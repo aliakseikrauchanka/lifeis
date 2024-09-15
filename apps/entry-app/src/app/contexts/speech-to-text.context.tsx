@@ -201,17 +201,6 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
   /**
    * magic microphone audio queue processing
    */
-  function insertAudioFromBlob(blob: any, parentElement = document.body) {
-    const audioUrl = URL.createObjectURL(blob);
-    const audioElement = document.createElement('audio');
-    audioElement.src = audioUrl;
-    audioElement.controls = true;
-    parentElement.appendChild(audioElement);
-
-    // Optionally, you can revoke the URL when the audio is done playing
-    audioElement.onended = () => URL.revokeObjectURL(audioUrl);
-  }
-
   useEffect(() => {
     const processQueue = async () => {
       if (microphoneQueueSize > 0 && !isProcessing) {
@@ -223,7 +212,6 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
           if (nextBlob && nextBlob?.size > 0) {
             connection?.send(nextBlob);
           }
-          insertAudioFromBlob(nextBlob);
 
           removeBlob();
         }

@@ -60,7 +60,20 @@ export default function App() {
             }
           />
           <Route path="/experiments" element={<ExperimentsPage />} />
-          <Route path="/logs" element={<LogsPage />} />
+          <Route
+            path="/logs"
+            element={
+              <MicrophoneContextProvider>
+                <DeepgramContextProvider>
+                  <AudioProvider>
+                    <SpeechToTextContextProvider>
+                      <LogsPage />
+                    </SpeechToTextContextProvider>
+                  </AudioProvider>
+                </DeepgramContextProvider>
+              </MicrophoneContextProvider>
+            }
+          />
           <Route path="/insights" element={<InsightsPage />} />
         </Routes>
       )}
