@@ -44,6 +44,8 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const queryClient = useQueryClient();
   const { audioEnabled } = useStorageContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const removeMutation = useMutation({
     mutationFn: removeAgent,
     onSuccess: () => {
@@ -89,8 +91,10 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
   const submitPrompt = async () => {
+    setIsSubmitting(true);
     const response = await submitMutation.mutateAsync({ id, message });
     const purifiedDom = domPurify.sanitize(response.answer);
+    setIsSubmitting(false);
     setAnswer(purifiedDom);
   };
 
@@ -205,7 +209,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         />
       </div>
       <div className={css.agentButtons}>
-        <OwnButton type="submit" disabled={!message}>
+        <OwnButton type="submit" disabled={!message || isSubmitting}>
           Submit
         </OwnButton>
         <OwnButton type="button" color="danger" onClick={handleClearText} style={{ marginLeft: 'auto' }}>
@@ -213,14 +217,14 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         </OwnButton>
         {audioEnabled && <SpeechToText onCaption={(caption) => setMessage(caption?.join(' ') || '')} id={id} />}
 
-        <OwnButton type="button" onClick={handleOpenAgentHistory} color="neutral">
+        <OwnButton type="button" onClick={handleOpenAgentHistory} color="neutral" disabled={!agentHistory?.length}>
           History
         </OwnButton>
       </div>
       <div className={css.agentResponse}>
         <h4 className={css.agentResponseTitle}>
           Response:{' '}
-          {answer && (
+          {!isSubmitting && answer && (
             <>
               <IconButton aria-label="Copy" size="sm" color="primary" onClick={handleCopyResponse}>
                 <CopyAll />
@@ -239,7 +243,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
             </>
           )}
         </h4>
-        <div ref={responseRef}>{<ReactMarkdown>{answer}</ReactMarkdown>}</div>
+        {isSubmitting ? 'Generating ...' : <div ref={responseRef}>{<ReactMarkdown>{answer}</ReactMarkdown>}</div>}
       </div>
       <AgentHistoryModal open={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} agentId={id} />
     </form>
