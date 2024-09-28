@@ -2,6 +2,7 @@ import { Router, Request } from 'express';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { MongoClient, ObjectId } from 'mongodb';
 import { GenerativeModel } from '@google/generative-ai';
+import OpenAI from 'openai';
 
 const router = Router();
 
@@ -13,7 +14,7 @@ interface IAgent {
 
 type IAgentDocument = Document & IAgent;
 
-export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeModel) => {
+export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeModel, openAiModel: OpenAI) => {
   const router = Router();
 
   router.get('/', verifyAccessToken, async (req, res) => {
@@ -41,11 +42,30 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
 
     const { prefix } = foundAgent;
 
-    // make request to gemini
+    const aiProvider = req.body.aiProvider === 'openai' ? 'openai' : 'gemini'; // gemini is default
     const prompt = `${prefix} ${req.body.message}`;
-    const result = await geminiModel.generateContent(prompt);
 
-    const responseText = result.response.text();
+    let responseText: string;
+    if (aiProvider === 'openai') {
+      const response = await openAiModel.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: prompt,
+              },
+            ],
+          },
+        ],
+      });
+      responseText = response.choices[0].message.content;
+    } else {
+      const response = await geminiModel.generateContent(prompt);
+      responseText = response.response.text();
+    }
 
     // save entry to db
     await client
@@ -58,6 +78,7 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
         message: req.body.message,
         response: responseText,
         timestamp: new Date(),
+        agentType: aiProvider,
       });
 
     return res.send({ answer: responseText });

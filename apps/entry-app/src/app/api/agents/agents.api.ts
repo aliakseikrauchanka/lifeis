@@ -62,9 +62,11 @@ export const getAllAgents = async (): Promise<IAgentsResponse> => {
 export const submitMessage = async ({
   id,
   message,
+  aiProvider,
 }: {
   id: string;
   message: string;
+  aiProvider: string;
 }): Promise<{
   answer: string;
 }> => {
@@ -75,6 +77,7 @@ export const submitMessage = async ({
     },
     body: JSON.stringify({
       message,
+      aiProvider,
     }),
   });
 

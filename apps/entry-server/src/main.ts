@@ -17,6 +17,7 @@ import { createAgentsRoutes } from './routes/agents-routes';
 import deepgramRoutes from './routes/deepgram-routes';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getBasketRoutes } from './routes/baskets-routes';
+import OpenAI from 'openai';
 
 // create mongo db client
 const client = getMongoDbClient();
@@ -24,6 +25,7 @@ const client = getMongoDbClient();
 // create gemini model
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const openAiModel = new OpenAI();
 
 const host = process.env.HOST ?? '0.0.0.0';
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -44,7 +46,7 @@ app.use(helmet());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/logs', createLogsRoutes(client, geminiModel));
-app.use('/api/agents/', createAgentsRoutes(client, geminiModel));
+app.use('/api/agents/', createAgentsRoutes(client, geminiModel, openAiModel));
 app.use('/api/insights', insightsRoutes);
 app.use('/api/gemini', createGeminiRoutes(geminiModel));
 app.use('/api/openai', openaiRoutes);

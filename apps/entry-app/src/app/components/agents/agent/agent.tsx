@@ -4,8 +4,8 @@ import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect } fro
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
-import { IconButton, useTheme } from '@mui/joy';
-import { CopyAll, Delete, DragHandle, Pin, PinDrop, PushPin, PushPinOutlined } from '@mui/icons-material';
+import { IconButton, Select, useTheme, Option } from '@mui/joy';
+import { CopyAll, Delete, DragHandle, PushPin, PushPinOutlined } from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AgentHistoryModal } from './components/agent-history';
 import classNames from 'classnames';
@@ -45,6 +45,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const queryClient = useQueryClient();
   const { audioEnabled } = useStorageContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedAiProvider, setSelectedAiProvider] = useState('gemini');
 
   const removeMutation = useMutation({
     mutationFn: removeAgent,
@@ -92,7 +93,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
 
   const submitPrompt = async () => {
     setIsSubmitting(true);
-    const response = await submitMutation.mutateAsync({ id, message });
+    const response = await submitMutation.mutateAsync({ id, message, aiProvider: selectedAiProvider });
     const purifiedDom = domPurify.sanitize(response.answer);
     setIsSubmitting(false);
     setAnswer(purifiedDom);
@@ -212,6 +213,14 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         <OwnButton type="submit" disabled={!message || isSubmitting}>
           Submit
         </OwnButton>
+        <Select
+          value={selectedAiProvider}
+          onChange={(_, newValue) => setSelectedAiProvider(newValue as string)}
+          sx={{ minWidth: 120 }}
+        >
+          <Option value="gemini">Gemini</Option>
+          <Option value="openai">OpenAI</Option>
+        </Select>
         <OwnButton type="button" color="danger" onClick={handleClearText} style={{ marginLeft: 'auto' }}>
           Clear input
         </OwnButton>

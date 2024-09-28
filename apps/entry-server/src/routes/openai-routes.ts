@@ -67,6 +67,7 @@ routes.post('/describe-image', verifyAccessToken, async (req, res) => {
   res.status(200).send(response);
 });
 
+// OpenAI Assistant API
 const assistantId = 'asst_xH1h4HyWEFulGnBrltEAGaJ9';
 routes.post('/check-polish-grammar', verifyAccessToken, async (req, res) => {
   // const openai = new OpenAI();
