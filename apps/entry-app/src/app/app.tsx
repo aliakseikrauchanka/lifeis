@@ -31,6 +31,8 @@ export default function App() {
     });
   }, []);
 
+  console.log('debug', CONFIG.CLIENT_ID);
+
   return (
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
       <header>
