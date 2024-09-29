@@ -10,12 +10,14 @@ import { InsightsPage } from './pages/insights.page';
 
 export function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
+  const [isInitialized, setIsInitialized] = useState(false);
   useEffect(() => {
     init({
       beUrl: CONFIG.BE_URL,
       clientId: CONFIG.CLIENT_ID,
       app: 'insights',
     });
+    setIsInitialized(true);
   }, []);
 
   const handleBEPing = async () => {
@@ -38,7 +40,7 @@ export function App() {
         />
         <OwnButton onClick={handleBEPing}>Ping BE</OwnButton>
       </header>
-      {isLoggedIn && (
+      {isLoggedIn && isInitialized && (
         <div>
           <div role="navigation">
             <ul>
