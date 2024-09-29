@@ -1,5 +1,5 @@
 import React from 'react';
-import { AllInsights } from '../components/insights/insights';
+import { AllInsights } from '../components/all-insights/all-insights';
 import { Link } from 'react-router-dom';
 
 export const InsightsPage = () => {

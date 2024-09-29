@@ -5,9 +5,6 @@ export const MainPage = () => {
   return (
     <div>
       <div>
-        <Link to="/insights">insight page</Link>
-      </div>
-      <div>
         <Link to="/logs">logs page</Link>
       </div>
       <div>

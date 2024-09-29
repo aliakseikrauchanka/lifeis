@@ -7,7 +7,6 @@ import { isUserLoggedIn, OwnButton, UserSession } from '@lifeis/common-ui';
 import { CONFIG } from '../config';
 
 import { Route, Routes } from 'react-router-dom';
-import { InsightsPage } from './pages/insights.page';
 import { MainPage } from './pages/main.page';
 import { AgentsPage } from './pages/agents.page';
 import { ExperimentsPage } from './pages/experiments.page';
@@ -95,7 +94,6 @@ export default function App() {
               />
             }
           />
-          <Route path="/insights" element={<InsightsPage />} />
         </Routes>
       )}
     </GoogleOAuthProvider>

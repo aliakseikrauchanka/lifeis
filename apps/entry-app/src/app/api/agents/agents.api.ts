@@ -1,9 +1,8 @@
 import { utilFetch } from '@lifeis/common-ui';
-import { CONFIG } from '../../../config';
-import { IAgentHistoryItem, IAgentHistoryResponse, IAgentsResponse } from '../../domains/agent.domain';
+import { IAgentHistoryResponse, IAgentsResponse } from '../../domains/agent.domain';
 
 export const createAgent = async (data: { name: string; prefix: string }): Promise<void> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/agents`, {
+  const response = await utilFetch(`/agents`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -19,7 +18,7 @@ export const createAgent = async (data: { name: string; prefix: string }): Promi
 };
 
 export const updateAgent = async (data: { id: string; name: string; prefix: string }): Promise<void> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/agents/${data.id}`, {
+  const response = await utilFetch(`/agents/${data.id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -35,7 +34,7 @@ export const updateAgent = async (data: { id: string; name: string; prefix: stri
 };
 
 export const removeAgent = async (id: string): Promise<void> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/agents/${id}`, {
+  const response = await utilFetch(`/agents/${id}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',
@@ -50,7 +49,7 @@ export const removeAgent = async (id: string): Promise<void> => {
 };
 
 export const getAllAgents = async (): Promise<IAgentsResponse> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/agents`);
+  const response = await utilFetch(`/agents`);
 
   if (!response.ok) {
     throw new Error('Failed to get agents');
@@ -70,7 +69,7 @@ export const submitMessage = async ({
 }): Promise<{
   answer: string;
 }> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/agents/${id}`, {
+  const response = await utilFetch(`/agents/${id}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -89,7 +88,7 @@ export const submitMessage = async ({
 };
 
 export const getAgentHistory = async (agentId: string): Promise<IAgentHistoryResponse> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/agents/${agentId}/history`, {
+  const response = await utilFetch(`/agents/${agentId}/history`, {
     method: 'GET',
   });
 

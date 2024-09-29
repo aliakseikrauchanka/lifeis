@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { CONFIG, utilFetch } from '@lifeis/common-ui';
 import { createBasket } from '../../api/baskets/baskets.api';
 
 interface IBasketFormProps {

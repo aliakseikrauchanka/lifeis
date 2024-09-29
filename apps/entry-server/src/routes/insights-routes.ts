@@ -13,15 +13,13 @@ router.get('/', verifyAccessToken, async (_, res) => {
     database_id: insightsDatabaseId,
   });
   // objects;
-  console.log(
-    res
-      .status(200)
-      .send(
-        response.results.map((obj) =>
-          ((obj as PageObjectResponse).properties.insight as any).title.map((title) => title.plain_text).join(', '),
-        ),
+  res
+    .status(200)
+    .send(
+      response.results.map((obj) =>
+        ((obj as PageObjectResponse).properties.insight as any).title.map((title) => title.plain_text).join(', '),
       ),
-  );
+    );
 });
 
 export default router;

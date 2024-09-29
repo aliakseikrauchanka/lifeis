@@ -10,10 +10,22 @@ const router = Router();
 
 router.post('/google', (req, res) => {
   const { code } = req.body;
-  const client_id = CLIENT_ID;
-  const client_secret = CLIENT_SECRET;
-  const redirect_uri = REDIRECT_URL;
-  const grant_type = 'authorization_code';
+  const app = req.headers['x-app-id'];
+
+  let clientId;
+  let clientSecret;
+  let redirectUri;
+  // TODO: we use auth for couple of applications which seems not good idea
+  if (app === 'insights') {
+    clientId = process.env.INSIGHTS_CLIENT_ID;
+    clientSecret = process.env.INSIGHTS_CLIENT_SECRET;
+    redirectUri = process.env.INSIGHTS_REDIRECT_URL;
+  } else {
+    clientId = process.env.CLIENT_ID;
+    clientSecret = process.env.CLIENT_SECRET;
+    redirectUri = process.env.REDIRECT_URL;
+  }
+  const grantType = 'authorization_code';
 
   fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -22,10 +34,10 @@ router.post('/google', (req, res) => {
     },
     body: new URLSearchParams({
       code,
-      client_id,
-      client_secret,
-      redirect_uri,
-      grant_type,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: grantType,
     }),
   })
     .then((response) => response.json())
@@ -39,10 +51,21 @@ router.post('/google', (req, res) => {
 
 router.post('/google/refresh', (req, res) => {
   const { refreshToken } = req.body;
-  const client_id = CLIENT_ID;
-  const client_secret = CLIENT_SECRET;
-  const redirect_uri = REDIRECT_URL;
-  const grant_type = 'refresh_token';
+  const app = req.headers['x-app-id'];
+  let clientId;
+  let clientSecret;
+  let redirectUri;
+  // TODO: we use auth for couple of applications which seems not good idea
+  if (app === 'insights') {
+    clientId = process.env.INSIGHTS_CLIENT_ID;
+    clientSecret = process.env.INSIGHTS_CLIENT_SECRET;
+    redirectUri = process.env.INSIGHTS_REDIRECT_URL;
+  } else {
+    clientId = process.env.CLIENT_ID;
+    clientSecret = process.env.CLIENT_SECRET;
+    redirectUri = process.env.REDIRECT_URL;
+  }
+  const grantType = 'refresh_token';
 
   fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -51,10 +74,10 @@ router.post('/google/refresh', (req, res) => {
     },
     body: new URLSearchParams({
       refresh_token: refreshToken,
-      client_id,
-      client_secret,
-      redirect_uri,
-      grant_type,
+      client_id: clientId,
+      client_secret: clientSecret,
+      redirect_uri: redirectUri,
+      grant_type: grantType,
     }),
   })
     .then((response) => response.json())

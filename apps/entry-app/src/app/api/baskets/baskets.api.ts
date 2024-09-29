@@ -1,8 +1,7 @@
 import { utilFetch } from '@lifeis/common-ui';
-import { CONFIG } from '../../../config';
 
 export const createBasket = async (name: string): Promise<void> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/baskets`, {
+  const response = await utilFetch(`/baskets`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -23,7 +22,7 @@ interface IBasket {
 }
 
 export const getAllBaskets = async <T>(): Promise<IBasket[]> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/baskets`);
+  const response = await utilFetch(`/baskets`);
 
   if (!response.ok) {
     throw new Error('Failed to get logs');

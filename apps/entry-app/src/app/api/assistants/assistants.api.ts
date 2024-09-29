@@ -1,12 +1,11 @@
 import { utilFetch } from '@lifeis/common-ui';
-import { CONFIG } from '../../../config';
 
 export const checkPolishGrammar = async (text: string): Promise<string> => {
   const accessToken = localStorage.getItem('accessToken');
 
   try {
     // post message
-    const checkData = await utilFetch(`${CONFIG.BE_URL}/openai/check-polish-grammar`, {
+    const checkData = await utilFetch(`/openai/check-polish-grammar`, {
       method: 'POST',
       body: JSON.stringify({ message: text }),
       headers: {
@@ -21,7 +20,7 @@ export const checkPolishGrammar = async (text: string): Promise<string> => {
       const intervalId = setInterval(async () => {
         try {
           const runResponse = await utilFetch(
-            `${CONFIG.BE_URL}/openai/thread/run?threadId=${threadId}&runId=${runId}`,
+            `/openai/thread/run?threadId=${threadId}&runId=${runId}`,
             {
               method: 'GET',
             },
@@ -32,7 +31,7 @@ export const checkPolishGrammar = async (text: string): Promise<string> => {
           if (run.status === 'completed') {
             clearInterval(intervalId);
 
-            const messagesResponse = await utilFetch(`${CONFIG.BE_URL}/openai/thread/messages?threadId=${threadId}`, {
+            const messagesResponse = await utilFetch(`/openai/thread/messages?threadId=${threadId}`, {
               method: 'GET',
             });
 
@@ -53,7 +52,7 @@ export const checkPolishGrammar = async (text: string): Promise<string> => {
 export const translateToPolish = async (text: string): Promise<string> => {
   try {
     // post message
-    const checkData = await utilFetch(`${CONFIG.BE_URL}/gemini/translate-to-polish`, {
+    const checkData = await utilFetch(`/gemini/translate-to-polish`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

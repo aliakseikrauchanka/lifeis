@@ -11,7 +11,6 @@ const routes = Router();
 
 routes.get('/authenticate', async (req, res) => {
   // exit early so we don't request 70000000 keys while in devmode
-  console.log('ENV', process.env.ENV);
   if (process.env.ENV === 'development') {
     return res.json({
       key: process.env.DEEPGRAM_API_KEY ?? '',
@@ -35,8 +34,6 @@ routes.get('/authenticate', async (req, res) => {
       tags: ['express'],
       time_to_live_in_seconds: 60,
     });
-
-    console.log({ newKeyResult });
 
     res.set({
       'Surrogate-Control': 'no-store',

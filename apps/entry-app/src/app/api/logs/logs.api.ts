@@ -1,9 +1,8 @@
 import { utilFetch } from '@lifeis/common-ui';
 import { IDiaryLog } from '../../domains/log.domain';
-import { CONFIG } from '../../../config';
 
 export const createLog = async (message: string): Promise<void> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/logs`, {
+  const response = await utilFetch(`/logs`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -19,7 +18,7 @@ export const createLog = async (message: string): Promise<void> => {
 };
 
 export const getAllLogs = async <T>(): Promise<IDiaryLog[]> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/logs`);
+  const response = await utilFetch(`/logs`);
 
   if (!response.ok) {
     throw new Error('Failed to get logs');

@@ -17,6 +17,12 @@ export default defineConfig({
     host: 'localhost',
   },
 
+  css: {
+    modules: {
+      localsConvention: 'camelCaseOnly',
+    },
+  },
+
   plugins: [react(), nxViteTsPaths()],
 
   // Uncomment this if you are using workers.

@@ -1,21 +1,27 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import css from './app.module.scss';
-import { OwnButton, UserSession } from '@lifeis/common-ui';
+import { OwnButton, UserSession, init, isUserLoggedIn, utilFetch } from '@lifeis/common-ui';
 
 import { Route, Routes, Link } from 'react-router-dom';
 import { CONFIG } from '../config';
 import { MainPage } from './pages/main.page';
+import { useEffect, useState } from 'react';
+import { InsightsPage } from './pages/insights.page';
 
 export function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
+  useEffect(() => {
+    init({
+      beUrl: CONFIG.BE_URL,
+      clientId: CONFIG.CLIENT_ID,
+      app: 'insights',
+    });
+  }, []);
+
   const handleBEPing = async () => {
-    const accessToken = localStorage.getItem('accessToken');
     try {
-      await fetch(`${CONFIG.BE_URL}/ping`, {
+      await utilFetch(`/ping`, {
         method: 'GET',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
       });
     } catch (e) {
       console.log('error happened during fetch');
@@ -25,42 +31,32 @@ export function App() {
   return (
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
       <header>
-        <UserSession />
+        <UserSession
+          isLoggedIn={isLoggedIn}
+          onLoginSuccess={() => setIsLoggedIn(true)}
+          onLogOut={() => setIsLoggedIn(false)}
+        />
         <OwnButton onClick={handleBEPing}>Ping BE</OwnButton>
       </header>
       <div>
-        {/* START: routes */}
-        {/* These routes and navigation have been generated for you */}
-        {/* Feel free to move and update them to fit your needs */}
-        <br />
-        <hr />
-        <br />
         <div role="navigation">
           <ul>
             <li>
               <Link to="/">Home</Link>
             </li>
             <li>
-              <Link to="/page-2">
-                <MainPage />
-              </Link>
+              <Link to="/page-2">main page</Link>
             </li>
           </ul>
         </div>
         <Routes>
-          <Route
-            path="/"
-            element={
-              <div>
-                This is the generated root route. <Link to="/page-2">Click here for page 2.</Link>
-              </div>
-            }
-          />
+          <Route path="/" element={<InsightsPage />} />
           <Route
             path="/page-2"
             element={
               <div>
                 <Link to="/">Click here to go back to root page.</Link>
+                <MainPage />
               </div>
             }
           />

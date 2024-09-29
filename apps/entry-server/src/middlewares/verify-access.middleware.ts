@@ -1,8 +1,9 @@
 import { Response } from 'express';
 
-const CLIENT_ID = process.env.CLIENT_ID;
+// const CLIENT_ID = process.env.CLIENT_ID;
 
 export const verifyAccessToken = (req, res: Response, next) => {
+  const app = req.headers['x-app-id'];
   const accessToken = req.headers.authorization?.split(' ')[1];
 
   if (!accessToken) {
@@ -17,7 +18,9 @@ export const verifyAccessToken = (req, res: Response, next) => {
         return res.status(401).json({ error: 'Invalid access token' });
       }
 
-      if (data.audience !== CLIENT_ID) {
+      // TODO: we use auth for couple of applications which seems not good idea
+      const clientId = app === 'insights' ? process.env.INSIGHTS_CLIENT_ID : process.env.CLIENT_ID;
+      if (data.audience !== clientId) {
         return res.status(401).json({ error: 'Token not issued for this application' });
       }
 

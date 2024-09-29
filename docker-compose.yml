@@ -27,6 +27,9 @@ services:
       - REDIRECT_URL=${NGINX_DOMAIN}
       - CLIENT_ID=${CLIENT_ID}
       - CLIENT_SECRET=${CLIENT_SECRET}
+      - INSIGHTS_REDIRECT_URL=${INSIGHTS_REDIRECT_URL}
+      - INSIGHTS_CLIENT_ID=${INSIGHTS_CLIENT_ID}
+      - INSIGHTS_CLIENT_SECRET=${INSIGHTS_CLIENT_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - NOTION_API_KEY=${NOTION_API_KEY}
@@ -37,10 +40,10 @@ services:
       service: nx-app-base
     command: npx nx run insights-app:serve --host=0.0.0.0
     ports:
-      - 4203:4200
+      - ${INSIGHTS_PORT}:4200
     environment:
       - VITE_BE=${NGINX_DOMAIN}
-      - VITE_CLIENT_ID=${CLIENT_ID}
+      - VITE_CLIENT_ID=${INSIGHTS_CLIENT_ID}
 
 volumes:
   mono-node-modules: null

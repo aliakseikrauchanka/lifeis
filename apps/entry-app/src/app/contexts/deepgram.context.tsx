@@ -12,7 +12,6 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 // import { useLocalStorage } from '../lib/hooks/useLocalStorage';
 
 import { utilFetch } from '@lifeis/common-ui';
-import { CONFIG } from '../../config';
 
 type DeepgramContext = {
   // ttsOptions: SpeakSchema | undefined;
@@ -42,7 +41,7 @@ const defaultSttsOptions: SpeakSchema = {
 };
 
 const getApiKey = async (): Promise<string> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/deepgram/authenticate`, { cache: 'no-store' });
+  const response = await utilFetch(`/deepgram/authenticate`, { cache: 'no-store' });
   const result: CreateProjectKeyResponse = await response.json();
   return result.key;
 };

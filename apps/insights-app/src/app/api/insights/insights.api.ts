@@ -1,8 +1,7 @@
 import { utilFetch } from '@lifeis/common-ui';
-import { CONFIG } from '../../../../src/config';
 
 export const getAllInsights = async (): Promise<string[]> => {
-  const response = await utilFetch(`${CONFIG.BE_URL}/insights`, {
+  const response = await utilFetch(`/insights`, {
     method: 'GET',
   });
 

@@ -7,6 +7,7 @@ export const authGoogle = async (code: string): Promise<AuthRawResponse> => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'x-app-id': CONFIG.APP,
     },
     body: JSON.stringify({ code }),
   });
@@ -32,6 +33,7 @@ export const refreshAuthGoogle = async (): Promise<AuthRawResponse> => {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'x-app-id': CONFIG.APP,
     },
     // How long does refreshToken last?
     body: JSON.stringify({ refreshToken: oldTokens.refreshToken }),
