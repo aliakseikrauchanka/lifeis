@@ -6,7 +6,7 @@ export const getAllInsights = async (): Promise<string[]> => {
   });
 
   if (!response.ok) {
-    throw new Error('Failed to create log');
+    throw new Error('Failed to get logs');
   }
 
   return await response.json();
