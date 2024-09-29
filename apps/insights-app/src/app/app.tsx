@@ -38,31 +38,33 @@ export function App() {
         />
         <OwnButton onClick={handleBEPing}>Ping BE</OwnButton>
       </header>
-      <div>
-        <div role="navigation">
-          <ul>
-            <li>
-              <Link to="/">Home</Link>
-            </li>
-            <li>
-              <Link to="/page-2">main page</Link>
-            </li>
-          </ul>
+      {isLoggedIn && (
+        <div>
+          <div role="navigation">
+            <ul>
+              <li>
+                <Link to="/">Home</Link>
+              </li>
+              <li>
+                <Link to="/page-2">main page</Link>
+              </li>
+            </ul>
+          </div>
+          <Routes>
+            <Route path="/" element={<InsightsPage />} />
+            <Route
+              path="/page-2"
+              element={
+                <div>
+                  <Link to="/">Click here to go back to root page.</Link>
+                  <MainPage />
+                </div>
+              }
+            />
+          </Routes>
+          {/* END: routes */}
         </div>
-        <Routes>
-          <Route path="/" element={<InsightsPage />} />
-          <Route
-            path="/page-2"
-            element={
-              <div>
-                <Link to="/">Click here to go back to root page.</Link>
-                <MainPage />
-              </div>
-            }
-          />
-        </Routes>
-        {/* END: routes */}
-      </div>
+      )}
     </GoogleOAuthProvider>
   );
 }
