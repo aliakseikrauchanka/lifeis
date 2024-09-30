@@ -40,6 +40,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [answer, setAnswer] = useState<string>('');
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const responseRef = useRef<HTMLDivElement | null>(null);
+  const currentMessageRef = useRef<string>(message);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const queryClient = useQueryClient();
@@ -88,6 +89,13 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
       textAreaRef?.current.focus();
     }
   }, [focused]);
+
+  useEffect(() => {
+    if (message !== currentMessageRef.current && !message) {
+      textAreaRef?.current?.focus();
+    }
+    currentMessageRef.current = message;
+  }, [message]);
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
