@@ -15,7 +15,7 @@
     "@emotion/react": "^11.11.4",
     "@emotion/styled": "^11.11.5",
     "@google/generative-ai": "^0.15.0",
-    "@million/lint": "^1.0.0-rc.76",
+    "@million/lint": "^1.0.0",
     "@mui/icons-material": "^5.16.6",
     "@mui/joy": "^5.0.0-beta.48",
     "@mui/material": "^5.16.6",
