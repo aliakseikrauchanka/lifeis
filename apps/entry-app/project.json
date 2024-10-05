@@ -51,7 +51,8 @@
         "production": {
           "buildTarget": "entry-app:build:production"
         }
-      }
+      },
+      "dependsOn": ["build"]
     },
     "test": {
       "executor": "@nx/vite:test",

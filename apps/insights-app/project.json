@@ -51,7 +51,8 @@
         "production": {
           "buildTarget": "insights-app:build:production"
         }
-      }
+      },
+      "dependsOn": ["build"]
     },
     "lint": {
       "executor": "@nx/eslint:lint"
