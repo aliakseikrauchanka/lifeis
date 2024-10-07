@@ -5,13 +5,13 @@ import { removeAuthData } from '../../services/auth-storage.service';
 
 interface IUserSessionProps {
   isLoggedIn: boolean;
-  onLoginSuccess: () => void;
+  onLoginSuccess: (googleUserId: string) => void;
   onLogOut: () => void;
 }
 
 export const UserSession = ({ isLoggedIn, onLoginSuccess, onLogOut }: IUserSessionProps) => {
-  const handleLoginSuccess = (): void => {
-    onLoginSuccess();
+  const handleLoginSuccess = (googleUserId: string): void => {
+    onLoginSuccess(googleUserId);
   };
 
   const handleLogout = (): void => {

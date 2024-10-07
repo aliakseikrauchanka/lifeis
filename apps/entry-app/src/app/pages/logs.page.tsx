@@ -37,9 +37,6 @@ export const LogsPage = () => {
 
   return (
     <main>
-      <div>
-        <Link to="/">Click here to go back to root page.</Link>
-      </div>
       <BasketForm onSubmit={() => fetchBaskets()} />
       <Baskets baskets={baskets} />
       <LogForm onSubmit={() => fetchLogs()} />

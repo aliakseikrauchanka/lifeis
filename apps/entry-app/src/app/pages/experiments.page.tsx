@@ -43,10 +43,6 @@ export const ExperimentsPage = () => {
 
   return (
     <main>
-      <div>
-        <Link to="/">Click here to go back to root page.</Link>
-      </div>
-
       <h3>Audio Recorder OpenAI</h3>
       <Recording requestTranscript={handleOpenAiTranscript} transcription={openAiTranscript} />
       <br />

@@ -8,7 +8,7 @@ const REDIRECT_URL = process.env.REDIRECT_URL ?? 'http://localhost:4201';
 
 const router = Router();
 
-router.post('/google', (req, res) => {
+router.post('/google', async (req, res) => {
   const { code } = req.body;
   const app = req.headers['x-app-id'];
 
@@ -27,29 +27,37 @@ router.post('/google', (req, res) => {
   }
   const grantType = 'authorization_code';
 
-  fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      code,
-      client_id: clientId,
-      client_secret: clientSecret,
-      redirect_uri: redirectUri,
-      grant_type: grantType,
-    }),
-  })
-    .then((response) => response.json())
-    .then((tokens) => res.json(tokens))
-    .catch(() => {
-      // Handle errors in the token exchange
-      console.error('Token exchange error');
-      res.status(500).json({ error: 'Internal Server Error' });
+  try {
+    const rawResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: grantType,
+      }),
     });
+    const response = await rawResponse.json();
+    const tokenInfoRaw = await fetch(
+      `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${response.access_token}`,
+    );
+    const tokenInfo = await tokenInfoRaw.json();
+
+    res.json({
+      ...response,
+      google_user_id: tokenInfo.user_id,
+    });
+  } catch {
+    console.error('Token exchange error');
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
-router.post('/google/refresh', (req, res) => {
+router.post('/google/refresh', async (req, res) => {
   const { refreshToken } = req.body;
   const app = req.headers['x-app-id'];
   let clientId;
@@ -67,28 +75,35 @@ router.post('/google/refresh', (req, res) => {
   }
   const grantType = 'refresh_token';
 
-  fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({
-      refresh_token: refreshToken,
-      client_id: clientId,
-      client_secret: clientSecret,
-      redirect_uri: redirectUri,
-      grant_type: grantType,
-    }),
-  })
-    .then((response) => response.json())
-    .then((tokens) => {
-      res.json(tokens);
-    })
-    .catch(() => {
-      // Handle errors in the token exchange
-      console.error('Token refresh error');
-      res.status(500).json({ error: 'Internal Server Error' });
+  try {
+    const rawResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        refresh_token: refreshToken,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri: redirectUri,
+        grant_type: grantType,
+      }),
     });
+    const response = await rawResponse.json();
+    // maybe not needed for refresh token logic
+    const tokenInfoRaw = await fetch(
+      `https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${response.access_token}`,
+    );
+    const tokenInfo = await tokenInfoRaw.json();
+
+    res.json({
+      ...response,
+      google_user_id: tokenInfo.user_id,
+    });
+  } catch {
+    console.error('Token exchange error');
+    res.status(500);
+  }
 });
 
 export default router;

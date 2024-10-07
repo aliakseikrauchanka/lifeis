@@ -12,6 +12,7 @@ services:
     environment:
       - VITE_BE=${NGINX_DOMAIN}
       - VITE_CLIENT_ID=${CLIENT_ID}
+      - VITE_FF_ENVIRONMENT=${FLAGSMITH_ENVIRONMENT}
 
   # Node.js Server App
   entry-server:

@@ -1,17 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export const MainPage = () => {
+export const Navigation = () => {
   return (
     <div>
       <div>
-        <Link to="/logs">logs page</Link>
+        <Link to="/logs">Logs</Link>
       </div>
       <div>
-        <Link to="/experiments">experiments page</Link>
+        <Link to="/experiments">Experiments</Link>
       </div>
       <div>
-        <Link to="/agents">agents page</Link>
+        <Link to="/">Agents</Link>
       </div>
     </div>
   );

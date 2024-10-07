@@ -4,13 +4,13 @@ import { CONFIG } from '../../main';
 
 export const utilFetch = async (path: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const beUrl = `${CONFIG.BE_URL}${path}`;
-  const oldTokens = getAuthData();
+  const oldAuthTokens = getAuthData();
 
   const response = await fetch(beUrl, {
     ...init,
     headers: {
       ...init?.headers,
-      Authorization: `Bearer ${oldTokens.accessToken}`,
+      Authorization: `Bearer ${oldAuthTokens.accessToken}`,
       'x-app-id': CONFIG.APP,
     },
   });

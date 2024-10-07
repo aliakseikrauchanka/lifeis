@@ -1,9 +1,10 @@
 import React from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { authGoogle } from '../../../api/auth/auth.api';
+import { getAuthData } from '../../../services/auth-storage.service';
 
 interface ISignInProps {
-  onSuccess: () => void;
+  onSuccess: (googleUserId: string) => void;
 }
 
 export function SignIn({ onSuccess }: ISignInProps) {
@@ -11,7 +12,8 @@ export function SignIn({ onSuccess }: ISignInProps) {
     onSuccess: async (googleResponse) => {
       try {
         await authGoogle(googleResponse.code);
-        onSuccess();
+        const authData = getAuthData();
+        onSuccess(authData.googleUserId);
       } catch (error) {
         console.error('Error while making request to own auth service:', error);
       }

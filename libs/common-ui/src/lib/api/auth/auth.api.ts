@@ -17,17 +17,19 @@ export const authGoogle = async (code: string): Promise<AuthRawResponse> => {
   }
 
   const authResponse = await response.json();
+  console.log('debug', authResponse);
 
   saveAuthData({
     accessToken: authResponse.access_token,
     refreshToken: authResponse.refresh_token,
+    googleUserId: authResponse.google_user_id,
   });
 
   return authResponse;
 };
 
 export const refreshAuthGoogle = async (): Promise<AuthRawResponse> => {
-  const oldTokens = getAuthData();
+  const oldAuthData = getAuthData();
 
   const response = await fetch(`${CONFIG.BE_URL}/auth/google/refresh`, {
     method: 'POST',
@@ -36,7 +38,7 @@ export const refreshAuthGoogle = async (): Promise<AuthRawResponse> => {
       'x-app-id': CONFIG.APP,
     },
     // How long does refreshToken last?
-    body: JSON.stringify({ refreshToken: oldTokens.refreshToken }),
+    body: JSON.stringify({ refreshToken: oldAuthData.refreshToken }),
   });
 
   if (!response.ok) {
@@ -46,7 +48,7 @@ export const refreshAuthGoogle = async (): Promise<AuthRawResponse> => {
   const authResponse = await response.json();
 
   saveAuthData({
-    ...oldTokens,
+    ...oldAuthData,
     accessToken: authResponse.access_token,
   });
 
