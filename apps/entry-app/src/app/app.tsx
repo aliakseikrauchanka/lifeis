@@ -39,13 +39,13 @@ export default function App() {
     logs_feature.enabled &&
     loggedInGoogleUserId &&
     logs_feature.value &&
-    JSON.parse(String(stt_feature.value)).indexOf(loggedInGoogleUserId) > -1;
+    JSON.parse(String(logs_feature.value)).indexOf(loggedInGoogleUserId) > -1;
 
   const hasExperimentsFeature =
     experiments_feature.enabled &&
     loggedInGoogleUserId &&
     experiments_feature.value &&
-    JSON.parse(String(stt_feature.value)).indexOf(loggedInGoogleUserId) > -1;
+    JSON.parse(String(experiments_feature.value)).indexOf(loggedInGoogleUserId) > -1;
 
   useEffect(() => {
     init({
