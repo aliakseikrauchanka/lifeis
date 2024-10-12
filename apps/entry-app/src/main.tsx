@@ -3,10 +3,31 @@ import * as ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import flagsmith from 'flagsmith';
 import { FlagsmithProvider } from 'flagsmith/react';
+import * as Sentry from '@sentry/react';
 
 import App from './app/app';
 import { BrowserRouter } from 'react-router-dom';
 import { StorageProvider } from './app/contexts/storage.context';
+
+Sentry.init({
+  dsn: 'https://83376255a4838abae3f68164365ee54a@o4508108846465024.ingest.de.sentry.io/4508108855836752',
+  integrations: [
+    Sentry.browserTracingIntegration(),
+    Sentry.replayIntegration(),
+    Sentry.feedbackIntegration({
+      // Additional SDK configuration goes in here, for example:
+      colorScheme: 'system',
+      isNameRequired: true,
+    }),
+  ],
+  // Tracing
+  tracesSampleRate: 1.0, //  Capture 100% of the transactions
+  // Set 'tracePropagationTargets' to control for which URLs distributed tracing should be enabled
+  tracePropagationTargets: ['localhost', /^https:\/\/yourserver\.io\/api/],
+  // Session Replay
+  replaysSessionSampleRate: 0.1, // This sets the sample rate at 10%. You may want to change it to 100% while in development and then sample at a lower rate in production.
+  replaysOnErrorSampleRate: 1.0, // If you're not already sampling the entire session, change the sample rate to 100% when sampling sessions where errors occur.
+});
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 const queryClient = new QueryClient();

@@ -1,5 +1,5 @@
 {
-  "name": "@lifeis",
+  "name": "lifeis",
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
@@ -23,6 +23,7 @@
     "@react-oauth/google": "^0.12.1",
     "@ricky0123/vad-react": "^0.0.24",
     "@ricky0123/vad-web": "^0.0.18",
+    "@sentry/react": "^8.34.0",
     "@swc/helpers": "0.5.12",
     "@tanstack/react-query": "^5.51.21",
     "@uidotdev/usehooks": "^2.4.1",
