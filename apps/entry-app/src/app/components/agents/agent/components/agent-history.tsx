@@ -79,7 +79,7 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
             xl: '50%',
           },
           maxWidth: 1200,
-          maxHeight: '85vh',
+          height: '85vh',
           overflowY: 'auto',
         }}
       >
