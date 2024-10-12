@@ -17,7 +17,6 @@ export const authGoogle = async (code: string): Promise<AuthRawResponse> => {
   }
 
   const authResponse = await response.json();
-  console.log('debug', authResponse);
 
   saveAuthData({
     accessToken: authResponse.access_token,
