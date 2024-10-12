@@ -2,6 +2,7 @@ import { SignIn } from './components/sign-in';
 
 import css from './user-session.module.scss';
 import { removeAuthData } from '../../services/auth-storage.service';
+import OwnButton from '../button/button';
 
 interface IUserSessionProps {
   isLoggedIn: boolean;
@@ -23,9 +24,9 @@ export const UserSession = ({ isLoggedIn, onLoginSuccess, onLogOut }: IUserSessi
     <div className={css.userSession}>
       {isLoggedIn ? (
         <div className={css.userSessionContent}>
-          <h1>Welcome, User!</h1>
+          <h2>Welcome, User!</h2>
           <div>
-            <button onClick={handleLogout}>Logout</button>
+            <OwnButton onClick={handleLogout}>Logout</OwnButton>
           </div>
         </div>
       ) : (

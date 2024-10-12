@@ -2,6 +2,7 @@ import React from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { authGoogle } from '../../../api/auth/auth.api';
 import { getAuthData } from '../../../services/auth-storage.service';
+import OwnButton from '../../button/button';
 
 interface ISignInProps {
   onSuccess: (googleUserId: string) => void;
@@ -25,5 +26,5 @@ export function SignIn({ onSuccess }: ISignInProps) {
     flow: 'auth-code',
   });
 
-  return <button onClick={() => handleGoogleLogin()}>Sign in with Google</button>;
+  return <OwnButton onClick={() => handleGoogleLogin()}>Sign in with Google account</OwnButton>;
 }
