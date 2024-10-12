@@ -40,7 +40,12 @@ const limiter = RateLimit({
 });
 app.use(limiter);
 app.use(compression());
-app.use(cors());
+app.use(
+  cors({
+    origin: [''],
+    optionsSuccessStatus: 200,
+  }),
+);
 app.use(json());
 app.use(helmet());
 
