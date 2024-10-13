@@ -19,33 +19,14 @@ import { SpeechToTextContextProvider } from './contexts/speech-to-text.context';
 import AudioProvider from './components/audio-provider/audio-provider';
 import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
+import { useFeatureFlags } from './hooks/ff.hook';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
   const [loggedInGoogleUserId, setLoggedInGoogleUserId] = useState<string>(getGoogleUserId());
   const { audioEnabled, setAudioEnabled } = useStorageContext();
-  const { stt_feature, logs_feature, experiments_feature } = useFlags<
-    'stt_feature' | 'logs_feature' | 'experiments_feature'
-  >(['stt_feature', 'logs_feature', 'experiments_feature']);
 
-  // TODO: redo logic of FFs
-  const hasAudioFeature =
-    stt_feature.enabled &&
-    loggedInGoogleUserId &&
-    stt_feature.value &&
-    JSON.parse(String(stt_feature.value)).indexOf(loggedInGoogleUserId) > -1;
-
-  const hasLogsFeature =
-    logs_feature.enabled &&
-    loggedInGoogleUserId &&
-    logs_feature.value &&
-    JSON.parse(String(logs_feature.value)).indexOf(loggedInGoogleUserId) > -1;
-
-  const hasExperimentsFeature =
-    experiments_feature.enabled &&
-    loggedInGoogleUserId &&
-    experiments_feature.value &&
-    JSON.parse(String(experiments_feature.value)).indexOf(loggedInGoogleUserId) > -1;
+  const { hasAudioFeature, hasLogsFeature, hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInGoogleUserId);
 
   useEffect(() => {
     init({
@@ -65,7 +46,7 @@ export default function App() {
           }}
           onLogOut={() => setIsLoggedIn(false)}
         />
-        <div style={{ position: 'absolute', top: '10px', right: '70px' }}>
+        <div style={{ position: 'absolute', top: '4px', right: '70px' }}>
           {hasAudioFeature && (
             <OwnButton
               type="button"
