@@ -52,7 +52,6 @@ export const AllAgents = () => {
   return (
     <div>
       <div className={css.agentsWrapper}>
-        <h2>agents</h2>
         <div className={css.agents}>
           {sortedAgents.map((agent: IAgentResponse, i: number) => (
             <Agent
