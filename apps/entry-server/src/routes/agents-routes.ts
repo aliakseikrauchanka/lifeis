@@ -52,25 +52,32 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     }
 
     let responseText: string;
-    if (aiProvider === 'openai') {
-      const response = await openAiModel.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
-                text: prompt,
-              },
-            ],
-          },
-        ],
+
+    try {
+      if (aiProvider === 'openai') {
+        const response = await openAiModel.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+        });
+        responseText = response.choices[0].message.content;
+      } else {
+        const response = await geminiModel.generateContent(prompt);
+        responseText = response.response.text();
+      }
+    } catch (e) {
+      return res.status(500).send({
+        message: e?.message || 'Something happened during request to AI service',
       });
-      responseText = response.choices[0].message.content;
-    } else {
-      const response = await geminiModel.generateContent(prompt);
-      responseText = response.response.text();
     }
 
     // save entry to db

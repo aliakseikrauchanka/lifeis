@@ -4,7 +4,7 @@ import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect } fro
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
-import { IconButton, Select, useTheme, Option } from '@mui/joy';
+import { IconButton, Select, useTheme, Option, Snackbar } from '@mui/joy';
 import { CopyAll, Delete, DragHandle, PushPin, PushPinOutlined } from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AgentHistoryModal } from './components/agent-history';
@@ -47,6 +47,7 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const { audioEnabled } = useStorageContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedAiProvider, setSelectedAiProvider] = useState('gemini');
+  const [snackBarText, setSnackBarText] = useState('');
 
   const removeMutation = useMutation({
     mutationFn: removeAgent,
@@ -101,10 +102,15 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
 
   const submitPrompt = async () => {
     setIsSubmitting(true);
-    const response = await submitMutation.mutateAsync({ id, message, aiProvider: selectedAiProvider });
-    const purifiedDom = domPurify.sanitize(response.answer);
-    setIsSubmitting(false);
-    setAnswer(purifiedDom);
+    try {
+      const response = await submitMutation.mutateAsync({ id, message, aiProvider: selectedAiProvider });
+      const purifiedDom = domPurify.sanitize(response.answer);
+      setAnswer(purifiedDom);
+    } catch (e) {
+      setSnackBarText('Problems on submitting query to AI service');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleOpenAgentHistory = async () => {
@@ -263,6 +269,24 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
         {isSubmitting ? 'Generating ...' : <div ref={responseRef}>{<ReactMarkdown>{answer}</ReactMarkdown>}</div>}
       </div>
       <AgentHistoryModal open={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} agentId={id} />
+      <Snackbar
+        anchorOrigin={{
+          horizontal: 'center',
+          vertical: 'bottom',
+        }}
+        color="danger"
+        autoHideDuration={2000}
+        open={!!snackBarText}
+        variant="solid"
+        onClose={(event, reason) => {
+          if (reason === 'clickaway') {
+            return;
+          }
+          setSnackBarText('');
+        }}
+      >
+        {snackBarText}
+      </Snackbar>
     </form>
   );
 };

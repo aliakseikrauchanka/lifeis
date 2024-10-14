@@ -11,7 +11,7 @@ export const createAgent = async (data: { name: string; prefix: string }): Promi
   });
 
   if (!response.ok) {
-    throw new Error('Failed to create log');
+    throw new Error('Failed to create agent');
   }
 
   return await response.json();
@@ -27,7 +27,7 @@ export const updateAgent = async (data: { id: string; name: string; prefix: stri
   });
 
   if (!response.ok) {
-    throw new Error('Failed to create log');
+    throw new Error('Failed to update agent');
   }
 
   return await response.json();
@@ -81,7 +81,8 @@ export const submitMessage = async ({
   });
 
   if (!response.ok) {
-    throw new Error('Failed to create log');
+    const errorBody: RequestError = await response.json();
+    throw new Error(errorBody.message);
   }
 
   return await response.json();
