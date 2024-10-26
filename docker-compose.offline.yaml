@@ -10,6 +10,7 @@ services:
       # PORT for million lint
       # - 42423:42423
     environment:
+      - VITE_MODE=offline
       - VITE_BE=${NGINX_DOMAIN}
       - VITE_CLIENT_ID=${CLIENT_ID}
       - VITE_FF_ENVIRONMENT=${FLAGSMITH_ENVIRONMENT}
@@ -23,6 +24,7 @@ services:
     ports:
       - ${SERVER_PORT}:3000
     environment:
+      - MODE=offline
       - PORT=3000
       - DB_URI=${DB_URI}
       - REDIRECT_URL=${NGINX_DOMAIN}

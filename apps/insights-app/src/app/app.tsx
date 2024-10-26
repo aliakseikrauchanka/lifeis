@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { OwnButton, UserSession, init, isUserLoggedIn, utilFetch } from '@lifeis/common-ui';
+import { UserSession, init, isUserLoggedIn } from '@lifeis/common-ui';
 
 import { Route, Routes, Link } from 'react-router-dom';
 import { CONFIG } from '../config';
@@ -15,20 +15,10 @@ export function App() {
     init({
       beUrl: CONFIG.BE_URL,
       clientId: CONFIG.CLIENT_ID,
-      app: 'insights',
+      app: 'logs',
     });
     setIsInitialized(true);
   }, []);
-
-  const handleBEPing = async () => {
-    try {
-      await utilFetch(`/ping`, {
-        method: 'GET',
-      });
-    } catch (e) {
-      console.log('error happened during fetch');
-    }
-  };
 
   return (
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
@@ -38,7 +28,6 @@ export function App() {
           onLoginSuccess={() => setIsLoggedIn(true)}
           onLogOut={() => setIsLoggedIn(false)}
         />
-        <OwnButton onClick={handleBEPing}>Ping BE</OwnButton>
       </header>
       {isLoggedIn && isInitialized && (
         <div>

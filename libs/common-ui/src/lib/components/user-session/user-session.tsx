@@ -6,11 +6,12 @@ import OwnButton from '../button/button';
 
 interface IUserSessionProps {
   isLoggedIn: boolean;
+  isOfflineMode?: boolean;
   onLoginSuccess: (googleUserId: string) => void;
   onLogOut: () => void;
 }
 
-export const UserSession = ({ isLoggedIn, onLoginSuccess, onLogOut }: IUserSessionProps) => {
+export const UserSession = ({ isLoggedIn, isOfflineMode, onLoginSuccess, onLogOut }: IUserSessionProps) => {
   const handleLoginSuccess = (googleUserId: string): void => {
     onLoginSuccess(googleUserId);
   };
@@ -25,9 +26,11 @@ export const UserSession = ({ isLoggedIn, onLoginSuccess, onLogOut }: IUserSessi
       {isLoggedIn ? (
         <div className={css.userSessionContent}>
           <h2>Welcome, User!</h2>
-          <div>
-            <OwnButton onClick={handleLogout}>Logout</OwnButton>
-          </div>
+          {!isOfflineMode && (
+            <div>
+              <OwnButton onClick={handleLogout}>Logout</OwnButton>
+            </div>
+          )}
         </div>
       ) : (
         <SignIn onSuccess={handleLoginSuccess} />

@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import { useFlags } from 'flagsmith/react';
 
 import { getGoogleUserId, isUserLoggedIn, OwnButton, UserSession } from '@lifeis/common-ui';
 import { CONFIG } from '../config';
@@ -21,8 +20,10 @@ import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
 
+const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
+
 export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
+  const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn() || isOfflineModeOn);
   const [loggedInGoogleUserId, setLoggedInGoogleUserId] = useState<string>(getGoogleUserId());
   const { audioEnabled, setAudioEnabled } = useStorageContext();
 
@@ -39,6 +40,7 @@ export default function App() {
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
       <header>
         <UserSession
+          isOfflineMode={isOfflineModeOn}
           isLoggedIn={isLoggedIn}
           onLoginSuccess={(googleUserId) => {
             setIsLoggedIn(true);
