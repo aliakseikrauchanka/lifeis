@@ -23,7 +23,7 @@ export const verifyAccessToken = (req, res: Response, next) => {
       }
 
       // TODO: we use auth for couple of applications which seems not good idea
-      const clientId = app === 'log' ? process.env.LOG_CLIENT_ID : process.env.CLIENT_ID;
+      const clientId = app === 'logs' ? process.env.LOGS_CLIENT_ID : process.env.CLIENT_ID;
       if (data.audience !== clientId) {
         return res.status(401).json({ error: 'Token not issued for this application' });
       }

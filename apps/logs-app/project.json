@@ -1,12 +1,12 @@
 {
   "name": "logs-app",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/logs-app",
+  "sourceRoot": "apps/logs-app/src",
   "projectType": "application",
   "tags": [],
   "targets": {
     "build": {
-      "executor": "@nx/next:build",
+      "executor": "@nx/vite:build",
       "outputs": ["{options.outputPath}"],
       "defaultConfiguration": "production",
       "options": {
@@ -14,34 +14,48 @@
       },
       "configurations": {
         "development": {
-          "outputPath": "apps/logs-app"
+          "mode": "development"
         },
-        "production": {}
+        "production": {
+          "mode": "production"
+        }
       }
     },
     "serve": {
-      "executor": "@nx/next:server",
+      "executor": "@nx/vite:dev-server",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "logs-app:build",
-        "dev": true
+        "buildTarget": "logs-app:build"
       },
       "configurations": {
         "development": {
           "buildTarget": "logs-app:build:development",
-          "dev": true
+          "hmr": true
         },
         "production": {
           "buildTarget": "logs-app:build:production",
-          "dev": false
+          "hmr": false
         }
       }
     },
-    "export": {
-      "executor": "@nx/next:export",
+    "preview": {
+      "executor": "@nx/vite:preview-server",
+      "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "logs-app:build:production"
-      }
+        "buildTarget": "logs-app:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "logs-app:build:development"
+        },
+        "production": {
+          "buildTarget": "logs-app:build:production"
+        }
+      },
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
     },
     "test": {
       "executor": "@nx/jest:jest",
@@ -49,9 +63,6 @@
       "options": {
         "jestConfig": "apps/logs-app/jest.config.ts"
       }
-    },
-    "lint": {
-      "executor": "@nx/eslint:lint"
     }
   }
 }

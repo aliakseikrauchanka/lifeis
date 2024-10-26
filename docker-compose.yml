@@ -28,31 +28,23 @@ services:
       - REDIRECT_URL=${NGINX_DOMAIN}
       - CLIENT_ID=${CLIENT_ID}
       - CLIENT_SECRET=${CLIENT_SECRET}
-      - LOG_REDIRECT_URL=${LOG_REDIRECT_URL}
-      - LOG_CLIENT_ID=${LOG_CLIENT_ID}
-      - LOG_CLIENT_SECRET=${LOG_CLIENT_SECRET}
+      - LOGS_REDIRECT_URL=${LOGS_REDIRECT_URL}
+      - LOGS_CLIENT_ID=${LOGS_CLIENT_ID}
+      - LOGS_CLIENT_SECRET=${LOGS_CLIENT_SECRET}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - NOTION_API_KEY=${NOTION_API_KEY}
-
-  insights-app:
-    extends:
-      file: docker-compose.base.yml
-      service: nx-app-base
-    command: npx nx run insights-app:serve --host=0.0.0.0
-    ports:
-      - ${LOG_PORT}:4200
-    environment:
-      - VITE_BE=${NGINX_DOMAIN}
-      - VITE_CLIENT_ID=${LOG_CLIENT_ID}
 
   logs-app:
     extends:
       file: docker-compose.base.yml
       service: nx-app-base
-    command: npx nx run logs-app:serve --configuration=development
+    command: npx nx run logs-app:serve --host=0.0.0.0
     ports:
       - ${LOGS_PORT}:4200
+    environment:
+      - VITE_BE=${NGINX_DOMAIN}
+      - VITE_CLIENT_ID=${LOGS_CLIENT_ID}
 
 volumes:
   mono-node-modules: null

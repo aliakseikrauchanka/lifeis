@@ -17,9 +17,9 @@ router.post('/google', async (req, res) => {
   let redirectUri;
   // TODO: we use auth for couple of applications which seems not good idea
   if (app === 'logs') {
-    clientId = process.env.LOG_CLIENT_ID;
-    clientSecret = process.env.LOG_CLIENT_SECRET;
-    redirectUri = process.env.LOG_REDIRECT_URL;
+    clientId = process.env.LOGS_CLIENT_ID;
+    clientSecret = process.env.LOGS_CLIENT_SECRET;
+    redirectUri = process.env.LOGS_REDIRECT_URL;
   } else {
     clientId = process.env.CLIENT_ID;
     clientSecret = process.env.CLIENT_SECRET;
@@ -65,9 +65,9 @@ router.post('/google/refresh', async (req, res) => {
   let redirectUri;
   // TODO: we use auth for couple of applications which seems not good idea
   if (app === 'insights') {
-    clientId = process.env.LOG_CLIENT_ID;
-    clientSecret = process.env.LOG_CLIENT_SECRET;
-    redirectUri = process.env.LOG_REDIRECT_URL;
+    clientId = process.env.LOGS_CLIENT_ID;
+    clientSecret = process.env.LOGS_CLIENT_SECRET;
+    redirectUri = process.env.LOGS_REDIRECT_URL;
   } else {
     clientId = process.env.CLIENT_ID;
     clientSecret = process.env.CLIENT_SECRET;
