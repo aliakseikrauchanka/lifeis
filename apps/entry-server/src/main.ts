@@ -44,7 +44,7 @@ app.use(limiter);
 app.use(compression());
 app.use(
   cors({
-    origin: ['https://lifeis-agents.vercel.app', 'http://localhost:4203', 'https://lifeis-insights.vercel.app'],
+    origin: ['https://lifeis-agents.vercel.app', 'http://localhost:4203', 'https://lifeis-logs.vercel.app'],
     optionsSuccessStatus: 200,
   }),
 );
