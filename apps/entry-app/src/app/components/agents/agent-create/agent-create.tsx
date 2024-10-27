@@ -31,7 +31,7 @@ const AgentForm = () => {
             <ErrorMessage name="name" component="div" />
           </div>
           <div>
-            <label htmlFor="prefix">Instructions (Prefix):</label>
+            <label htmlFor="prefix">Instructions:</label>
             <Field as="textarea" id="prefix" name="prefix" className={css.agentCreateInputFullWidth} />
             <ErrorMessage name="prefix" component="div" />
           </div>

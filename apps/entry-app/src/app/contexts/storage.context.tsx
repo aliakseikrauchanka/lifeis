@@ -1,3 +1,4 @@
+import { getGoogleUserId } from '@lifeis/common-ui';
 import { ReactNode, createContext, useContext, useState } from 'react';
 
 const pinnedAgentsKey = 'pinnedAgents';
@@ -23,7 +24,7 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
     return storedValue ? JSON.parse(storedValue) : false;
   });
 
-  const [loggedInUserId, setLoggedInUserId] = useState<string>(isOfflineModeOn ? 'local_user' : '');
+  const [loggedInUserId, setLoggedInUserId] = useState<string>(isOfflineModeOn ? 'local_user' : getGoogleUserId());
 
   const [pinnedAgentsIds, setPinnedAgents] = useState<string[]>(() => {
     const storedValue = localStorage.getItem(pinnedAgentsKey);
