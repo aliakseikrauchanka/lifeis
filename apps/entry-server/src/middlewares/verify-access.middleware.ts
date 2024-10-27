@@ -1,7 +1,7 @@
 import { Response } from 'express';
 
 export const verifyAccessToken = (req, res: Response, next) => {
-  if (process.env.ENV === 'offline') {
+  if (process.env.MODE === 'offline') {
     res.locals.userId = 'local_user';
     next();
     return;

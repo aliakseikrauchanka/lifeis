@@ -1,11 +1,27 @@
 import { EditableInput, OwnButton } from '@lifeis/common-ui';
-import { getAgentHistory, removeAgent, submitMessage, updateAgent } from '../../../api/agents/agents.api';
+import {
+  getAgentHistory,
+  removeAgent,
+  submitMessage,
+  updateAgent,
+  createTemplate,
+  cloneTemplateAgent,
+} from '../../../api/agents/agents.api';
 import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect } from 'react';
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
 import { IconButton, Select, useTheme, Option, Snackbar } from '@mui/joy';
-import { CopyAll, Delete, DragHandle, PushPin, PushPinOutlined } from '@mui/icons-material';
+import {
+  Archive,
+  ContentCopy,
+  CopyAll,
+  Delete,
+  DragHandle,
+  PushPin,
+  PushPinOutlined,
+  Unarchive,
+} from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AgentHistoryModal } from './components/agent-history';
 import classNames from 'classnames';
@@ -16,11 +32,14 @@ import { useStorageContext } from '../../../contexts/storage.context';
 import { SpeechToText } from '../../speech-to-text/speech-to-text';
 
 interface IAgentProps {
+  type: 'agent' | 'template';
   id: string;
+  userId: string;
   name: string;
   prefix: string;
-  focused: boolean;
+  focused?: boolean;
   number?: number;
+  isArchived?: boolean;
 }
 
 const emptyHistoryItem: IAgentHistoryItem = {
@@ -33,7 +52,7 @@ const emptyHistoryItem: IAgentHistoryItem = {
   timestamp: new Date(),
 } as const;
 
-export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
+export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchived: isArchivedProp }: IAgentProps) => {
   const [historyCurrentIndex, setHistoryCurrentIndex] = useState(0);
   const [initLoad, setInitLoad] = useState(true);
   const [message, setMessage] = useState('');
@@ -49,12 +68,29 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
   const [selectedAiProvider, setSelectedAiProvider] = useState('gemini');
   const [snackBarText, setSnackBarText] = useState('');
 
+  const { loggedInUserId } = useStorageContext();
+
   const removeMutation = useMutation({
     mutationFn: removeAgent,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agents'] });
     },
   });
+
+  const createTemplateMutation = useMutation({
+    mutationFn: createTemplate,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    },
+  });
+
+  const createCloneOfTemplateMutation = useMutation({
+    mutationFn: cloneTemplateAgent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    },
+  });
+
   const updateMutation = useMutation({
     mutationFn: updateAgent,
     onSuccess: () => {
@@ -135,6 +171,20 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
     }
   };
 
+  const handleMakeAgentTemplate = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (window.confirm('Are you sure you want to make agent template?')) {
+      createTemplateMutation.mutate(id);
+    }
+  };
+
+  const handleMakeCloneOfAgentTemplate = async (e: MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (window.confirm('Are you sure you want to make clone of agent template?')) {
+      createCloneOfTemplateMutation.mutate(id);
+    }
+  };
+
   const handleBlurPrefix = (newValue: string) => {
     if (prefix !== newValue) {
       try {
@@ -142,6 +192,14 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
       } catch (error) {
         console.error('Failed to update agent prefix:', error);
       }
+    }
+  };
+
+  const handleArhiveUnarchived = (isArchived: boolean) => {
+    try {
+      updateMutation.mutate({ id, isArchived });
+    } catch (error) {
+      console.error('Failed to update agent prefix:', error);
     }
   };
 
@@ -188,9 +246,32 @@ export const Agent = ({ id, name, prefix, focused, number }: IAgentProps) => {
           <EditableInput initialValue={name} onValueChange={handleBlurName} />
         </h3>
         <div className={css.agentDeleteBtnContainer}>
-          <IconButton aria-label="Delete" size="sm" color="danger" onClick={handleRemoveAgent}>
-            <Delete />
+          {type === 'agent' && (
+            <IconButton
+              aria-label="Archive/Unarchive"
+              size="sm"
+              color="primary"
+              onClick={() => {
+                unpinAgent(id);
+                handleArhiveUnarchived(!isArchivedProp);
+              }}
+            >
+              {isArchivedProp ? <Unarchive /> : <Archive />}
+            </IconButton>
+          )}
+          <IconButton
+            aria-label="Clone"
+            size="sm"
+            color="primary"
+            onClick={type === 'agent' ? handleMakeAgentTemplate : handleMakeCloneOfAgentTemplate}
+          >
+            <ContentCopy />
           </IconButton>
+          {userId === loggedInUserId && (
+            <IconButton aria-label="Delete" size="sm" color="danger" onClick={handleRemoveAgent}>
+              <Delete />
+            </IconButton>
+          )}
         </div>
       </header>
 

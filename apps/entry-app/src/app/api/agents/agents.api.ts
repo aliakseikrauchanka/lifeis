@@ -17,7 +17,35 @@ export const createAgent = async (data: { name: string; prefix: string }): Promi
   return await response.json();
 };
 
-export const updateAgent = async (data: { id: string; name: string; prefix: string }): Promise<void> => {
+export const createTemplate = async (id: string): Promise<void> => {
+  const response = await utilFetch(`/agents/${id}/:make-template`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to create agent template');
+  }
+
+  return await response.json();
+};
+
+export const cloneTemplateAgent = async (id: string): Promise<void> => {
+  const response = await utilFetch(`/agents/${id}/:clone`, {
+    method: 'POST',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to create clone of agent template');
+  }
+
+  return await response.json();
+};
+export const updateAgent = async (data: {
+  id: string;
+  name?: string;
+  prefix?: string;
+  isArchived?: boolean;
+}): Promise<void> => {
   const response = await utilFetch(`/agents/${data.id}`, {
     method: 'PUT',
     headers: {

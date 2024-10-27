@@ -4,12 +4,16 @@ const pinnedAgentsKey = 'pinnedAgents';
 const audioEnabledKey = 'audio';
 
 export interface StorageContextType {
+  loggedInUserId: string;
+  setLoggedInUserId: (userId: string) => void;
   pinnedAgentsIds: string[];
   pinAgent: (agentId: string) => void;
   unpinAgent: (agentId: string) => void;
   audioEnabled: boolean;
   setAudioEnabled: (enabled: boolean) => void;
 }
+
+const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
 export const StorageContext = createContext<StorageContextType | undefined>(undefined);
 
@@ -19,12 +23,16 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
     return storedValue ? JSON.parse(storedValue) : false;
   });
 
+  const [loggedInUserId, setLoggedInUserId] = useState<string>(isOfflineModeOn ? 'local_user' : '');
+
   const [pinnedAgentsIds, setPinnedAgents] = useState<string[]>(() => {
     const storedValue = localStorage.getItem(pinnedAgentsKey);
     return storedValue ? JSON.parse(storedValue) : [];
   });
 
   const returnValue: StorageContextType = {
+    loggedInUserId,
+    setLoggedInUserId,
     pinnedAgentsIds,
     pinAgent: (agentId: string) => {
       setPinnedAgents((prevPinnedAgents) => {

@@ -24,10 +24,9 @@ const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn() || isOfflineModeOn);
-  const [loggedInGoogleUserId, setLoggedInGoogleUserId] = useState<string>(getGoogleUserId());
-  const { audioEnabled, setAudioEnabled } = useStorageContext();
+  const { audioEnabled, setAudioEnabled, loggedInUserId, setLoggedInUserId } = useStorageContext();
 
-  const { hasAudioFeature, hasLogsFeature, hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInGoogleUserId);
+  const { hasAudioFeature, hasLogsFeature, hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInUserId);
 
   useEffect(() => {
     init({
@@ -44,7 +43,7 @@ export default function App() {
           isLoggedIn={isLoggedIn}
           onLoginSuccess={(googleUserId) => {
             setIsLoggedIn(true);
-            setLoggedInGoogleUserId(googleUserId);
+            setLoggedInUserId(googleUserId);
           }}
           onLogOut={() => setIsLoggedIn(false)}
         />

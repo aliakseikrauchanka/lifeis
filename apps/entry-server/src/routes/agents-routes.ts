@@ -6,13 +6,24 @@ import OpenAI from 'openai';
 
 const router = Router();
 
-interface IAgent {
+interface IAgentBasic {
   name: string;
   prefix: string;
-  ownerId: string;
+  type: string;
 }
 
-type IAgentDocument = Document & IAgent;
+interface IAgent extends IAgentBasic {
+  ownerId: string;
+  type: 'agent';
+  isArchived?: boolean;
+}
+
+interface IAgentTemplate extends IAgentBasic {
+  creatorId: string;
+  type: 'template';
+}
+
+type IAgentDocument = Document & IAgent & IAgentTemplate;
 
 export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeModel, openAiModel: OpenAI) => {
   const router = Router();
@@ -22,19 +33,60 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
       .db('lifeis')
       .collection('agents')
       .find({
-        ownerId: res.locals.userId,
+        $or: [{ ownerId: res.locals.userId }, { type: 'template' }],
       })
       .toArray();
     res.send({ agents });
   });
 
-  router.post('/:id', verifyAccessToken, async (req: Request, res) => {
+  router.post('/:id/:make-template', verifyAccessToken, async (req, res) => {
+    console.log('debug', 'make-template');
     const agentId = req.params.id;
 
-    const foundAgent = await client
+    const foundAgent: IAgent = await client
       .db('lifeis')
       .collection<IAgentDocument>('agents')
       .findOne({ _id: new ObjectId(agentId), ownerId: res.locals.userId });
+
+    const { name, prefix } = foundAgent;
+
+    const newAgent: IAgentTemplate = {
+      type: 'template',
+      prefix,
+      name: `${name} template`,
+      creatorId: res.locals.userId,
+    };
+    const newAgentRaw = await client.db('lifeis').collection('agents').insertOne(newAgent);
+    res.status(200).send(newAgentRaw);
+  });
+
+  router.post('/:id/:clone', verifyAccessToken, async (req, res) => {
+    const agentId = req.params.id;
+
+    const foundAgent: IAgentTemplate = await client
+      .db('lifeis')
+      .collection<IAgentDocument>('agents')
+      .findOne({ _id: new ObjectId(agentId) });
+
+    const { name, prefix } = foundAgent;
+
+    const newAgent: IAgent = {
+      type: 'agent',
+      prefix,
+      name,
+      ownerId: res.locals.userId,
+    };
+    const newAgentRaw = await client.db('lifeis').collection('agents').insertOne(newAgent);
+    res.status(200).send(newAgentRaw);
+  });
+
+  router.post('/:id', verifyAccessToken, async (req: Request, res) => {
+    const agentId = req.params.id;
+
+    const foundAgent: IAgent | IAgentTemplate = await client
+      .db('lifeis')
+      .collection<IAgentDocument>('agents')
+      .findOne({ _id: new ObjectId(agentId), $or: [{ ownerId: res.locals.userId }, { creatorId: res.locals.userId }] });
 
     if (!foundAgent) {
       return res.status(404).send({ message: 'agent not found' });
@@ -103,7 +155,7 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     const foundAgent = await client
       .db('lifeis')
       .collection<IAgentDocument>('agents')
-      .findOne({ _id: new ObjectId(agentId), ownerId: res.locals.userId });
+      .findOne({ _id: new ObjectId(agentId) });
 
     if (!foundAgent) {
       return res.status(404).send({ message: 'agent not found' });
@@ -122,14 +174,23 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
   router.put('/:id', verifyAccessToken, async (req: Request, res) => {
     const agentId = req.params.id;
 
-    const { name, prefix } = req.body;
+    const foundAgent: IAgent = await client
+      .db('lifeis')
+      .collection<IAgentDocument>('agents')
+      .findOne({ _id: new ObjectId(agentId), $or: [{ ownerId: res.locals.userId }, { creatorId: res.locals.userId }] });
+
+    if (!foundAgent) {
+      return res.status(404).send({ message: 'agent not found' });
+    }
 
     const updatedAgent = await client
       .db('lifeis')
-      .collection<IAgentDocument>('agents')
+      .collection<IAgent | IAgentTemplate>('agents')
       .updateOne(
         { _id: new ObjectId(agentId), ownerId: res.locals.userId },
-        { $set: { name, prefix, ownerId: res.locals.userId } },
+        {
+          $set: { foundAgent, ...req.body },
+        },
       );
 
     if (!updatedAgent) {
@@ -145,7 +206,10 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     const deleteResult = await client
       .db('lifeis')
       .collection('agents')
-      .deleteOne({ _id: new ObjectId(agentId), ownerId: res.locals.userId });
+      .deleteOne({
+        _id: new ObjectId(agentId),
+        $or: [{ ownerId: res.locals.userId }, { creatorId: res.locals.userId }],
+      });
 
     if (deleteResult.deletedCount == 0) {
       return res.status(404).send({ message: 'agent not found' });
@@ -154,7 +218,7 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     if (deleteResult.deletedCount > 1) {
       return res.status(500).send({ message: 'something went wrong' });
     }
-
+    1;
     res.status(200).send({ message: 'agent deleted' });
   });
 
@@ -162,6 +226,7 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     const { name, prefix } = req.body;
 
     const newAgent: IAgent = {
+      type: 'agent',
       name,
       prefix,
       ownerId: res.locals.userId,

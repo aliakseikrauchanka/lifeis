@@ -1,12 +1,23 @@
-export interface IAgentResponse {
+interface IAgentBasic {
   _id: string;
   name: string;
   prefix: string;
+  type: string;
+}
+
+export interface IAgentResponse extends IAgentBasic {
+  type: 'agent';
   ownerId: string;
+  isArchived?: boolean;
+}
+
+export interface IAgentTemplateResponse extends IAgentBasic {
+  type: 'template';
+  creatorId: string;
 }
 
 export interface IAgentsResponse {
-  agents: IAgentResponse[];
+  agents: (IAgentResponse | IAgentTemplateResponse)[];
 }
 
 export interface IAgentHistoryResponse {

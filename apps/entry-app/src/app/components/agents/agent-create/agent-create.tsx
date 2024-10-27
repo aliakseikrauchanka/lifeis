@@ -24,7 +24,7 @@ const AgentForm = () => {
     >
       {({ isSubmitting }) => (
         <Form className={css.agentCreate}>
-          <h2>Create agent</h2>
+          <h2>Create new agent</h2>
           <div>
             <label htmlFor="name">Name:</label>
             <Field type="text" id="name" name="name" className={css.agentCreateInputFullWidth} />
