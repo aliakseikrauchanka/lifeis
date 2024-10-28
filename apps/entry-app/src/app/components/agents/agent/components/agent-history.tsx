@@ -119,10 +119,16 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
                     }}
                   >
                     <Typography>
-                      <Typography level="title-md" color={'primary'}>
-                        Prompt:
+                      <Typography level="title-md" color={'neutral'}>
+                        Instructions:
                       </Typography>{' '}
-                      {item.prompt}
+                      {item.prefix}
+                    </Typography>
+                    <Typography>
+                      <Typography level="title-md" color={'primary'}>
+                        Message:
+                      </Typography>{' '}
+                      {item.message}
                     </Typography>
                     <Typography>
                       <Typography level="title-md" color="success">

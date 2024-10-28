@@ -86,7 +86,7 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     const foundAgent: IAgent | IAgentTemplate = await client
       .db('lifeis')
       .collection<IAgentDocument>('agents')
-      .findOne({ _id: new ObjectId(agentId), $or: [{ ownerId: res.locals.userId }, { creatorId: res.locals.userId }] });
+      .findOne({ _id: new ObjectId(agentId), $or: [{ ownerId: res.locals.userId }, { type: 'template' }] });
 
     if (!foundAgent) {
       return res.status(404).send({ message: 'agent not found' });
