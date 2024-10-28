@@ -16,6 +16,7 @@ import {
   Archive,
   ContentCopy,
   CopyAll,
+  Dashboard,
   Delete,
   DragHandle,
   PushPin,
@@ -262,10 +263,10 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           <IconButton
             aria-label="Clone"
             size="sm"
-            color="primary"
+            color="warning"
             onClick={type === 'agent' ? handleMakeAgentTemplate : handleMakeCloneOfAgentTemplate}
           >
-            <ContentCopy />
+            {type === 'agent' ? <Dashboard /> : <ContentCopy />}
           </IconButton>
           {userId === loggedInUserId && (
             <IconButton aria-label="Delete" size="sm" color="danger" onClick={handleRemoveAgent}>
