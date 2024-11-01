@@ -1,6 +1,6 @@
 import { utilFetch } from '@lifeis/common-ui';
 
-export const GET = async (): Promise<string[]> => {
+export const GET = async (): Promise<Response> => {
   const response = await utilFetch(`/insights`, {
     method: 'GET',
   });
@@ -9,5 +9,5 @@ export const GET = async (): Promise<string[]> => {
     throw new Error('Failed to get logs');
   }
 
-  return await response.json();
+  return response;
 };

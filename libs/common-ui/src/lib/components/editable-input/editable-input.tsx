@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Textarea, Typography } from '@mui/joy';
 

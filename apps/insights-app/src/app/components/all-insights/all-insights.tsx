@@ -6,7 +6,8 @@ export const AllInsights = () => {
 
   useEffect(() => {
     const fetchLogs = async () => {
-      const insights = await GET();
+      const insightsResponse = await GET();
+      const insights = await insightsResponse.json();
       setInsights(insights);
     };
     fetchLogs();
