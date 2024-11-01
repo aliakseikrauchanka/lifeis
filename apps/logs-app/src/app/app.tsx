@@ -6,7 +6,6 @@ import { Route, Routes, Link } from 'react-router-dom';
 import { CONFIG } from '../config';
 import { MainPage } from './pages/main.page';
 import { useEffect, useState } from 'react';
-import { InsightsPage } from './pages/insights.page';
 
 export function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
@@ -42,18 +41,16 @@ export function App() {
             </ul>
           </div>
           <Routes>
-            <Route path="/" element={<InsightsPage />} />
+            <Route path="/" element={<MainPage />} />
             <Route
               path="/page-2"
               element={
                 <div>
                   <Link to="/">Click here to go back to root page.</Link>
-                  <MainPage />
                 </div>
               }
             />
           </Routes>
-          {/* END: routes */}
         </div>
       )}
     </GoogleOAuthProvider>
