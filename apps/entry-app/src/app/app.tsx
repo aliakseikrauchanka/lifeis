@@ -3,7 +3,14 @@ import { useEffect, useState } from 'react';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
-import { getGoogleUserId, isUserLoggedIn, OwnButton, UserSession } from '@lifeis/common-ui';
+import {
+  DeepgramContextProvider,
+  isUserLoggedIn,
+  MicrophoneContextProvider,
+  OwnButton,
+  SpeechToTextContextProvider,
+  UserSession,
+} from '@lifeis/common-ui';
 import { CONFIG } from '../config';
 
 import { Route, Routes } from 'react-router-dom';
@@ -12,9 +19,6 @@ import { ExperimentsPage } from './pages/experiments.page';
 import { LogsPage } from './pages/logs.page';
 import { init } from '@lifeis/common-ui';
 import './styles/reset.css';
-import { DeepgramContextProvider } from './contexts/deepgram.context';
-import { MicrophoneContextProvider } from './contexts/microphone.context';
-import { SpeechToTextContextProvider } from './contexts/speech-to-text.context';
 import AudioProvider from './components/audio-provider/audio-provider';
 import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';

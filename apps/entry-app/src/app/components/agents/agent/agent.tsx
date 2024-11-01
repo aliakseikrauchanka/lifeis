@@ -1,4 +1,4 @@
-import { EditableInput, OwnButton } from '@lifeis/common-ui';
+import { EditableInput, OwnButton, SpeechToText } from '@lifeis/common-ui';
 import {
   getAgentHistory,
   removeAgent,
@@ -30,7 +30,6 @@ import { useMediaQuery } from '@mui/material';
 import { AgentHistoryNavigation } from './components/agent-history-navigation/agent-history-navigation';
 import { IAgentHistoryItem } from '../../../domains/agent.domain';
 import { useStorageContext } from '../../../contexts/storage.context';
-import { SpeechToText } from '../../speech-to-text/speech-to-text';
 
 interface IAgentProps {
   type: 'agent' | 'template';

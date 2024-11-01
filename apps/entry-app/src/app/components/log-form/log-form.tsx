@@ -1,7 +1,7 @@
 import React from 'react';
 import { createLog } from '../../api/logs/logs.api';
-import { SpeechToText } from '../speech-to-text/speech-to-text';
 import { useStorageContext } from '../../contexts/storage.context';
+import { SpeechToText } from '@lifeis/common-ui';
 
 interface ILogFormProps {
   onSubmit: () => void;
