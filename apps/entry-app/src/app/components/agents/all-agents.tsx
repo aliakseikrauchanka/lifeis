@@ -13,7 +13,6 @@ const AVAILABLE_KEYS = ['1', '2', '3', '4'];
 
 export const AllAgents = () => {
   const query = useQuery({ queryKey: ['agents'], queryFn: getAllAgents, select: (data) => data.agents });
-  const [searchAgentTemplate, setSearchAgentTemplate] = useState<string>('');
 
   const { pinnedAgentsIds } = useStorageContext();
 

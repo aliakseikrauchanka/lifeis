@@ -2,8 +2,6 @@ import { refreshAuthGoogle } from '../api/auth/auth.api';
 import { getAuthData } from '../services/auth-storage.service';
 import { CONFIG } from '../../main';
 
-const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
-
 export const utilFetch = async (path: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
   const beUrl = `${CONFIG.BE_URL}${path}`;
   const oldAuthTokens = getAuthData();
@@ -12,7 +10,7 @@ export const utilFetch = async (path: RequestInfo | URL, init?: RequestInit): Pr
     ...init,
     headers: {
       ...init?.headers,
-      Authorization: !isOfflineModeOn ? `Bearer ${oldAuthTokens.accessToken}` : '',
+      Authorization: !CONFIG.isOffline ? `Bearer ${oldAuthTokens.accessToken}` : '',
       'x-app-id': CONFIG.APP,
     },
   });
@@ -24,7 +22,7 @@ export const utilFetch = async (path: RequestInfo | URL, init?: RequestInit): Pr
       ...init,
       headers: {
         ...init?.headers,
-        Authorization: !isOfflineModeOn ? `Bearer ${authResponse.access_token}` : '',
+        Authorization: !CONFIG.isOffline ? `Bearer ${authResponse.access_token}` : '',
         'x-app-id': CONFIG.APP,
       },
     });

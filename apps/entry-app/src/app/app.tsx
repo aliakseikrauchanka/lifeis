@@ -32,6 +32,7 @@ export default function App() {
     init({
       beUrl: CONFIG.BE_URL,
       clientId: CONFIG.CLIENT_ID,
+      isOffline: isOfflineModeOn,
     });
   }, []);
 

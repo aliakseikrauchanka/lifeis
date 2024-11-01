@@ -1,5 +1,7 @@
 import { AuthResponse } from '../domains/auth.domain';
 
+const localStorage = window.localStorage;
+
 export const getAuthData = (): AuthResponse => {
   return {
     accessToken: localStorage.getItem('accessToken') ?? '',
