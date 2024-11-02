@@ -6,7 +6,7 @@ interface AudioProviderProps {
   children: React.ReactNode;
 }
 
-const AudioProvider: React.FC<AudioProviderProps> = ({ children }) => {
+export const AudioProvider: React.FC<AudioProviderProps> = ({ children }) => {
   const [ortLoaded, setORTLoaded] = useState(false);
   const [isFullyLoaded, setIsFullyLoaded] = useState(false);
 
@@ -42,5 +42,3 @@ const AudioProvider: React.FC<AudioProviderProps> = ({ children }) => {
     </>
   );
 };
-
-export default AudioProvider;

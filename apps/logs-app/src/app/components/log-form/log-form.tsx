@@ -1,14 +1,12 @@
 import React from 'react';
-import { createLog } from '../../api/logs/logs.api';
-import { useStorageContext } from '../../contexts/storage.context';
 import { SpeechToText } from '@lifeis/common-ui';
+import { createLog } from '../../api/logs/logs.api';
 
 interface ILogFormProps {
   onSubmit: () => void;
 }
 
 export const LogForm = ({ onSubmit }: ILogFormProps) => {
-  const { audioEnabled } = useStorageContext();
   const [message, setMessage] = React.useState('');
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(event.target.value);
@@ -28,7 +26,7 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
   return (
     <form method="post" onSubmit={handleSubmit}>
       <textarea value={message} name="message" placeholder="Enter your message here" onChange={handleChange} />
-      {audioEnabled && <SpeechToText onCaption={(caption) => setMessage(caption?.join(' ') || '')} id={'logger'} />}
+      <SpeechToText onCaption={(caption) => setMessage(caption?.join(' ') || '')} id={'logger'} />
       <button type="submit">Submit</button>
     </form>
   );

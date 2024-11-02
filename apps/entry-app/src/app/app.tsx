@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 import {
+  AudioProvider,
   DeepgramContextProvider,
   isUserLoggedIn,
   MicrophoneContextProvider,
@@ -16,10 +17,8 @@ import { CONFIG } from '../config';
 import { Route, Routes } from 'react-router-dom';
 import { AgentsPage } from './pages/agents.page';
 import { ExperimentsPage } from './pages/experiments.page';
-import { LogsPage } from './pages/logs.page';
 import { init } from '@lifeis/common-ui';
 import './styles/reset.css';
-import AudioProvider from './components/audio-provider/audio-provider';
 import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
@@ -89,27 +88,6 @@ export default function App() {
             }
           />
           {hasExperimentsFeature && <Route path="/experiments" element={<ExperimentsPage />} />}
-          {hasLogsFeature && (
-            <Route
-              path="/logs"
-              element={
-                <AudioSwitch
-                  audioElement={
-                    <MicrophoneContextProvider>
-                      <DeepgramContextProvider>
-                        <AudioProvider>
-                          <SpeechToTextContextProvider>
-                            <LogsPage />
-                          </SpeechToTextContextProvider>
-                        </AudioProvider>
-                      </DeepgramContextProvider>
-                    </MicrophoneContextProvider>
-                  }
-                  nonAudioElement={<LogsPage />}
-                />
-              }
-            />
-          )}
         </Routes>
       )}
     </GoogleOAuthProvider>

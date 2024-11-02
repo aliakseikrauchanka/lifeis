@@ -1,4 +1,4 @@
-import { IDiaryLog } from '../../domains/log.domain';
+import { IDiaryLog } from '../../../../../logs-app/src/app/domains/log.domain';
 
 interface ILogsProps {
   logs: IDiaryLog[] | undefined;

@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { LogForm } from '../components/log-form/log-form';
-import { Logs } from '../components/logs/logs';
-import { getAllLogs } from '../api/logs/logs.api';
 import { IDiaryLog } from '../domains/log.domain';
 import { getAllBaskets } from '../api/baskets/baskets.api';
-import BasketForm from '../components/baskets/basket-form';
 import Baskets from '../components/baskets/baskets';
+import { LogForm } from '../components/log-form/log-form';
+import { getAllLogs } from '../api/logs/logs.api';
+import BasketForm from '../components/baskets/basket-form';
+import { Logs } from '../components/logs/logs';
 
 // duplicate of IBasket from api file
 interface IBasket {

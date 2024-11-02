@@ -9,3 +9,4 @@ export * from './main';
 export * from './lib/contexts/deepgram.context';
 export * from './lib/contexts/microphone.context';
 export * from './lib/contexts/speech-to-text.context';
+export * from './lib/components/audio-provider/audio-provider';
