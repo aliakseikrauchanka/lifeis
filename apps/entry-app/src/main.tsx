@@ -9,9 +9,9 @@ import App from './app/app';
 import { BrowserRouter } from 'react-router-dom';
 import { StorageProvider } from './app/contexts/storage.context';
 
-import.meta.env.PROD &&
+import.meta.env.VITE_SENTRY_DSN &&
   Sentry.init({
-    dsn: 'https://83376255a4838abae3f68164365ee54a@o4508108846465024.ingest.de.sentry.io/4508108855836752',
+    dsn: import.meta.env.VITE_SENTRY_DSN,
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration(),
