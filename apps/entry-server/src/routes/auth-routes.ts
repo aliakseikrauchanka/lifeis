@@ -1,10 +1,10 @@
 import { Router } from 'express';
 
-const CLIENT_ID = process.env.CLIENT_ID;
-const CLIENT_SECRET = process.env.CLIENT_SECRET;
-// what is this? I send reques to oauth from server on localhost:3000 and redirect to localhost:4201
-// how does it work?
-const REDIRECT_URL = process.env.REDIRECT_URL ?? 'http://localhost:4201';
+// const CLIENT_ID = process.env.CLIENT_ID;
+// const CLIENT_SECRET = process.env.CLIENT_SECRET;
+// // what is this? I send reques to oauth from server on localhost:3000 and redirect to localhost:4201
+// // how does it work?
+// const REDIRECT_URL = process.env.REDIRECT_URL ?? 'http://localhost:4201';
 
 const router = Router();
 
@@ -27,7 +27,7 @@ router.post('/google', async (req, res) => {
   } else {
     clientId = process.env.CLIENT_ID;
     clientSecret = process.env.CLIENT_SECRET;
-    redirectUri = process.env.REDIRECT_URL;
+    redirectUri = process.env.REDIRECT_URL ?? 'http://localhost:4201';
   }
   const grantType = 'authorization_code';
 

@@ -1,4 +1,4 @@
-import express, { json } from 'express';
+import express, { json, urlencoded } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -47,11 +47,13 @@ app.use(
       'https://lifeis-logs.vercel.app',
       'http://localhost:4203',
       'http://localhost:4204',
+      'https://qsl13trb-80.euw.devtunnels.ms',
     ],
     optionsSuccessStatus: 200,
   }),
 );
-app.use(json());
+app.use(json({ limit: '10mb' }));
+app.use(urlencoded({ extended: true, limit: '10mb' }));
 app.use(helmet());
 
 app.use('/api/auth', authRoutes);

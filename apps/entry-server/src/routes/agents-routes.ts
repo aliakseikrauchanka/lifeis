@@ -1,10 +1,32 @@
 import { Router, Request } from 'express';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { MongoClient, ObjectId } from 'mongodb';
-import { GenerativeModel } from '@google/generative-ai';
+import { GenerateContentRequest, GenerativeModel, Part } from '@google/generative-ai';
+import { GoogleAIFileManager } from '@google/generative-ai/server';
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
+
 import OpenAI from 'openai';
+import multer from 'multer';
+const fileManager = new GoogleAIFileManager(process.env.GOOGLE_API_KEY);
 
 const router = Router();
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const d = path.join(__dirname, 'uploads');
+    if (!fs.existsSync(d)) {
+      fs.mkdirSync(d, { recursive: true });
+    }
+    cb(null, d);
+  },
+  filename: (req, file, cb) => {
+    cb(null, 'image_upload.jpg');
+  },
+});
+
+export const uploadMiddlewareFactory = multer({ storage, limits: { fileSize: 1024 * 1024 * 10 } });
 
 interface IAgentBasic {
   name: string;
@@ -80,8 +102,46 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     res.status(200).send(newAgentRaw);
   });
 
-  router.post('/:id', verifyAccessToken, async (req: Request, res) => {
+  router.post('/:id', [verifyAccessToken, uploadMiddlewareFactory.single('image')], async (req: Request, res) => {
+    console.log('test');
     const agentId = req.params.id;
+
+    const filePath = path.join(__dirname, 'uploads', 'image_upload.jpg');
+    // read file from filePath
+    let imageBuffer;
+    try {
+      imageBuffer = fs.readFileSync(filePath);
+      try {
+        imageBuffer = await sharp(imageBuffer)
+          .resize({
+            width: 1200,
+            // Example dimensions
+            fit: sharp.fit.inside, // Or other fit options as needed
+            withoutEnlargement: true, // Prevent upscaling
+          })
+          .jpeg({ quality: 100 }) // Adjust quality as needed
+          .toBuffer();
+        console.log('debug size', imageBuffer.length);
+
+        // ... save resizedBuffer ...
+      } catch (error) {
+        // ... handle error ...
+      }
+    } catch (error) {
+      console.log('error', error);
+    }
+
+    console.log('debug', filePath, req.file);
+
+    let uploadResult;
+    if (imageBuffer) {
+      uploadResult = await fileManager.uploadFile(filePath, {
+        mimeType: 'image/jpeg',
+        displayName: 'Jetpack drawing',
+      });
+      console.log(`Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri}`);
+    }
+    // View the response.
 
     const foundAgent: IAgent | IAgentTemplate = await client
       .db('lifeis')
@@ -121,9 +181,20 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
             },
           ],
         });
+
         responseText = response.choices[0].message.content;
       } else {
-        const response = await geminiModel.generateContent(prompt);
+        const geminiRequestBody: GenerateContentRequest | string | Array<string | Part> = [prompt];
+        if (uploadResult) {
+          console.log('debug', 'uploading image', uploadResult.file.uri, uploadResult.file.mimeType);
+          geminiRequestBody.push({
+            fileData: {
+              fileUri: uploadResult.file.uri,
+              mimeType: uploadResult.file.mimeType,
+            },
+          });
+        }
+        const response = await geminiModel.generateContent(geminiRequestBody);
         responseText = response.response.text();
       }
     } catch (e) {

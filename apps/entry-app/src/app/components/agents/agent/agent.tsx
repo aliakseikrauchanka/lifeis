@@ -7,7 +7,7 @@ import {
   createTemplate,
   cloneTemplateAgent,
 } from '../../../api/agents/agents.api';
-import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect } from 'react';
+import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect, useCallback } from 'react';
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
@@ -30,6 +30,7 @@ import { useMediaQuery } from '@mui/material';
 import { AgentHistoryNavigation } from './components/agent-history-navigation/agent-history-navigation';
 import { IAgentHistoryItem } from '../../../domains/agent.domain';
 import { useStorageContext } from '../../../contexts/storage.context';
+import { ImagePreviewFromBuffer } from './components/imaget-preview-from-buffer';
 
 interface IAgentProps {
   type: 'agent' | 'template';
@@ -69,6 +70,43 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const [snackBarText, setSnackBarText] = useState('');
 
   const { loggedInUserId } = useStorageContext();
+
+  const [content, setContent] = useState<string | ArrayBuffer | null>(null);
+
+  const handleCapture = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setContent(reader.result as ArrayBuffer);
+        event.target.value = '';
+      };
+      reader.readAsArrayBuffer(file);
+      // get file format
+      // alert(file.type);
+    }
+  }, []);
+
+  const handlePaste = useCallback((event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = event.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          if (blob) {
+            const reader = new FileReader();
+            reader.onload = () => {
+              setContent(reader.result as ArrayBuffer);
+            };
+            reader.readAsArrayBuffer(blob);
+
+            return; // Exit after handling the image
+          }
+        }
+      }
+    }
+  }, []);
 
   const removeMutation = useMutation({
     mutationFn: removeAgent,
@@ -139,11 +177,16 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const submitPrompt = async () => {
     setIsSubmitting(true);
     try {
-      const response = await submitMutation.mutateAsync({ id, message, aiProvider: selectedAiProvider });
+      const response = await submitMutation.mutateAsync({
+        id,
+        message,
+        aiProvider: selectedAiProvider,
+        imageBuffer: content,
+      });
       const purifiedDom = domPurify.sanitize(response.answer);
       setAnswer(purifiedDom);
     } catch (e) {
-      setSnackBarText('Problems on submitting query to AI service');
+      setSnackBarText('Problems on submitting query to AI service' + e);
     } finally {
       setIsSubmitting(false);
     }
@@ -226,6 +269,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const handleClearText = () => {
     setMessage('');
     setAnswer('');
+    setContent(null);
   };
 
   const handleCopyResponse = () => {
@@ -289,9 +333,12 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           ref={textAreaRef}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
+          onPaste={handlePaste}
           onKeyPress={handleKeyPress}
           className={css.agentInput}
         />
+        {content instanceof ArrayBuffer && <ImagePreviewFromBuffer buffer={content} />}
+
         <AgentHistoryNavigation
           historyItems={clientHistoryItems}
           className={css.agentHistoryNavigation}
@@ -305,7 +352,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         />
       </div>
       <div className={css.agentButtons}>
-        <OwnButton type="submit" disabled={!message || isSubmitting}>
+        <OwnButton type="submit" disabled={(!message && !content) || isSubmitting}>
           Submit
         </OwnButton>
         <Select
@@ -320,6 +367,16 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           Clear input
         </OwnButton>
         {audioEnabled && <SpeechToText onCaption={(caption) => setMessage(caption?.join(' ') || '')} id={id} />}
+
+        <label htmlFor={`photo-${number}`}>Photo</label>
+        <input
+          type="file"
+          id={`photo-${number}`}
+          capture="environment"
+          accept="image/*,video/*"
+          style={{ display: 'none' }}
+          onChangeCapture={handleCapture}
+        />
 
         <OwnButton type="button" onClick={handleOpenAgentHistory} color="neutral" disabled={!agentHistory?.length}>
           History

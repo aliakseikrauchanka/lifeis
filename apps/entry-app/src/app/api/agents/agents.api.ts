@@ -89,27 +89,31 @@ export const getAllAgents = async (): Promise<IAgentsResponse> => {
 export const submitMessage = async ({
   id,
   message,
+  imageBuffer,
   aiProvider,
 }: {
   id: string;
   message: string;
+  imageBuffer?: string | ArrayBuffer | null;
   aiProvider: string;
 }): Promise<{
   answer: string;
 }> => {
+  const formData = new FormData();
+  formData.append('message', message);
+  formData.append('aiProvider', aiProvider);
+  if (imageBuffer) {
+    formData.append('image', new Blob([imageBuffer]), 'image.png');
+  }
+
   const response = await utilFetch(`/agents/${id}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      message,
-      aiProvider,
-    }),
+    body: formData,
   });
 
   if (!response.ok) {
     const errorBody: RequestError = await response.json();
+
     throw new Error(errorBody.message);
   }
 
