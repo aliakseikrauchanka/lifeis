@@ -195,6 +195,13 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
           });
         }
         const response = await geminiModel.generateContent(geminiRequestBody);
+        try {
+          uploadResult.file.url && fileManager.deleteFile(uploadResult.file.id);
+          filePath && fs.unlinkSync(filePath);
+        } catch (e) {
+          console.log('error', e, 'error on deleting file');
+        }
+
         responseText = response.response.text();
       }
     } catch (e) {
@@ -204,6 +211,7 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     }
 
     // save entry to db
+    //
     await client
       .db('lifeis')
       .collection('agent_history')
