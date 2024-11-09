@@ -6,6 +6,7 @@ import {
   updateAgent,
   createTemplate,
   cloneTemplateAgent,
+  submitImageOnParsing,
 } from '../../../api/agents/agents.api';
 import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect, useCallback } from 'react';
 import css from './agent.module.scss';
@@ -69,22 +70,32 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedAiProvider, setSelectedAiProvider] = useState('gemini');
   const [snackBarText, setSnackBarText] = useState('');
+  const [imageIsParsing, setImageIsParsing] = useState(false);
 
   const { loggedInUserId } = useStorageContext();
 
   const [imageBuffer, setImageBuffer] = useState<string | ArrayBuffer | null>(null);
+
+  const setImage = async (buffer: ArrayBuffer) => {
+    setImageBuffer(buffer);
+    setImageIsParsing(true);
+
+    const response = await submitImageOnParsing(buffer);
+
+    setImageIsParsing(false);
+    const purifiedDom = domPurify.sanitize(response.answer);
+    setMessage(purifiedDom);
+  };
 
   const handleCapture = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
-        setImageBuffer(reader.result as ArrayBuffer);
+        setImage(reader.result as ArrayBuffer);
         event.target.value = '';
       };
       reader.readAsArrayBuffer(file);
-      // get file format
-      // alert(file.type);
     }
   }, []);
 
@@ -98,7 +109,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           if (blob) {
             const reader = new FileReader();
             reader.onload = () => {
-              setImageBuffer(reader.result as ArrayBuffer);
+              setImage(reader.result as ArrayBuffer);
             };
             reader.readAsArrayBuffer(blob);
 
@@ -182,7 +193,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         id,
         message,
         aiProvider: selectedAiProvider,
-        imageBuffer: imageBuffer,
+        // imageBuffer: imageBuffer,
       });
       const purifiedDom = domPurify.sanitize(response.answer);
       setAnswer(purifiedDom);
@@ -343,7 +354,11 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           className={css.agentInput}
         />
         {imageBuffer instanceof ArrayBuffer && (
-          <ImagePreviewFromBuffer buffer={imageBuffer} onClose={() => setImageBuffer(null)} />
+          <ImagePreviewFromBuffer
+            buffer={imageBuffer}
+            onClose={() => setImageBuffer(null)}
+            isLoading={imageIsParsing}
+          />
         )}
 
         <AgentHistoryNavigation
@@ -359,7 +374,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         />
       </div>
       <div className={css.agentButtons}>
-        <OwnButton type="submit" disabled={(!message && !imageBuffer) || isSubmitting}>
+        <OwnButton type="submit" disabled={!message || isSubmitting}>
           Submit
         </OwnButton>
         <Select

@@ -25,7 +25,13 @@ export const UserSession = ({ isLoggedIn, isOfflineMode, onLoginSuccess, onLogOu
     <div className={css.userSession}>
       {isLoggedIn ? (
         <div className={css.userSessionContent}>
-          <h2>Welcome, User!</h2>
+          <h2>
+            Welcome,{' '}
+            <span onClick={() => alert('Срочно! Только что было определено, что Серега Я - космический бульбозавт')}>
+              User
+            </span>
+            !
+          </h2>
           {!isOfflineMode && (
             <div>
               <OwnButton onClick={handleLogout}>Logout</OwnButton>

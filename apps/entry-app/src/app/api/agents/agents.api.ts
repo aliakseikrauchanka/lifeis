@@ -132,6 +132,30 @@ export const getAgentHistory = async (agentId: string): Promise<IAgentHistoryRes
   return await response.json();
 };
 
+export const submitImageOnParsing = async (
+  imageBuffer: string | ArrayBuffer | null,
+): Promise<{
+  answer: string;
+}> => {
+  const formData = new FormData();
+  if (imageBuffer) {
+    formData.append('image', new Blob([imageBuffer]), 'image.png');
+  }
+
+  const response = await utilFetch(`/agents/parse-image`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody: RequestError = await response.json();
+
+    throw new Error(errorBody.message);
+  }
+
+  return await response.json();
+};
+
 export const savePinnedAgents = async (agentsIds: string[]): Promise<IPinnedAgentsResponse> => {
   const response = await utilFetch(`/agents/pinned-agents-ids`, {
     method: 'POST',

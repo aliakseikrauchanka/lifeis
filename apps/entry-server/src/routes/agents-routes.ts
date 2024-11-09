@@ -144,10 +144,91 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     res.status(200).send({ agentsIds: pinnedAgents ? pinnedAgents.agentIds : [] });
   });
 
+  router.post(
+    '/parse-image',
+    [verifyAccessToken, uploadMiddlewareFactory.single('image')],
+    async (req: Request, res) => {
+      // const directoryPath = path.join(__dirname, 'uploads', res.locals.userId);
+      // if (!fs.existsSync(directoryPath)) {
+      //   fs.mkdirSync(directoryPath);
+      // }
+
+      const filePath = path.join(__dirname, 'uploads', 'image_upload.jpg');
+      // read file from filePath
+      let imageBuffer;
+      try {
+        imageBuffer = fs.readFileSync(filePath);
+        try {
+          imageBuffer = await sharp(imageBuffer)
+            .resize({
+              width: 1200,
+              // Example dimensions
+              fit: sharp.fit.inside, // Or other fit options as needed
+              withoutEnlargement: true, // Prevent upscaling
+            })
+            .jpeg({ quality: 100 }) // Adjust quality as needed
+            .toBuffer();
+          console.log('debug size', imageBuffer.length);
+
+          // ... save resizedBuffer ...
+        } catch (error) {
+          // ... handle error ...
+        }
+      } catch (error) {
+        console.log('error', error);
+      }
+
+      console.log('debug', filePath, req.file);
+
+      let uploadResult;
+      if (imageBuffer) {
+        uploadResult = await fileManager.uploadFile(filePath, {
+          mimeType: 'image/jpeg',
+          displayName: 'Jetpack drawing',
+        });
+        console.log(`Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri}`);
+      }
+      // View the response.
+
+      let responseText: string;
+
+      try {
+        const geminiRequestBody: GenerateContentRequest | string | Array<string | Part> = ['Get text from the image'];
+        if (uploadResult) {
+          geminiRequestBody.push({
+            fileData: {
+              fileUri: uploadResult.file.uri,
+              mimeType: uploadResult.file.mimeType,
+            },
+          });
+        }
+        const response = await geminiModel.generateContent(geminiRequestBody);
+        try {
+          uploadResult.file.url && fileManager.deleteFile(uploadResult.file.id);
+          filePath && fs.unlinkSync(filePath);
+        } catch (e) {
+          console.log('error', e, 'error on deleting file');
+        }
+
+        responseText = response.response.text();
+      } catch (e) {
+        return res.status(500).send({
+          message: e?.message || 'Something happened during request to AI service',
+        });
+      }
+
+      return res.send({ answer: responseText });
+    },
+  );
+
   router.post('/:id', [verifyAccessToken, uploadMiddlewareFactory.single('image')], async (req: Request, res) => {
-    console.log('test');
     const agentId = req.params.id;
 
+    // create directory if not exists
+    // const directoryPath = path.join(__dirname, 'uploads', res.locals.userId);
+    // if (!fs.existsSync(directoryPath)) {
+    //   fs.mkdirSync(directoryPath);
+    // }
     const filePath = path.join(__dirname, 'uploads', 'image_upload.jpg');
     // read file from filePath
     let imageBuffer;
