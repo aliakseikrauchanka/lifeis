@@ -58,6 +58,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const [initLoad, setInitLoad] = useState(true);
   const [message, setMessage] = useState('');
   const [answer, setAnswer] = useState<string>('');
+  const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const responseRef = useRef<HTMLDivElement | null>(null);
   const currentMessageRef = useRef<string>(message);
@@ -238,6 +239,10 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
     }
   };
 
+  const handleInstructionsToggle = (isInstructionsOpen: boolean) => {
+    setIsInstructionsOpen(isInstructionsOpen);
+  };
+
   const handleArhiveUnarchived = (isArchived: boolean) => {
     try {
       updateMutation.mutate({ id, isArchived });
@@ -319,8 +324,8 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         </div>
       </header>
 
-      <div className={css.agentPrefixContainer}>
-        <EditableInput initialValue={prefix} onValueChange={handleBlurPrefix} />
+      <div className={classNames(css.agentPrefixContainer, isInstructionsOpen && css.agentPrefixContainerExpanded)}>
+        <EditableInput initialValue={prefix} onValueChange={handleBlurPrefix} onToggle={handleInstructionsToggle} />
       </div>
 
       <div

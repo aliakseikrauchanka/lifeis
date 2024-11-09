@@ -54,6 +54,10 @@
     height: 30px;
     position: relative;
     z-index: 1;
+
+    &-expanded {
+      z-index: 2;
+    }
   }
 
   &-delete-btn-container {
