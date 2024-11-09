@@ -30,7 +30,7 @@ import { useMediaQuery } from '@mui/material';
 import { AgentHistoryNavigation } from './components/agent-history-navigation/agent-history-navigation';
 import { IAgentHistoryItem } from '../../../domains/agent.domain';
 import { useStorageContext } from '../../../contexts/storage.context';
-import { ImagePreviewFromBuffer } from './components/imaget-preview-from-buffer';
+import { ImagePreviewFromBuffer } from './components/image-preview-from-buffer';
 
 interface IAgentProps {
   type: 'agent' | 'template';
@@ -72,14 +72,14 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
 
   const { loggedInUserId } = useStorageContext();
 
-  const [content, setContent] = useState<string | ArrayBuffer | null>(null);
+  const [imageBuffer, setImageBuffer] = useState<string | ArrayBuffer | null>(null);
 
   const handleCapture = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = () => {
-        setContent(reader.result as ArrayBuffer);
+        setImageBuffer(reader.result as ArrayBuffer);
         event.target.value = '';
       };
       reader.readAsArrayBuffer(file);
@@ -98,7 +98,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           if (blob) {
             const reader = new FileReader();
             reader.onload = () => {
-              setContent(reader.result as ArrayBuffer);
+              setImageBuffer(reader.result as ArrayBuffer);
             };
             reader.readAsArrayBuffer(blob);
 
@@ -182,7 +182,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         id,
         message,
         aiProvider: selectedAiProvider,
-        imageBuffer: content,
+        imageBuffer: imageBuffer,
       });
       const purifiedDom = domPurify.sanitize(response.answer);
       setAnswer(purifiedDom);
@@ -274,7 +274,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const handleClearText = () => {
     setMessage('');
     setAnswer('');
-    setContent(null);
+    setImageBuffer(null);
   };
 
   const handleCopyResponse = () => {
@@ -342,7 +342,9 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           onKeyPress={handleKeyPress}
           className={css.agentInput}
         />
-        {content instanceof ArrayBuffer && <ImagePreviewFromBuffer buffer={content} />}
+        {imageBuffer instanceof ArrayBuffer && (
+          <ImagePreviewFromBuffer buffer={imageBuffer} onClose={() => setImageBuffer(null)} />
+        )}
 
         <AgentHistoryNavigation
           historyItems={clientHistoryItems}
@@ -357,7 +359,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         />
       </div>
       <div className={css.agentButtons}>
-        <OwnButton type="submit" disabled={(!message && !content) || isSubmitting}>
+        <OwnButton type="submit" disabled={(!message && !imageBuffer) || isSubmitting}>
           Submit
         </OwnButton>
         <Select
