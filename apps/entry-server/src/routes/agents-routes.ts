@@ -268,7 +268,7 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
       .updateOne(
         { _id: new ObjectId(agentId), ownerId: res.locals.userId },
         {
-          $set: { foundAgent, ...req.body },
+          $set: { ...foundAgent, ...req.body },
         },
       );
 
