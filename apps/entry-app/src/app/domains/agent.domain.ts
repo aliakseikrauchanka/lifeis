@@ -24,6 +24,10 @@ export interface IAgentHistoryResponse {
   history: IAgentHistoryItem[];
 }
 
+export interface IPinnedAgentsResponse {
+  agentsIds: string[];
+}
+
 export interface IAgentHistoryItem {
   _id: string;
   agentId: string;

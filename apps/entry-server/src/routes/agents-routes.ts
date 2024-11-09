@@ -40,6 +40,11 @@ interface IAgent extends IAgentBasic {
   isArchived?: boolean;
 }
 
+interface IPinnedAgents {
+  ownerId: string;
+  agentIds: string[];
+}
+
 interface IAgentTemplate extends IAgentBasic {
   creatorId: string;
   type: 'template';
@@ -100,6 +105,43 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     };
     const newAgentRaw = await client.db('lifeis').collection('agents').insertOne(newAgent);
     res.status(200).send(newAgentRaw);
+  });
+
+  router.post('/pinned-agents-ids', [verifyAccessToken], async (req: Request, res) => {
+    const { agentsIds } = req.body;
+
+    const pinnedAgents: IPinnedAgents = await client
+      .db('lifeis')
+      .collection<IPinnedAgents>('pinned_agents')
+      .findOne({ ownerId: res.locals.userId });
+
+    if (pinnedAgents) {
+      await client
+        .db('lifeis')
+        .collection<IPinnedAgents>('pinned_agents')
+        .updateOne(
+          { ownerId: res.locals.userId },
+          {
+            $set: { agentIds: agentsIds },
+          },
+        );
+    } else {
+      await client
+        .db('lifeis')
+        .collection<IPinnedAgents>('pinned_agents')
+        .insertOne({ ownerId: res.locals.userId, agentIds: agentsIds });
+    }
+
+    res.status(200).send({ agentsIds });
+  });
+
+  router.get('/pinned-agents-ids', [verifyAccessToken], async (req: Request, res) => {
+    const pinnedAgents = await client
+      .db('lifeis')
+      .collection<IPinnedAgents>('pinned_agents')
+      .findOne({ ownerId: res.locals.userId });
+
+    res.status(200).send({ agentsIds: pinnedAgents ? pinnedAgents.agentIds : [] });
   });
 
   router.post('/:id', [verifyAccessToken, uploadMiddlewareFactory.single('image')], async (req: Request, res) => {

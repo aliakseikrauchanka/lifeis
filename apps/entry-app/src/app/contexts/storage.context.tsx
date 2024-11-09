@@ -1,7 +1,7 @@
 import { getGoogleUserId } from '@lifeis/common-ui';
-import { ReactNode, createContext, useContext, useState } from 'react';
+import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { getPinnedAgents, savePinnedAgents } from '../api/agents/agents.api';
 
-const pinnedAgentsKey = 'pinnedAgents';
 const audioEnabledKey = 'audio';
 
 export interface StorageContextType {
@@ -26,32 +26,44 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
 
   const [loggedInUserId, setLoggedInUserId] = useState<string>(isOfflineModeOn ? 'local_user' : getGoogleUserId());
 
-  const [pinnedAgentsIds, setPinnedAgents] = useState<string[]>(() => {
-    const storedValue = localStorage.getItem(pinnedAgentsKey);
-    return storedValue ? JSON.parse(storedValue) : [];
-  });
+  const [pinnedAgentsIds, setPinnedAgents] = useState<string[]>([]);
+
+  useEffect(() => {
+    const restorePinnedAgents = async () => {
+      const pinnedAgentsIdsResponse = await getPinnedAgents();
+      setPinnedAgents(pinnedAgentsIdsResponse.agentsIds);
+    };
+
+    restorePinnedAgents();
+  }, [loggedInUserId]);
+
+  const pinAgent = useCallback(
+    async (agentId: string) => {
+      if (pinnedAgentsIds.includes(agentId)) {
+        return pinnedAgentsIds;
+      }
+      const newValue = [...pinnedAgentsIds, agentId];
+      setPinnedAgents(newValue);
+      await savePinnedAgents(newValue);
+    },
+    [pinnedAgentsIds],
+  );
+
+  const unpinAgent = useCallback(
+    async (agentId: string) => {
+      const newValue = pinnedAgentsIds.filter((id) => id !== agentId);
+      setPinnedAgents(newValue);
+      await savePinnedAgents(newValue);
+    },
+    [pinnedAgentsIds],
+  );
 
   const returnValue: StorageContextType = {
     loggedInUserId,
     setLoggedInUserId,
     pinnedAgentsIds,
-    pinAgent: (agentId: string) => {
-      setPinnedAgents((prevPinnedAgents) => {
-        if (prevPinnedAgents.includes(agentId)) {
-          return prevPinnedAgents;
-        }
-        const newValue = [...prevPinnedAgents, agentId];
-        localStorage.setItem(pinnedAgentsKey, JSON.stringify(newValue));
-        return newValue;
-      });
-    },
-    unpinAgent: (agentId: string) => {
-      setPinnedAgents((prevPinnedAgents) => {
-        const newValue = prevPinnedAgents.filter((id) => id !== agentId);
-        localStorage.setItem(pinnedAgentsKey, JSON.stringify(newValue));
-        return newValue;
-      });
-    },
+    pinAgent,
+    unpinAgent,
     audioEnabled,
     setAudioEnabled: (value: boolean) => {
       setAudioEnabled(value);

@@ -1,5 +1,5 @@
 import { utilFetch } from '@lifeis/common-ui';
-import { IAgentHistoryResponse, IAgentsResponse } from '../../domains/agent.domain';
+import { IAgentHistoryResponse, IAgentsResponse, IPinnedAgentsResponse } from '../../domains/agent.domain';
 
 export const createAgent = async (data: { name: string; prefix: string }): Promise<void> => {
   const response = await utilFetch(`/agents`, {
@@ -127,6 +127,34 @@ export const getAgentHistory = async (agentId: string): Promise<IAgentHistoryRes
 
   if (!response.ok) {
     throw new Error('Failed to create log');
+  }
+
+  return await response.json();
+};
+
+export const savePinnedAgents = async (agentsIds: string[]): Promise<IPinnedAgentsResponse> => {
+  const response = await utilFetch(`/agents/pinned-agents-ids`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ agentsIds }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update pinned agents');
+  }
+
+  return await response.json();
+};
+
+export const getPinnedAgents = async (): Promise<IPinnedAgentsResponse> => {
+  const response = await utilFetch(`/agents/pinned-agents-ids`, {
+    method: 'GET',
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update pinned agents');
   }
 
   return await response.json();
