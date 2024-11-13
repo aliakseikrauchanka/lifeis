@@ -32,6 +32,8 @@ import { AgentHistoryNavigation } from './components/agent-history-navigation/ag
 import { IAgentHistoryItem } from '../../../domains/agent.domain';
 import { useStorageContext } from '../../../contexts/storage.context';
 import { ImagePreviewFromBuffer } from './components/image-preview-from-buffer';
+import { text } from 'stream/consumers';
+import { ClassNames } from '@emotion/react';
 
 interface IAgentProps {
   type: 'agent' | 'template';
@@ -61,6 +63,12 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const [answer, setAnswer] = useState<string>('');
   const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
+  const textareaWrapperRef = useRef(null);
+  // resizer
+  const resizerRef = useRef(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const [height, setHeight] = useState(100); // Initial height
+
   const responseRef = useRef<HTMLDivElement | null>(null);
   const currentMessageRef = useRef<string>(message);
   const theme = useTheme();
@@ -292,6 +300,50 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
     navigator.clipboard.writeText(responseRef.current?.textContent || '');
   };
 
+  const startResizing = (e: any) => {
+    e.preventDefault();
+    setIsResizing(true);
+  };
+
+  const stopResizing = () => {
+    if (isResizing) {
+      setIsResizing(false);
+    }
+  };
+
+  const resize = (e: any) => {
+    if (!isResizing || !textareaWrapperRef.current) return;
+
+    // Support touch and mouse events
+    const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+    if (!clientY) return;
+
+    const wrapperTop = (textareaWrapperRef.current as any).getBoundingClientRect().top;
+    const newHeight = clientY - wrapperTop;
+
+    // Set minimum and maximum height
+    const minHeight = 50;
+    const maxHeight = 500;
+
+    if (newHeight > minHeight && newHeight < maxHeight) {
+      setHeight(newHeight);
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener('mousemove', resize);
+    window.addEventListener('touchmove', resize);
+    window.addEventListener('mouseup', stopResizing);
+    window.addEventListener('touchend', stopResizing);
+
+    return () => {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('touchmove', resize);
+      window.removeEventListener('mouseup', stopResizing);
+      window.removeEventListener('touchend', stopResizing);
+    };
+  }, [isResizing]);
+
   return (
     <form onSubmit={handleSubmitForm} className={css.agent}>
       <header className={css.agentHeader}>
@@ -343,6 +395,10 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         className={classNames(css.agentInputWrapper, {
           [css.agentInputWrapperMinimized]: isMobile,
         })}
+        style={{
+          height: `${height}px`,
+        }}
+        ref={textareaWrapperRef}
       >
         <textarea
           onDrop={handleDrop}
@@ -351,7 +407,23 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           onChange={(e) => setMessage(e.target.value)}
           onPaste={handlePaste}
           onKeyPress={handleKeyPress}
-          className={css.agentInput}
+          className={classNames(css.agentInput, isMobile && css.agentInputMinimized)}
+          style={{
+            height: `${height}px`,
+          }}
+        />
+        <div
+          ref={resizerRef}
+          className={classNames(css.agentInputResizer, isResizing && css.agentInputResizerActive)}
+          onMouseDown={startResizing}
+          onTouchStart={startResizing}
+          tabIndex={0}
+          role="slider"
+          aria-valuemin={50}
+          aria-valuemax={500}
+          aria-valuenow={height}
+          aria-orientation="vertical"
+          aria-label="Resize textarea"
         />
         {imageBuffer instanceof ArrayBuffer && (
           <ImagePreviewFromBuffer
