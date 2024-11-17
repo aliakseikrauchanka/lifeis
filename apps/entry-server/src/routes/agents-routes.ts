@@ -368,7 +368,7 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
       .collection<IAgentDocument>('agent_history')
       .find({ agentId: new ObjectId(agentId) });
 
-    const agentHistory = (await agentHistoryDbItems.toArray()).reverse();
+    const agentHistory = (await agentHistoryDbItems.toArray()).slice(0, 100).reverse();
 
     return res.send({ history: agentHistory });
   });
