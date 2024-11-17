@@ -32,8 +32,6 @@ import { AgentHistoryNavigation } from './components/agent-history-navigation/ag
 import { IAgentHistoryItem } from '../../../domains/agent.domain';
 import { useStorageContext } from '../../../contexts/storage.context';
 import { ImagePreviewFromBuffer } from './components/image-preview-from-buffer';
-import { text } from 'stream/consumers';
-import { ClassNames } from '@emotion/react';
 
 interface IAgentProps {
   type: 'agent' | 'template';

@@ -107,7 +107,7 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
           <List>
             {filteredHistory.map((item, index) => (
               <ListItem
-                key={index}
+                key={item._id}
                 sx={{
                   [theme.breakpoints.down('sm')]: {
                     padding: '0',
@@ -143,14 +143,8 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
                       <Typography level="title-md" color="success">
                         Response:
                       </Typography>
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        rehypePlugins={[rehypeRaw]}
-                        // components={{
-                        //   mark: ({ node, ...props }) => <mark style={{ backgroundColor: 'yellow' }} {...props} />,
-                        // }}
-                      >
-                        {highlightText(item.response, searchTerm)}
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                        {searchTerm.length > 2 ? highlightText(item.response, searchTerm) : item.response}
                       </ReactMarkdown>
                     </Typography>
                   </Box>{' '}
