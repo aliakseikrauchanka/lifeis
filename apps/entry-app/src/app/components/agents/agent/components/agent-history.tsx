@@ -1,3 +1,5 @@
+import remarkGfm from 'remark-gfm';
+import rehypeRaw from 'rehype-raw';
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -21,6 +23,13 @@ interface IAgentHistoryModalProps {
   onClose: () => void;
   agentId: string;
 }
+
+const highlightText = (text: string, searchTerm: string): string => {
+  if (!searchTerm) return text;
+
+  const regex = new RegExp(`(${searchTerm})`, 'gi');
+  return text.replace(regex, '<mark style="background-color: yellow">$1</mark>');
+};
 
 export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onClose, agentId }) => {
   // const [history, setHistory] = useState<IAgentHistoryItem[]>([]);
@@ -134,7 +143,15 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
                       <Typography level="title-md" color="success">
                         Response:
                       </Typography>
-                      <ReactMarkdown>{item.response}</ReactMarkdown>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeRaw]}
+                        // components={{
+                        //   mark: ({ node, ...props }) => <mark style={{ backgroundColor: 'yellow' }} {...props} />,
+                        // }}
+                      >
+                        {highlightText(item.response, searchTerm)}
+                      </ReactMarkdown>
                     </Typography>
                   </Box>{' '}
                 </ListItemContent>
