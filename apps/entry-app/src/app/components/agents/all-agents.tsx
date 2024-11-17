@@ -9,7 +9,7 @@ import { useStorageContext } from '../../contexts/storage.context';
 import { Accordion, AccordionDetails, AccordionSummary } from '@mui/joy';
 import classNames from 'classnames';
 
-const AVAILABLE_KEYS = ['1', '2', '3', '4'];
+const AVAILABLE_KEYS = ['1', '2', '3', '4', '5'];
 
 export const AllAgents = () => {
   const query = useQuery({ queryKey: ['agents'], queryFn: getAllAgents, select: (data) => data.agents });
