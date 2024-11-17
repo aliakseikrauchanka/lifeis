@@ -137,14 +137,16 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
                       <Typography level="title-md" color={'primary'}>
                         Message:
                       </Typography>{' '}
-                      {item.message}
+                      <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                        {searchTerm.length >= 2 ? highlightText(item.message ?? '', searchTerm) : item.message}
+                      </ReactMarkdown>
                     </Typography>
                     <Typography>
                       <Typography level="title-md" color="success">
                         Response:
                       </Typography>
                       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                        {searchTerm.length > 2 ? highlightText(item.response, searchTerm) : item.response}
+                        {searchTerm.length >= 2 ? highlightText(item.response, searchTerm) : item.response}
                       </ReactMarkdown>
                     </Typography>
                   </Box>{' '}
