@@ -1,5 +1,5 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
@@ -28,6 +28,29 @@ const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn() || isOfflineModeOn);
   const { audioEnabled, setAudioEnabled, loggedInUserId, setLoggedInUserId } = useStorageContext();
+  const [isIniitialized, setIsInitialized] = useState(false);
+  const [language, setLanguage] = useState('ru-RU');
+
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  const blobsRef = useRef<Blob[]>([]);
+
+  const playBlobs = useCallback(() => {
+    if (audioRef.current) {
+      const concatenatedBlob = new Blob(blobsRef.current, { type: 'audio/webm' });
+      const audioUrl = URL.createObjectURL(concatenatedBlob);
+
+      // can I open it in separate tab?
+      window.open(audioUrl, '_blank');
+
+      audioRef.current.src = audioUrl;
+      audioRef.current.play();
+
+      audioRef.current.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+      };
+    }
+  }, [blobsRef]);
 
   const { hasAudioFeature, hasLogsFeature, hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInUserId);
 
@@ -37,10 +60,12 @@ export default function App() {
       clientId: CONFIG.CLIENT_ID,
       isOffline: isOfflineModeOn,
     });
+    setIsInitialized(true);
   }, []);
 
-  return (
+  return isIniitialized ? (
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
+      <audio ref={audioRef} />
       <header>
         <UserSession
           isOfflineMode={isOfflineModeOn}
@@ -53,15 +78,32 @@ export default function App() {
         />
         <div style={{ position: 'absolute', top: '4px', right: '70px' }}>
           {hasAudioFeature && (
-            <OwnButton
-              type="button"
-              color="success"
-              onClick={() => {
-                setAudioEnabled(!audioEnabled);
-              }}
-            >
-              toggle audio
-            </OwnButton>
+            // toggle of ru-RU and en-US languages
+            <>
+              <button type="button" onClick={() => playBlobs()}>
+                Play blobs
+              </button>
+              <select
+                value={language}
+                onChange={(e) => {
+                  setLanguage(e.target.value);
+                }}
+              >
+                <option value="ru-RU">ru</option>
+                <option value="en-US">en</option>
+                <option value="pl">pl</option>
+              </select>
+
+              <OwnButton
+                type="button"
+                color="success"
+                onClick={() => {
+                  setAudioEnabled(!audioEnabled);
+                }}
+              >
+                toggle audio
+              </OwnButton>
+            </>
           )}
         </div>
       </header>
@@ -74,9 +116,19 @@ export default function App() {
               <AudioSwitch
                 audioElement={
                   <MicrophoneContextProvider>
-                    <DeepgramContextProvider>
+                    <DeepgramContextProvider language={language}>
                       <AudioProvider>
-                        <SpeechToTextContextProvider>
+                        <SpeechToTextContextProvider
+                          onBlob={(blob) => {
+                            blobsRef.current.push(blob);
+                          }}
+                          clearBlobs={() => {
+                            blobsRef.current = [];
+                            if (audioRef.current) {
+                              audioRef.current.src = '';
+                            }
+                          }}
+                        >
                           <AgentsPage />
                         </SpeechToTextContextProvider>
                       </AudioProvider>
@@ -91,5 +143,5 @@ export default function App() {
         </Routes>
       )}
     </GoogleOAuthProvider>
-  );
+  ) : null;
 }

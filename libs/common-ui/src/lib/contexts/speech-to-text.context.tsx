@@ -19,14 +19,20 @@ const utteranceText = (event: LiveTranscriptionEvent) => {
 const SpeechToTextContext = createContext<SpeechToTextContextType | undefined>(undefined);
 
 interface SpeechToTextContextProviderProps {
+  clearBlobs: () => void;
+  onBlob: (blob: Blob) => void;
   children: ReactNode;
 }
 
-const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = ({ children }) => {
+const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = ({
+  clearBlobs: clearBlobsProp,
+  onBlob,
+  children,
+}) => {
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [caption, setCaption] = useState<{ [activeId: string]: string[] }>({});
 
-  const { connection, connectionReady } = useDeepgram();
+  const { connection, connectionReady, isNeedReset, onResetDone } = useDeepgram();
   const {
     add: addTranscriptPart,
     queue: transcriptParts,
@@ -44,7 +50,18 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
     startMicrophone,
     stopMicrophone,
     stream,
+    resetMicrophone,
   } = useMicrophone();
+
+  useEffect(() => {
+    if (isNeedReset) {
+      console.error('debug, resetting speech to text');
+      clearTranscriptParts();
+      resetMicrophone();
+      onResetDone();
+    }
+  }, [isNeedReset, clearTranscriptParts, resetMicrophone, onResetDone]);
+
   // const captionTimeout = useRef<any>();
   const keepAliveInterval = useRef<any>();
 
@@ -209,7 +226,9 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
           const nextBlob = firstBlob;
 
           if (nextBlob && nextBlob?.size > 0) {
+            // console.log('debug, sending blob', connection);
             connection?.send(nextBlob);
+            onBlob(nextBlob);
           }
 
           removeBlob();

@@ -11,6 +11,8 @@ interface MicrophoneContextType {
   microphoneState: MicrophoneState | null;
   enqueueBlob: (element: Blob) => void;
   removeBlob: () => Blob | undefined;
+  clearBlobs: () => void;
+  resetMicrophone: () => void;
   firstBlob: Blob | undefined;
   queueSize: number;
   queue: Blob[];
@@ -53,28 +55,37 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
     first: firstBlob, // firstMicrophoneBlob,
     size: queueSize, // countBlobs,
     queue, // : microphoneBlobs,
+    clear: clearBlobs, // clearMicrophoneBlobs,
   } = useQueue<Blob>([]);
 
+  const setupMicrophone = useCallback(async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        noiseSuppression: true,
+        echoCancellation: true,
+      },
+    });
+
+    setStream(stream);
+
+    const microphone = new MediaRecorder(stream);
+
+    setMicrophone(microphone);
+  }, []);
+
+  const resetMicrophone = useCallback(() => {
+    setMicrophoneState(MicrophoneState.NotSetup);
+    setMicrophone(null);
+    setStream(undefined);
+    clearBlobs();
+    setupMicrophone();
+  }, [clearBlobs, setupMicrophone]);
+
   useEffect(() => {
-    async function setupMicrophone() {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          noiseSuppression: true,
-          echoCancellation: true,
-        },
-      });
-
-      setStream(stream);
-
-      const microphone = new MediaRecorder(stream);
-
-      setMicrophone(microphone);
-    }
-
     if (!microphone) {
       setupMicrophone();
     }
-  }, [enqueueBlob, microphone, microphoneState]);
+  }, [enqueueBlob, microphone, microphoneState, setupMicrophone]);
 
   const stopMicrophone = useCallback(() => {
     setMicrophoneState(MicrophoneState.Pausing);
@@ -123,6 +134,7 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
     <MicrophoneContext.Provider
       value={{
         microphone,
+        resetMicrophone,
         startMicrophone,
         stopMicrophone,
         microphoneState,
@@ -132,6 +144,7 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
         firstBlob,
         queueSize,
         queue,
+        clearBlobs,
       }}
     >
       {children}
