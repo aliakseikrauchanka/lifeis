@@ -24,7 +24,7 @@ type DeepgramContext = {
   connectionReady: boolean;
 };
 interface DeepgramContextInterface {
-  language: string;
+  language?: string;
   children: React.ReactNode;
 }
 
