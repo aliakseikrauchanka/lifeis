@@ -477,7 +477,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           style={{ marginLeft: 'auto' }}
           disabled={!message}
         >
-          Clear input
+          Clear All
         </OwnButton>
         {audioEnabled && selectedAiProvider === 'gemini' && (
           <SpeechToText
