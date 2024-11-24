@@ -11,7 +11,7 @@ export const Logs = ({ logs }: ILogsProps) => {
       <ul>
         {!!logs?.length &&
           logs.map((log) => (
-            <li id={log.id}>
+            <li key={log.id} id={log.id}>
               {log.message}, {log.basket_name}
             </li>
           ))}

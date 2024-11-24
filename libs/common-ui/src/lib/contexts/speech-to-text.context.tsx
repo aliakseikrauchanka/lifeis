@@ -20,7 +20,7 @@ const utteranceText = (event: LiveTranscriptionEvent) => {
 const SpeechToTextContext = createContext<SpeechToTextContextType | undefined>(undefined);
 
 interface SpeechToTextContextProviderProps {
-  onBlob: (blob: Blob) => void;
+  onBlob?: (blob: Blob) => void;
   children: ReactNode;
 }
 
@@ -223,7 +223,7 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
           if (nextBlob && nextBlob?.size > 0) {
             // console.log('debug, sending blob', connection);
             connection?.send(nextBlob);
-            onBlob(nextBlob);
+            onBlob?.(nextBlob);
           }
 
           removeBlob();

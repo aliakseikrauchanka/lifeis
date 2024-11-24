@@ -50,7 +50,7 @@ const getApiKey = async (): Promise<string> => {
   return result.key;
 };
 
-const DeepgramContextProvider = ({ language, children }: DeepgramContextInterface) => {
+const DeepgramContextProvider = ({ language = DEFAULT_LANGUAGE, children }: DeepgramContextInterface) => {
   // const [ttsOptions, setTtsOptions] = useLocalStorage<SpeakSchema | undefined>('ttsModel');
   const [isNeedReset, setIsNeedReset] = useState(false);
   const [sttOptions, setSttOptions] = useState<LiveSchema>({ ...defaultSttsOptions, language });
