@@ -479,7 +479,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         >
           Clear input
         </OwnButton>
-        {audioEnabled && (
+        {audioEnabled && selectedAiProvider === 'gemini' && (
           <SpeechToText
             onCaption={(caption) => setMessage(caption?.join(' ') || '')}
             id={id}
