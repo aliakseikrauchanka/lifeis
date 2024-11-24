@@ -6,9 +6,9 @@ import { useEffect, useState } from 'react';
 
 interface ISpeechToTextProps {
   id: string;
-  isNeedClear: boolean;
+  isNeedClear?: boolean;
   onCaption: (caption: string[] | undefined) => void;
-  onCleared: () => void;
+  onCleared?: () => void;
 }
 
 export const SpeechToText = ({ id, isNeedClear, onCaption, onCleared }: ISpeechToTextProps) => {
@@ -17,10 +17,9 @@ export const SpeechToText = ({ id, isNeedClear, onCaption, onCleared }: ISpeechT
 
   useEffect(() => {
     if (isNeedClear) {
-      onCleared();
+      onCleared?.();
       setIsRecording(false);
       stopListening(id);
-      onCleared();
     }
   }, [isNeedClear, onCleared, stopListening, id]);
 
