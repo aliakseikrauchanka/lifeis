@@ -15,6 +15,7 @@ import ReactMarkdown from 'react-markdown';
 import { IconButton, Select, useTheme, Option, Snackbar } from '@mui/joy';
 import {
   Archive,
+  CameraAlt,
   ContentCopy,
   CopyAll,
   Dashboard,
@@ -77,6 +78,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const [selectedAiProvider, setSelectedAiProvider] = useState('gemini');
   const [snackBarText, setSnackBarText] = useState('');
   const [imageIsParsing, setImageIsParsing] = useState(false);
+  const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
 
   const { loggedInUserId } = useStorageContext();
 
@@ -90,7 +92,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
 
     setImageIsParsing(false);
     const purifiedDom = domPurify.sanitize(response.answer);
-    setMessage(purifiedDom);
+    setMessage((message) => message + purifiedDom);
   };
 
   const handleCapture = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
@@ -199,7 +201,6 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         id,
         message,
         aiProvider: selectedAiProvider,
-        // imageBuffer: imageBuffer,
       });
       const purifiedDom = domPurify.sanitize(response.answer);
       setAnswer(purifiedDom);
@@ -288,10 +289,15 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
     setMessage(data);
   };
 
+  const handleCopyMessage = () => {
+    navigator.clipboard.writeText(message);
+  };
+
   const handleClearText = () => {
     setMessage('');
     setAnswer('');
     setImageBuffer(null);
+    setIsCaptionsNeedClear(true);
   };
 
   const handleCopyResponse = () => {
@@ -410,6 +416,14 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
             height: `${height}px`,
           }}
         />
+        <IconButton
+          sx={{ position: 'absolute', right: '32px', top: '2px', opacity: 0.5 }}
+          size="sm"
+          onClick={handleCopyMessage}
+        >
+          <CopyAll />
+        </IconButton>
+
         <div
           ref={resizerRef}
           className={classNames(css.agentInputResizer, isResizing && css.agentInputResizerActive)}
@@ -432,9 +446,10 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         )}
 
         <AgentHistoryNavigation
-          historyItems={clientHistoryItems}
           className={css.agentHistoryNavigation}
+          historyItems={clientHistoryItems}
           index={historyCurrentIndex}
+          onHistoryClick={handleOpenAgentHistory}
           onIndexChange={(index) => {
             setHistoryCurrentIndex(index);
             const historyItem = clientHistoryItems?.[index];
@@ -450,17 +465,32 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         <Select
           value={selectedAiProvider}
           onChange={(_, newValue) => setSelectedAiProvider(newValue as string)}
-          sx={{ minWidth: 120 }}
+          sx={{ minWidth: 120, minHeight: 30 }}
         >
           <Option value="gemini">Gemini</Option>
           <Option value="openai">OpenAI</Option>
         </Select>
-        <OwnButton type="button" color="danger" onClick={handleClearText} style={{ marginLeft: 'auto' }}>
+        <OwnButton
+          type="button"
+          color="danger"
+          onClick={handleClearText}
+          style={{ marginLeft: 'auto' }}
+          disabled={!message}
+        >
           Clear input
         </OwnButton>
-        {audioEnabled && <SpeechToText onCaption={(caption) => setMessage(caption?.join(' ') || '')} id={id} />}
+        {audioEnabled && (
+          <SpeechToText
+            onCaption={(caption) => setMessage(caption?.join(' ') || '')}
+            id={id}
+            onCleared={() => setIsCaptionsNeedClear(false)}
+            isNeedClear={isCaptionsNeedClear}
+          />
+        )}
 
-        <label htmlFor={`photo-${number}`}>Photo</label>
+        <label htmlFor={`photo-${number}`} className={css.agentButtonsPhoto}>
+          <CameraAlt fontSize="large" color="inherit" className={css.agentButtonsPhotoIcon} />
+        </label>
         <input
           type="file"
           id={`photo-${number}`}
@@ -469,10 +499,6 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           style={{ display: 'none' }}
           onChangeCapture={handleCapture}
         />
-
-        <OwnButton type="button" onClick={handleOpenAgentHistory} color="neutral" disabled={!agentHistory?.length}>
-          History
-        </OwnButton>
       </div>
       <div className={css.agentResponse}>
         <h4 className={css.agentResponseTitle}>

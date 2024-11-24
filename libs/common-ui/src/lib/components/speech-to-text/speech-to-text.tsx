@@ -6,20 +6,31 @@ import { useEffect, useState } from 'react';
 
 interface ISpeechToTextProps {
   id: string;
+  isNeedClear: boolean;
   onCaption: (caption: string[] | undefined) => void;
+  onCleared: () => void;
 }
 
-export const SpeechToText = ({ id, onCaption }: ISpeechToTextProps) => {
-  const { startListening, stopListening, caption } = useSpeechToText();
+export const SpeechToText = ({ id, isNeedClear, onCaption, onCleared }: ISpeechToTextProps) => {
+  const { startListening, pauseListening, stopListening, caption } = useSpeechToText();
   const [isRecording, setIsRecording] = useState(false);
+
+  useEffect(() => {
+    if (isNeedClear) {
+      onCleared();
+      setIsRecording(false);
+      stopListening(id);
+      onCleared();
+    }
+  }, [isNeedClear, onCleared, stopListening, id]);
 
   const handleStartListening = () => {
     startListening(id);
     setIsRecording(true);
   };
 
-  const handleStopListening = () => {
-    stopListening();
+  const handlePauseListening = () => {
+    pauseListening();
     setIsRecording(false);
   };
 
@@ -33,7 +44,7 @@ export const SpeechToText = ({ id, onCaption }: ISpeechToTextProps) => {
         Record
       </OwnButton>
 
-      <OwnButton type="button" color="success" onClick={handleStopListening} disabled={!isRecording}>
+      <OwnButton type="button" color="success" onClick={handlePauseListening} disabled={!isRecording}>
         Pause
       </OwnButton>
     </div>

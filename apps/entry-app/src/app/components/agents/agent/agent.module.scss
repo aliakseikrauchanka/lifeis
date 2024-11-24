@@ -43,8 +43,8 @@
     }
 
     &-resizer {
-      width: calc(100% - 30px);
-      height: 20px;
+      width: 100%;
+      height: 15px;
       background: #f0f0f0;
       position: absolute;
       bottom: 0;
@@ -61,7 +61,7 @@
         display: block;
         width: 40px;
         height: 5px;
-        margin: 7px auto;
+        margin: 5px auto;
         background: #999;
         border-radius: 5px;
       }
@@ -70,6 +70,8 @@
 
 
   &-history-navigation {
+    display: flex;
+    flex-direction: column;
     width: 30px;
 
     &:hover {
@@ -79,7 +81,16 @@
 
   &-buttons {
     display: flex;
+    align-items: center;
     gap: 5px;
+
+    &-photo {
+      display: flex;
+
+      &-icon{
+        margin-right: 10px;
+      }
+    }
   }
 
   &-prefix-container {

@@ -8,7 +8,8 @@ import { useMicVAD } from '../hooks/use-mic-vad';
 interface SpeechToTextContextType {
   caption: { [activeId: string]: string[] };
   startListening: (id: string) => void;
-  stopListening: () => void;
+  stopListening: (id: string) => void;
+  pauseListening: () => void;
 }
 
 const utteranceText = (event: LiveTranscriptionEvent) => {
@@ -19,16 +20,11 @@ const utteranceText = (event: LiveTranscriptionEvent) => {
 const SpeechToTextContext = createContext<SpeechToTextContextType | undefined>(undefined);
 
 interface SpeechToTextContextProviderProps {
-  clearBlobs: () => void;
   onBlob: (blob: Blob) => void;
   children: ReactNode;
 }
 
-const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = ({
-  clearBlobs: clearBlobsProp,
-  onBlob,
-  children,
-}) => {
+const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = ({ onBlob, children }) => {
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [caption, setCaption] = useState<{ [activeId: string]: string[] }>({});
 
@@ -55,7 +51,6 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
 
   useEffect(() => {
     if (isNeedReset) {
-      console.error('debug, resetting speech to text');
       clearTranscriptParts();
       resetMicrophone();
       onResetDone();
@@ -271,7 +266,21 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
     [startMicrophone],
   );
 
-  const stopListening = useCallback(() => {
+  const stopListening = useCallback(
+    (id: string) => {
+      setActiveId(undefined);
+      setCaption((prevCaption) => {
+        return {
+          ...prevCaption,
+          [id]: [],
+        };
+      });
+      stopMicrophone();
+    },
+    [stopMicrophone],
+  );
+
+  const pauseListening = useCallback(() => {
     setActiveId(undefined);
     stopMicrophone();
   }, [stopMicrophone]);
@@ -281,6 +290,7 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
       value={{
         caption,
         startListening,
+        pauseListening,
         stopListening,
       }}
     >

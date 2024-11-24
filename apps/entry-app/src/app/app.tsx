@@ -22,6 +22,7 @@ import './styles/reset.css';
 import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
+import { Select, Option } from '@mui/joy';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
@@ -35,7 +36,7 @@ export default function App() {
 
   const blobsRef = useRef<Blob[]>([]);
 
-  const playBlobs = useCallback(() => {
+  const handlePlayRecordedAudio = useCallback(() => {
     if (audioRef.current) {
       const concatenatedBlob = new Blob(blobsRef.current, { type: 'audio/webm' });
       const audioUrl = URL.createObjectURL(concatenatedBlob);
@@ -46,11 +47,17 @@ export default function App() {
       audioRef.current.src = audioUrl;
       audioRef.current.play();
 
-      audioRef.current.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-      };
+      // audioRef.current.onended = () => {
+      //   URL.revokeObjectURL(audioUrl);
+      // };
     }
   }, [blobsRef]);
+
+  const handleOnGetBlob = useCallback((blob: Blob) => {
+    blobsRef.current.push(blob);
+  }, []);
+
+  const handleLanguageChange = useCallback((_: any, newLanguageValue: string) => setLanguage(newLanguageValue), []);
 
   const { hasAudioFeature, hasLogsFeature, hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInUserId);
 
@@ -76,24 +83,22 @@ export default function App() {
           }}
           onLogOut={() => setIsLoggedIn(false)}
         />
-        <div style={{ position: 'absolute', top: '4px', right: '70px' }}>
+        <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex' }}>
           {hasAudioFeature && (
             // toggle of ru-RU and en-US languages
             <>
-              <button type="button" onClick={() => playBlobs()}>
-                Play blobs
-              </button>
-              <select
-                value={language}
-                onChange={(e) => {
-                  setLanguage(e.target.value);
-                }}
-              >
-                <option value="ru-RU">ru</option>
-                <option value="en-US">en</option>
-                <option value="pl">pl</option>
-              </select>
-
+              {audioEnabled && (
+                <>
+                  <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
+                    Play recorded audio
+                  </OwnButton>
+                  <Select value={language} onChange={handleLanguageChange} sx={{ minWidth: 120, minHeight: '1.75rem' }}>
+                    <Option value="ru-RU">ru</Option>
+                    <Option value="en-US">en</Option>
+                    <Option value="pl">pl</Option>
+                  </Select>
+                </>
+              )}
               <OwnButton
                 type="button"
                 color="success"
@@ -101,7 +106,7 @@ export default function App() {
                   setAudioEnabled(!audioEnabled);
                 }}
               >
-                toggle audio
+                {audioEnabled ? 'Disable stt' : 'Enable stt'}
               </OwnButton>
             </>
           )}
@@ -118,17 +123,7 @@ export default function App() {
                   <MicrophoneContextProvider>
                     <DeepgramContextProvider language={language}>
                       <AudioProvider>
-                        <SpeechToTextContextProvider
-                          onBlob={(blob) => {
-                            blobsRef.current.push(blob);
-                          }}
-                          clearBlobs={() => {
-                            blobsRef.current = [];
-                            if (audioRef.current) {
-                              audioRef.current.src = '';
-                            }
-                          }}
-                        >
+                        <SpeechToTextContextProvider onBlob={handleOnGetBlob}>
                           <AgentsPage />
                         </SpeechToTextContextProvider>
                       </AudioProvider>
