@@ -57,7 +57,10 @@ export default function App() {
     blobsRef.current.push(blob);
   }, []);
 
-  const handleLanguageChange = useCallback((_: any, newLanguageValue: string) => setLanguage(newLanguageValue), []);
+  const handleLanguageChange = useCallback(
+    (_: any, newLanguageValue: string | null) => setLanguage(newLanguageValue as string),
+    [],
+  );
 
   const { hasAudioFeature, hasLogsFeature, hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInUserId);
 
