@@ -86,7 +86,7 @@ export default function App() {
           }}
           onLogOut={() => setIsLoggedIn(false)}
         />
-        <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex' }}>
+        <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex', maxHeight: '30px' }}>
           {hasAudioFeature && (
             // toggle of ru-RU and en-US languages
             <>

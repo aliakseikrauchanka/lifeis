@@ -2,7 +2,7 @@
 
 import { useSpeechToText } from '../../contexts/speech-to-text.context';
 import { OwnButton } from '../button/button';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 interface ISpeechToTextProps {
   id: string;
@@ -14,6 +14,7 @@ interface ISpeechToTextProps {
 export const SpeechToText = ({ id, isNeedClear, onCaption, onCleared }: ISpeechToTextProps) => {
   const { startListening, pauseListening, stopListening, caption, connectionReady } = useSpeechToText();
   const [isRecording, setIsRecording] = useState(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (isNeedClear) {
@@ -26,11 +27,18 @@ export const SpeechToText = ({ id, isNeedClear, onCaption, onCleared }: ISpeechT
   const handleStartListening = () => {
     startListening(id);
     setIsRecording(true);
+    timeoutRef.current = setTimeout(() => {
+      stopListening(id);
+      setIsRecording(false);
+    }, 30000);
   };
 
   const handlePauseListening = () => {
     pauseListening();
     setIsRecording(false);
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
   };
 
   useEffect(() => {
