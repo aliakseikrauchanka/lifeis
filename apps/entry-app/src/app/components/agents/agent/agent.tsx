@@ -79,6 +79,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const [snackBarText, setSnackBarText] = useState('');
   const [imageIsParsing, setImageIsParsing] = useState(false);
   const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
+  const [savedCaptions, setSavedCaptions] = useState<string[]>([]);
 
   const { loggedInUserId } = useStorageContext();
 
@@ -475,13 +476,19 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           color="danger"
           onClick={handleClearText}
           style={{ marginLeft: 'auto' }}
-          disabled={!message}
+          disabled={!message && !answer}
         >
           Clear All
         </OwnButton>
         {audioEnabled && selectedAiProvider === 'gemini' && (
           <SpeechToText
-            onCaption={(caption) => setMessage(caption?.join(' ') || '')}
+            onCaption={(caption) => {
+              if (!caption || !caption.length) return;
+              setSavedCaptions(caption);
+              const differenceIndex = caption.findIndex((item, index) => savedCaptions[index] !== item);
+              const additionalMessage = caption.slice(differenceIndex).join(' ');
+              setMessage((message) => (message ? `${message} ${additionalMessage}` : additionalMessage));
+            }}
             id={id}
             onCleared={() => setIsCaptionsNeedClear(false)}
             isNeedClear={isCaptionsNeedClear}

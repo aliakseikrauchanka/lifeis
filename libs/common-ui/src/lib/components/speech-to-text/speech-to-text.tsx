@@ -12,7 +12,7 @@ interface ISpeechToTextProps {
 }
 
 export const SpeechToText = ({ id, isNeedClear, onCaption, onCleared }: ISpeechToTextProps) => {
-  const { startListening, pauseListening, stopListening, caption } = useSpeechToText();
+  const { startListening, pauseListening, stopListening, caption, connectionReady } = useSpeechToText();
   const [isRecording, setIsRecording] = useState(false);
 
   useEffect(() => {
@@ -39,11 +39,21 @@ export const SpeechToText = ({ id, isNeedClear, onCaption, onCleared }: ISpeechT
 
   return (
     <div>
-      <OwnButton type="button" color="success" onClick={handleStartListening} disabled={isRecording}>
+      <OwnButton
+        type="button"
+        color="success"
+        onClick={handleStartListening}
+        disabled={!connectionReady || (connectionReady && isRecording)}
+      >
         Record
       </OwnButton>
 
-      <OwnButton type="button" color="success" onClick={handlePauseListening} disabled={!isRecording}>
+      <OwnButton
+        type="button"
+        color="success"
+        onClick={handlePauseListening}
+        disabled={!isRecording || !connectionReady}
+      >
         Pause
       </OwnButton>
     </div>

@@ -6,6 +6,7 @@ import { LiveClient, LiveTranscriptionEvent, LiveTranscriptionEvents } from '@de
 import { useMicVAD } from '../hooks/use-mic-vad';
 
 interface SpeechToTextContextType {
+  connectionReady: boolean;
   caption: { [activeId: string]: string[] };
   startListening: (id: string) => void;
   stopListening: (id: string) => void;
@@ -292,6 +293,7 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
         startListening,
         pauseListening,
         stopListening,
+        connectionReady,
       }}
     >
       {children}
