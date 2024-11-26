@@ -87,32 +87,27 @@ export default function App() {
           onLogOut={() => setIsLoggedIn(false)}
         />
         <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex', maxHeight: '30px' }}>
-          {hasAudioFeature && (
-            // toggle of ru-RU and en-US languages
+          {audioEnabled && (
             <>
-              {audioEnabled && (
-                <>
-                  <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
-                    Play recorded audio
-                  </OwnButton>
-                  <Select value={language} onChange={handleLanguageChange} sx={{ minWidth: 120, minHeight: '1.75rem' }}>
-                    <Option value="ru-RU">ru</Option>
-                    <Option value="en-US">en</Option>
-                    <Option value="pl">pl</Option>
-                  </Select>
-                </>
-              )}
-              <OwnButton
-                type="button"
-                color="success"
-                onClick={() => {
-                  setAudioEnabled(!audioEnabled);
-                }}
-              >
-                {audioEnabled ? 'Disable stt' : 'Enable stt'}
-              </OwnButton>
+              {/* <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
+                Play recorded audio
+              </OwnButton> */}
+              <Select value={language} onChange={handleLanguageChange} sx={{ minWidth: 120, minHeight: '1.75rem' }}>
+                <Option value="ru-RU">ru</Option>
+                <Option value="en-US">en</Option>
+                <Option value="pl">pl</Option>
+              </Select>
             </>
           )}
+          <OwnButton
+            type="button"
+            color="success"
+            onClick={() => {
+              setAudioEnabled(!audioEnabled);
+            }}
+          >
+            {audioEnabled ? 'Disable stt' : 'Enable stt'}
+          </OwnButton>
         </div>
       </header>
 
