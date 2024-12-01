@@ -89,9 +89,9 @@ export default function App() {
         <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex', maxHeight: '30px' }}>
           {audioEnabled && (
             <>
-              {/* <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
+              <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
                 Play recorded audio
-              </OwnButton> */}
+              </OwnButton>
               <Select value={language} onChange={handleLanguageChange} sx={{ minWidth: 120, minHeight: '1.75rem' }}>
                 <Option value="ru-RU">ru</Option>
                 <Option value="en-US">en</Option>

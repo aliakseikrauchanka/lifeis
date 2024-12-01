@@ -7,7 +7,7 @@ interface MicrophoneContextType {
   microphone: MediaRecorder | null;
   stream: MediaStream | undefined;
   startMicrophone: () => void;
-  stopMicrophone: () => void;
+  pauseMicrophone: () => void;
   microphoneState: MicrophoneState | null;
   enqueueBlob: (element: Blob) => void;
   removeBlob: () => Blob | undefined;
@@ -87,7 +87,7 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
     }
   }, [enqueueBlob, microphone, microphoneState, setupMicrophone]);
 
-  const stopMicrophone = useCallback(() => {
+  const pauseMicrophone = useCallback(() => {
     setMicrophoneState(MicrophoneState.Pausing);
 
     if (microphone?.state === 'recording') {
@@ -136,7 +136,7 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
         microphone,
         resetMicrophone,
         startMicrophone,
-        stopMicrophone,
+        pauseMicrophone,
         microphoneState,
         stream,
         enqueueBlob,

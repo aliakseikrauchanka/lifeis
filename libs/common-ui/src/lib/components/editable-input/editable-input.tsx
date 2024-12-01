@@ -5,11 +5,12 @@ import { Textarea, Typography } from '@mui/joy';
 
 interface EditableInputProps {
   initialValue: string;
+  isDisabled?: boolean;
   onValueChange: (newPrefix: string) => void;
   onToggle?: (isEditing: boolean) => void;
 }
 
-export const EditableInput: React.FC<EditableInputProps> = ({ initialValue, onValueChange, onToggle }) => {
+export const EditableInput: React.FC<EditableInputProps> = ({ initialValue, isDisabled, onValueChange, onToggle }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(initialValue);
 
@@ -31,6 +32,7 @@ export const EditableInput: React.FC<EditableInputProps> = ({ initialValue, onVa
 
   return isEditing ? (
     <Textarea
+      disabled={isDisabled}
       value={inputValue}
       onChange={(e) => setInputValue(e.target.value)}
       onBlur={handleBlurTextarea}

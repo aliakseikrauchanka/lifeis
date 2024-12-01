@@ -12,11 +12,15 @@ import {
   ListItemContent,
   CircularProgress,
   useTheme,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/joy';
 import { IAgentHistoryItem, IAgentHistoryResponse } from '../../../../domains/agent.domain';
 import { getAgentHistory } from '../../../../api/agents/agents.api';
 import ReactMarkdown from 'react-markdown';
 import { useQuery } from '@tanstack/react-query';
+import { EditableInput } from '@lifeis/common-ui';
 
 interface IAgentHistoryModalProps {
   open: boolean;
@@ -54,6 +58,10 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
     select: (data) => data?.history,
   });
 
+  query.data?.forEach((item) => {
+    console.log(item.prompt);
+  });
+
   useEffect(() => {
     if (open) {
       fetchHistory();
@@ -63,7 +71,7 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
   useEffect(() => {
     const filtered = query.data?.filter(
       (item) =>
-        item.prompt.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.response.toLowerCase().includes(searchTerm.toLowerCase()),
     );
     setFilteredHistory(filtered ?? []);
@@ -127,12 +135,15 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
                       },
                     }}
                   >
-                    <Typography>
-                      <Typography level="title-md" color={'neutral'}>
-                        Instructions:
-                      </Typography>{' '}
-                      {item.prefix}
-                    </Typography>
+                    <Accordion>
+                      <AccordionSummary sx={{ marginRight: '28px', backgroundColor: '#f5f5f5', height: '60px' }}>
+                        <Typography level="title-md" color={'neutral'}>
+                          Instructions:
+                        </Typography>{' '}
+                      </AccordionSummary>
+                      <AccordionDetails>{item.prefix}</AccordionDetails>
+                    </Accordion>
+                    {/* <EditableInput></EditableInput> */}
                     <Typography>
                       <Typography level="title-md" color={'primary'}>
                         Message:

@@ -45,7 +45,7 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
     firstBlob,
     removeBlob,
     startMicrophone,
-    stopMicrophone,
+    pauseMicrophone,
     stream,
     resetMicrophone,
   } = useMicrophone();
@@ -276,15 +276,15 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
           [id]: [],
         };
       });
-      stopMicrophone();
+      pauseMicrophone();
     },
-    [stopMicrophone],
+    [pauseMicrophone],
   );
 
   const pauseListening = useCallback(() => {
     setActiveId(undefined);
-    stopMicrophone();
-  }, [stopMicrophone]);
+    pauseMicrophone();
+  }, [pauseMicrophone]);
 
   return (
     <SpeechToTextContext.Provider
