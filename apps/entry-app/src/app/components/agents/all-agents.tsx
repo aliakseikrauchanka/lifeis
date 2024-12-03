@@ -158,7 +158,7 @@ export const AllAgents = () => {
                 display: 'flex',
                 alignItems: 'center',
                 position: 'absolute',
-                top: selectionRect.top - 40, // TODO: Adjust as needed
+                top: selectionRect.top - 100, // TODO: Adjust as needed
                 left: selectionRect.left,
                 backgroundColor: 'rebeccapurple',
                 height: selectionRect.height,
