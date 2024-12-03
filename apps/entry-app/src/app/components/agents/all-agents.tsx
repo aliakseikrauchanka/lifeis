@@ -158,17 +158,17 @@ export const AllAgents = () => {
                 display: 'flex',
                 alignItems: 'center',
                 position: 'absolute',
-                top: selectionRect.top - 100, // TODO: Adjust as needed
+                top: selectionRect.top + selectionRect.height + 10, // TODO: Adjust as needed
                 left: selectionRect.left,
                 backgroundColor: 'rebeccapurple',
-                height: selectionRect.height,
+                // height: selectionRect.height,
                 overflow: 'hidden',
                 zIndex: 1000,
                 fontSize: '13px',
                 color: 'white',
               }}
             >
-              {selectionText}
+              {/* {selectionText} */}
               <button
                 onClick={async () => {
                   let audioContent;
