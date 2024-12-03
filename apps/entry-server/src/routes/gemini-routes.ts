@@ -19,5 +19,35 @@ export const createGeminiRoutes = (geminiModel: GenerativeModel) => {
     res.send({ translation });
   });
 
+  routes.post('/text-to-speech', verifyAccessToken, async (req, res) => {
+    const raw = JSON.stringify({
+      input: {
+        text: req.body.message,
+      },
+      voice: {
+        languageCode: 'pl-PL',
+      },
+      audioConfig: {
+        audioEncoding: 'MP3',
+      },
+    });
+
+    const requestOptions = {
+      method: 'POST',
+      body: raw,
+    };
+
+    const url = 'https://texttospeech.googleapis.com/v1/text:synthesize?key=' + process.env.GOOGLE_CLOUD_API_KEY;
+
+    try {
+      const respone = await fetch(url, requestOptions);
+      const responseJson = await respone.json();
+      res.send(responseJson);
+    } catch (e) {
+      console.error('error', e);
+      res.send({ error: e }).status(500);
+    }
+  });
+
   return routes;
 };

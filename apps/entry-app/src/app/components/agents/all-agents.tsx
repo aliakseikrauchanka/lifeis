@@ -1,5 +1,5 @@
 import { getAllAgents } from '../../api/agents/agents.api';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Agent } from './agent/agent';
 import AgentForm from './agent-create/agent-create';
 import css from './all-agents.module.scss';
@@ -8,6 +8,7 @@ import { IAgentResponse } from '../../domains/agent.domain';
 import { useStorageContext } from '../../contexts/storage.context';
 import { Accordion, AccordionDetails, AccordionSummary } from '@mui/joy';
 import classNames from 'classnames';
+import { textToSpeech } from '../../api/assistants/assistants.api';
 
 const AVAILABLE_KEYS = ['1', '2', '3', '4', '5'];
 
@@ -17,6 +18,7 @@ export const AllAgents = () => {
   const { pinnedAgentsIds } = useStorageContext();
 
   const [focusedAgentIndex, setFocusedAgentIndex] = useState(0);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   useEffect(() => {
     if (!query.data?.length) {
@@ -40,6 +42,77 @@ export const AllAgents = () => {
 
   // array of agents where pinnedAgents are first and then the rest but that need to save the order of the pinned agents
   // order of pinned agents should be saved
+
+  const [selectionRect, setSelectionRect] = useState<any>(null);
+  const [selectionText, setSelectionText] = useState('');
+  const textRef = useRef(null);
+  const [curAudioBase64, setCurAudioBase64] = useState('');
+
+  useEffect(() => {
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
+  }, []);
+
+  const handleSelectionChange = () => {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount) return;
+
+    const range = selection.getRangeAt(0);
+    // get text from selection
+    const text = selection.toString();
+
+    if (
+      range &&
+      !selection.isCollapsed &&
+      !!range.commonAncestorContainer.parentElement?.closest('.response-body') &&
+      text.length < 200 // limit to 200 characters
+    ) {
+      const containerRect = (textRef.current as any).getBoundingClientRect();
+
+      const rect = range.getBoundingClientRect();
+      setSelectionRect({
+        top: rect.top - containerRect.top,
+        left: rect.left - containerRect.left,
+        width: rect.width,
+        height: rect.height,
+      });
+
+      setSelectionText(text);
+    } else {
+      setSelectionRect(null);
+      setSelectionText('');
+      setCurAudioBase64('');
+      audioRef.current?.pause();
+    }
+  };
+
+  const playBase64Audio = (base64Audio: string) => {
+    setCurAudioBase64(base64Audio);
+    if (audioRef.current) {
+      // Convert base64 to blob
+      const byteCharacters = atob(base64Audio);
+      const byteNumbers = new Array(byteCharacters.length);
+
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+
+      const byteArray = new Uint8Array(byteNumbers);
+      const audioBlob = new Blob([byteArray], { type: 'audio/mp3' });
+
+      // Create and play audio
+      const audioUrl = URL.createObjectURL(audioBlob);
+      audioRef.current.src = audioUrl;
+      audioRef.current.play();
+
+      // Cleanup
+      audioRef.current.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+      };
+    }
+  };
 
   if (!query.data) {
     return <div>Loading...</div>;
@@ -77,6 +150,53 @@ export const AllAgents = () => {
         </div>
 
         <AgentForm />
+
+        <div style={{ position: 'relative', padding: '20px' }} ref={textRef}>
+          {selectionRect && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                position: 'absolute',
+                top: selectionRect.top - 40, // TODO: Adjust as needed
+                left: selectionRect.left,
+                backgroundColor: 'rebeccapurple',
+                height: selectionRect.height,
+                overflow: 'hidden',
+                zIndex: 1000,
+                fontSize: '13px',
+                color: 'white',
+              }}
+            >
+              {selectionText}
+              <button
+                onClick={async () => {
+                  let audioContent;
+                  if (!curAudioBase64) {
+                    audioContent = await textToSpeech(selectionText);
+                  } else {
+                    audioContent = curAudioBase64;
+                  }
+                  if (audioContent) {
+                    playBase64Audio(audioContent);
+                  }
+                }}
+              >
+                Speak
+              </button>
+              <button
+                onClick={() => {
+                  audioRef.current?.pause();
+                }}
+              >
+                Stop
+              </button>
+              <audio ref={audioRef}>
+                <source type="audio/mpeg" />
+              </audio>
+            </div>
+          )}
+        </div>
 
         <br />
         <Accordion>

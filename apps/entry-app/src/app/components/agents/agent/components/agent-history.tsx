@@ -58,10 +58,6 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
     select: (data) => data?.history,
   });
 
-  query.data?.forEach((item) => {
-    console.log(item.prompt);
-  });
-
   useEffect(() => {
     if (open) {
       fetchHistory();

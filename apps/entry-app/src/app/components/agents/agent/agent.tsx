@@ -529,7 +529,13 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
             </>
           )}
         </h4>
-        {isSubmitting ? 'Generating ...' : <div ref={responseRef}>{<ReactMarkdown>{answer}</ReactMarkdown>}</div>}
+        {isSubmitting ? (
+          'Generating ...'
+        ) : (
+          <div className="response-body" ref={responseRef}>
+            {<ReactMarkdown>{answer}</ReactMarkdown>}
+          </div>
+        )}
       </div>
       <AgentHistoryModal open={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} agentId={id} />
       <Snackbar

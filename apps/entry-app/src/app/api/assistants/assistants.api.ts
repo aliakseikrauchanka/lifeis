@@ -19,12 +19,9 @@ export const checkPolishGrammar = async (text: string): Promise<string> => {
     return new Promise((resolve, reject) => {
       const intervalId = setInterval(async () => {
         try {
-          const runResponse = await utilFetch(
-            `/openai/thread/run?threadId=${threadId}&runId=${runId}`,
-            {
-              method: 'GET',
-            },
-          );
+          const runResponse = await utilFetch(`/openai/thread/run?threadId=${threadId}&runId=${runId}`, {
+            method: 'GET',
+          });
 
           const run = await runResponse.json();
 
@@ -61,6 +58,24 @@ export const translateToPolish = async (text: string): Promise<string> => {
     });
     const { translation } = await checkData.json();
     return translation;
+  } catch (e) {
+    console.log(e);
+    throw e;
+  }
+};
+
+export const textToSpeech = async (text: string): Promise<string> => {
+  try {
+    // post message
+    const checkData = await utilFetch(`/gemini/text-to-speech`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message: text }),
+    });
+    const { audioContent } = await checkData.json();
+    return audioContent;
   } catch (e) {
     console.log(e);
     throw e;
