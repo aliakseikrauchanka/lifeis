@@ -233,7 +233,6 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
       removeMutation.mutate(id);
     }
   };
-
   const handleMakeAgentTemplate = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
     if (window.confirm('Are you sure you want to make agent template?')) {
@@ -460,9 +459,6 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         />
       </div>
       <div className={css.agentButtons}>
-        <OwnButton type="submit" disabled={!message || isSubmitting}>
-          Submit
-        </OwnButton>
         <Select
           value={selectedAiProvider}
           onChange={(_, newValue) => setSelectedAiProvider(newValue as string)}
@@ -494,6 +490,9 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
             isNeedClear={isCaptionsNeedClear}
           />
         )}
+        <OwnButton type="submit" disabled={!message || isSubmitting}>
+          Submit
+        </OwnButton>
 
         <label htmlFor={`photo-${number}`} className={css.agentButtonsPhoto}>
           <CameraAlt fontSize="large" color="inherit" className={css.agentButtonsPhotoIcon} />

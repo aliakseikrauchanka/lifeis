@@ -15,12 +15,13 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  IconButton,
 } from '@mui/joy';
 import { IAgentHistoryItem, IAgentHistoryResponse } from '../../../../domains/agent.domain';
 import { getAgentHistory } from '../../../../api/agents/agents.api';
 import ReactMarkdown from 'react-markdown';
 import { useQuery } from '@tanstack/react-query';
-import { EditableInput } from '@lifeis/common-ui';
+import { Clear } from '@mui/icons-material';
 
 interface IAgentHistoryModalProps {
   open: boolean;
@@ -98,13 +99,31 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
       >
         {' '}
         <Typography level="h4">Agent History</Typography>
-        <Input
-          type="text"
-          placeholder="Search history..."
-          value={searchTerm}
-          onChange={handleSearchChange}
-          sx={{ mb: 2, width: '100%', position: 'sticky', top: 0, zIndex: 1 }}
-        />
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, position: 'relative' }}>
+          <Input
+            type="text"
+            placeholder="Search history..."
+            value={searchTerm}
+            onChange={handleSearchChange}
+            sx={{ mb: 2, width: '100%', position: 'sticky', top: 0, zIndex: 1 }}
+          />
+          <IconButton
+            onClick={() => setSearchTerm('')}
+            sx={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              zIndex: 1,
+              backgroundColor: 'transparent',
+              color: 'text.primary',
+              '&:hover': {
+                backgroundColor: 'transparent',
+              },
+            }}
+          >
+            <Clear />
+          </IconButton>
+        </Box>
         {loading ? (
           <CircularProgress />
         ) : (
