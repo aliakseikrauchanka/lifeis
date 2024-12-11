@@ -1,7 +1,7 @@
 import { Router, Request } from 'express';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { MongoClient, ObjectId } from 'mongodb';
-import { GenerateContentRequest, GenerativeModel, Part } from '@google/generative-ai';
+import { GenerateContentRequest, GoogleGenerativeAI, Part } from '@google/generative-ai';
 import { GoogleAIFileManager } from '@google/generative-ai/server';
 import fs from 'fs';
 import path from 'path';
@@ -52,7 +52,11 @@ interface IAgentTemplate extends IAgentBasic {
 
 type IAgentDocument = Document & IAgent & IAgentTemplate;
 
-export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeModel, openAiModel: OpenAI) => {
+const defaultGeminiModelName = 'gemini-1.5-flash-latest';
+const defaultOpenAiModelName = 'gpt-4o-mini';
+const allowedGeminiModelsNames = ['gemini-1.5-flash-latest', 'gemini-2.0-flash-exp', 'gemini-1.5-pro'];
+
+export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeAI, openAiModel: OpenAI) => {
   const router = Router();
 
   router.get('/', verifyAccessToken, async (req, res) => {
@@ -202,6 +206,8 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
             },
           });
         }
+
+        const geminiModel = genAi.getGenerativeModel({ model: defaultGeminiModelName });
         const response = await geminiModel.generateContent(geminiRequestBody);
         try {
           uploadResult.file.url && fileManager.deleteFile(uploadResult.file.id);
@@ -291,7 +297,7 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
     try {
       if (aiProvider === 'openai') {
         const response = await openAiModel.chat.completions.create({
-          model: 'gpt-4o-mini',
+          model: defaultOpenAiModelName,
           messages: [
             {
               role: 'user',
@@ -317,6 +323,8 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
             },
           });
         }
+        const model = allowedGeminiModelsNames.includes(aiProvider) ? aiProvider : defaultGeminiModelName;
+        const geminiModel = genAi.getGenerativeModel({ model });
         const response = await geminiModel.generateContent(geminiRequestBody);
         try {
           uploadResult.file.url && fileManager.deleteFile(uploadResult.file.id);

@@ -55,6 +55,8 @@ const emptyHistoryItem: IAgentHistoryItem = {
   timestamp: new Date(),
 } as const;
 
+const defaultAiModelName = 'gemini-1.5-flash-latest';
+
 export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchived: isArchivedProp }: IAgentProps) => {
   const [historyCurrentIndex, setHistoryCurrentIndex] = useState(0);
   const [initLoad, setInitLoad] = useState(true);
@@ -75,7 +77,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const queryClient = useQueryClient();
   const { audioEnabled } = useStorageContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedAiProvider, setSelectedAiProvider] = useState('gemini');
+  const [selectedAiProvider, setSelectedAiProvider] = useState(defaultAiModelName);
   const [snackBarText, setSnackBarText] = useState('');
   const [imageIsParsing, setImageIsParsing] = useState(false);
   const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
@@ -464,7 +466,9 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           onChange={(_, newValue) => setSelectedAiProvider(newValue as string)}
           sx={{ minHeight: 30, minWidth: 95 }}
         >
-          <Option value="gemini">Gemini</Option>
+          <Option value="gemini-1.5-flash-latest">Gemini</Option>
+          <Option value="gemini-2.0-flash-exp">Gemini Flash 2</Option>
+          <Option value="gemini-1.5-pro">Gemini Pro</Option>
           <Option value="openai">OpenAI</Option>
         </Select>
         <label htmlFor={`photo-${number}`} className={css.agentButtonsPhoto}>
