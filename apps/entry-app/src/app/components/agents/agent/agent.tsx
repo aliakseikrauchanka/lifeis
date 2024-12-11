@@ -55,7 +55,7 @@ const emptyHistoryItem: IAgentHistoryItem = {
   timestamp: new Date(),
 } as const;
 
-const defaultAiModelName = 'gemini-1.5-flash-latest';
+const defaultAiModelName = 'gemini-2.0-flash-exp';
 
 export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchived: isArchivedProp }: IAgentProps) => {
   const [historyCurrentIndex, setHistoryCurrentIndex] = useState(0);
@@ -466,7 +466,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           onChange={(_, newValue) => setSelectedAiProvider(newValue as string)}
           sx={{ minHeight: 30, minWidth: 95 }}
         >
-          <Option value="gemini-1.5-flash-latest">Gemini</Option>
+          <Option value="gemini-1.5-flash-latest">Gemini Flash 1.5</Option>
           <Option value="gemini-2.0-flash-exp">Gemini Flash 2</Option>
           <Option value="gemini-1.5-pro">Gemini Pro</Option>
           <Option value="openai">OpenAI</Option>

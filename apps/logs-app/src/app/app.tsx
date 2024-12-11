@@ -12,7 +12,6 @@ import {
 
 import { Route, Routes, Link } from 'react-router-dom';
 import { CONFIG } from '../config';
-import { MainPage } from './pages/main.page';
 import { useEffect, useState } from 'react';
 import { LogsPage } from './pages/logs.page';
 

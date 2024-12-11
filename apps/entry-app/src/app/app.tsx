@@ -30,7 +30,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn() || isOfflineModeOn);
   const { audioEnabled, setAudioEnabled, loggedInUserId, setLoggedInUserId } = useStorageContext();
   const [isIniitialized, setIsInitialized] = useState(false);
-  const [language, setLanguage] = useState('ru-RU');
+  const [language, setLanguage] = useState('pl');
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
