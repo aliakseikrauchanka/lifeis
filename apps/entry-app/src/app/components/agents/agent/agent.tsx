@@ -220,6 +220,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
 
   const handleSubmitForm = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsCaptionsNeedClear(true);
     submitPrompt();
   };
 
