@@ -277,7 +277,7 @@ export const createAgentsRoutes = (client: MongoClient, geminiModel: GenerativeM
 
     const { prefix } = foundAgent;
 
-    const aiProvider = req.body.aiProvider === 'openai' ? 'openai' : 'gemini'; // gemini is default
+    const aiProvider = req.body.aiProvider ?? 'gemini'; // gemini is default
 
     let prompt: string;
     if (prefix.indexOf('{}') > -1) {

@@ -462,21 +462,23 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         <Select
           value={selectedAiProvider}
           onChange={(_, newValue) => setSelectedAiProvider(newValue as string)}
-          sx={{ minWidth: 120, minHeight: 30 }}
+          sx={{ minHeight: 30, minWidth: 95 }}
         >
           <Option value="gemini">Gemini</Option>
           <Option value="openai">OpenAI</Option>
         </Select>
-        <OwnButton
-          type="button"
-          color="danger"
-          onClick={handleClearText}
-          style={{ marginLeft: 'auto' }}
-          disabled={!message && !answer}
-        >
-          Clear All
-        </OwnButton>
-        {audioEnabled && selectedAiProvider === 'gemini' && (
+        <label htmlFor={`photo-${number}`} className={css.agentButtonsPhoto}>
+          <CameraAlt fontSize="large" color="inherit" />
+        </label>
+        <input
+          type="file"
+          id={`photo-${number}`}
+          capture="environment"
+          accept="image/*,video/*"
+          style={{ display: 'none' }}
+          onChangeCapture={handleCapture}
+        />
+        {audioEnabled && (
           <SpeechToText
             onCaption={(caption) => {
               if (!caption || !caption.length) return;
@@ -490,21 +492,18 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
             isNeedClear={isCaptionsNeedClear}
           />
         )}
+        <OwnButton
+          type="button"
+          color="danger"
+          onClick={handleClearText}
+          style={{ marginLeft: 'auto' }}
+          disabled={!message && !answer}
+        >
+          Clear All
+        </OwnButton>
         <OwnButton type="submit" disabled={!message || isSubmitting}>
           Submit
         </OwnButton>
-
-        <label htmlFor={`photo-${number}`} className={css.agentButtonsPhoto}>
-          <CameraAlt fontSize="large" color="inherit" className={css.agentButtonsPhotoIcon} />
-        </label>
-        <input
-          type="file"
-          id={`photo-${number}`}
-          capture="environment"
-          accept="image/*,video/*"
-          style={{ display: 'none' }}
-          onChangeCapture={handleCapture}
-        />
       </div>
       <div className={css.agentResponse}>
         <h4 className={css.agentResponseTitle}>

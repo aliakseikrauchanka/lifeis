@@ -7,11 +7,12 @@ import { useEffect, useRef, useState } from 'react';
 interface ISpeechToTextProps {
   id: string;
   isNeedClear?: boolean;
+  className?: string;
   onCaption: (caption: string[] | undefined) => void;
   onCleared?: () => void;
 }
 
-export const SpeechToText = ({ id, isNeedClear, onCaption, onCleared }: ISpeechToTextProps) => {
+export const SpeechToText = ({ id, className, isNeedClear, onCaption, onCleared }: ISpeechToTextProps) => {
   const { startListening, pauseListening, stopListening, caption, connectionReady } = useSpeechToText();
   const [isRecording, setIsRecording] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -46,7 +47,7 @@ export const SpeechToText = ({ id, isNeedClear, onCaption, onCleared }: ISpeechT
   }, [caption[id]]);
 
   return (
-    <div>
+    <div className={className}>
       <OwnButton
         type="button"
         color="success"
