@@ -501,12 +501,12 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           type="button"
           color="danger"
           onClick={handleClearText}
-          style={{ marginLeft: 'auto' }}
+          style={{ marginLeft: 'auto', height: '100%' }}
           disabled={!message && !answer}
         >
           Clear All
         </OwnButton>
-        <OwnButton type="submit" disabled={!message || isSubmitting}>
+        <OwnButton type="submit" style={{ height: '100%' }} disabled={!message || isSubmitting}>
           Submit
         </OwnButton>
       </div>
