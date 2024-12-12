@@ -483,6 +483,15 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
           style={{ display: 'none' }}
           onChangeCapture={handleCapture}
         />
+        <OwnButton
+          type="button"
+          color="danger"
+          onClick={handleClearText}
+          style={{ marginLeft: 'auto', height: '100%' }}
+          disabled={!message && !answer}
+        >
+          Clear All
+        </OwnButton>
         {audioEnabled && (
           <SpeechToText
             onCaption={(caption) => {
@@ -497,15 +506,6 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
             isNeedClear={isCaptionsNeedClear}
           />
         )}
-        <OwnButton
-          type="button"
-          color="danger"
-          onClick={handleClearText}
-          style={{ marginLeft: 'auto', height: '100%' }}
-          disabled={!message && !answer}
-        >
-          Clear All
-        </OwnButton>
         <OwnButton type="submit" style={{ height: '100%' }} disabled={!message || isSubmitting}>
           Submit
         </OwnButton>
