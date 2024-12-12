@@ -494,6 +494,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         </OwnButton>
         {audioEnabled && (
           <SpeechToText
+            className={css.agentButtonsStt}
             onCaption={(caption) => {
               if (!caption || !caption.length) return;
               setSavedCaptions(caption);
