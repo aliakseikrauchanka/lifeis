@@ -28,9 +28,9 @@ const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn() || isOfflineModeOn);
-  const { audioEnabled, setAudioEnabled, loggedInUserId, setLoggedInUserId } = useStorageContext();
+  const { audioEnabled, setAudioEnabled, loggedInUserId, setLoggedInUserId, languageCode, setLanguageCode } =
+    useStorageContext();
   const [isIniitialized, setIsInitialized] = useState(false);
-  const [language, setLanguage] = useState('pl');
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -58,7 +58,7 @@ export default function App() {
   }, []);
 
   const handleLanguageChange = useCallback(
-    (_: any, newLanguageValue: string | null) => setLanguage(newLanguageValue as string),
+    (_: any, newLanguageValue: string | null) => setLanguageCode(newLanguageValue as string),
     [],
   );
 
@@ -92,10 +92,11 @@ export default function App() {
               <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
                 Play recorded audio
               </OwnButton>
-              <Select value={language} onChange={handleLanguageChange} sx={{ minWidth: 120, minHeight: '1.75rem' }}>
+              <Select value={languageCode} onChange={handleLanguageChange} sx={{ minWidth: 120, minHeight: '1.75rem' }}>
+                <Option value="pl">pl</Option>
+                <Option value="cs-CZ">cs</Option>
                 <Option value="ru-RU">ru</Option>
                 <Option value="en-US">en</Option>
-                <Option value="pl">pl</Option>
               </Select>
             </>
           )}
@@ -119,7 +120,7 @@ export default function App() {
               <AudioSwitch
                 audioElement={
                   <MicrophoneContextProvider>
-                    <DeepgramContextProvider language={language}>
+                    <DeepgramContextProvider language={languageCode === 'cs-CZ' ? 'cs' : languageCode}>
                       <AudioProvider>
                         <SpeechToTextContextProvider onBlob={handleOnGetBlob}>
                           <AgentsPage />

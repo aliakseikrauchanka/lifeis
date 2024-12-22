@@ -64,10 +64,10 @@ export const translateToPolish = async (text: string): Promise<string> => {
   }
 };
 
-export const textToSpeech = async (text: string): Promise<string> => {
+export const textToSpeech = async (text: string, languageCode: string): Promise<string> => {
   try {
     // post message
-    const checkData = await utilFetch(`/gemini/text-to-speech`, {
+    const checkData = await utilFetch(`/gemini/text-to-speech?l=${languageCode}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

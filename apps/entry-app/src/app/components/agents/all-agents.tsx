@@ -15,7 +15,7 @@ const AVAILABLE_KEYS = ['1', '2', '3', '4', '5'];
 export const AllAgents = () => {
   const query = useQuery({ queryKey: ['agents'], queryFn: getAllAgents, select: (data) => data.agents });
 
-  const { pinnedAgentsIds } = useStorageContext();
+  const { pinnedAgentsIds, languageCode } = useStorageContext();
 
   const [focusedAgentIndex, setFocusedAgentIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -173,7 +173,7 @@ export const AllAgents = () => {
                 onClick={async () => {
                   let audioContent;
                   if (!curAudioBase64) {
-                    audioContent = await textToSpeech(selectionText);
+                    audioContent = await textToSpeech(selectionText, languageCode);
                   } else {
                     audioContent = curAudioBase64;
                   }

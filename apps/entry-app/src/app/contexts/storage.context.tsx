@@ -5,6 +5,8 @@ import { getPinnedAgents, savePinnedAgents } from '../api/agents/agents.api';
 const audioEnabledKey = 'audio';
 
 export interface StorageContextType {
+  languageCode: string;
+  setLanguageCode: (code: string) => void;
   loggedInUserId: string;
   setLoggedInUserId: (userId: string) => void;
   pinnedAgentsIds: string[];
@@ -25,6 +27,8 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
   });
 
   const [loggedInUserId, setLoggedInUserId] = useState<string>(isOfflineModeOn ? 'local_user' : getGoogleUserId());
+
+  const [languageCode, setLanguageCode] = useState<string>('cs-CZ');
 
   const [pinnedAgentsIds, setPinnedAgents] = useState<string[]>([]);
 
@@ -59,6 +63,8 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const returnValue: StorageContextType = {
+    languageCode,
+    setLanguageCode,
     loggedInUserId,
     setLoggedInUserId,
     pinnedAgentsIds,
