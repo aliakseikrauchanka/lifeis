@@ -132,7 +132,7 @@ export const AllAgents = () => {
 
   return (
     <div>
-      <div className={css.agentsWrapper}>
+      <div>
         <div className={css.agents}>
           {sortedAgents.map((agent, i: number) => (
             <Agent

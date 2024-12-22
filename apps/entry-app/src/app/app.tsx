@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
+import css from './app.module.scss';
+
 import {
   AudioProvider,
   DeepgramContextProvider,
@@ -75,67 +77,75 @@ export default function App() {
 
   return isIniitialized ? (
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
-      <audio ref={audioRef} />
-      <header>
-        <UserSession
-          isOfflineMode={isOfflineModeOn}
-          isLoggedIn={isLoggedIn}
-          onLoginSuccess={(googleUserId) => {
-            setIsLoggedIn(true);
-            setLoggedInUserId(googleUserId);
-          }}
-          onLogOut={() => setIsLoggedIn(false)}
-        />
-        <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex', maxHeight: '30px' }}>
-          {audioEnabled && (
-            <>
-              <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
-                Play recorded audio
-              </OwnButton>
-              <Select value={languageCode} onChange={handleLanguageChange} sx={{ minWidth: 120, minHeight: '1.75rem' }}>
-                <Option value="pl">pl</Option>
-                <Option value="cs-CZ">cs</Option>
-                <Option value="ru-RU">ru</Option>
-                <Option value="en-US">en</Option>
-              </Select>
-            </>
-          )}
-          <OwnButton
-            type="button"
-            color="success"
-            onClick={() => {
-              setAudioEnabled(!audioEnabled);
+      <main className={css.main}>
+        <audio ref={audioRef} />
+        <header className={css.header}>
+          <UserSession
+            isOfflineMode={isOfflineModeOn}
+            isLoggedIn={isLoggedIn}
+            onLoginSuccess={(googleUserId) => {
+              setIsLoggedIn(true);
+              setLoggedInUserId(googleUserId);
             }}
-          >
-            {audioEnabled ? 'Disable stt' : 'Enable stt'}
-          </OwnButton>
-        </div>
-      </header>
-
-      {isLoggedIn && (
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <AudioSwitch
-                audioElement={
-                  <MicrophoneContextProvider>
-                    <DeepgramContextProvider language={languageCode === 'cs-CZ' ? 'cs' : languageCode}>
-                      <AudioProvider>
-                        <SpeechToTextContextProvider onBlob={handleOnGetBlob}>
-                          <AgentsPage />
-                        </SpeechToTextContextProvider>
-                      </AudioProvider>
-                    </DeepgramContextProvider>
-                  </MicrophoneContextProvider>
-                }
-                nonAudioElement={<AgentsPage />}
-              />
-            }
+            onLogOut={() => setIsLoggedIn(false)}
           />
-          {hasExperimentsFeature && <Route path="/experiments" element={<ExperimentsPage />} />}
-        </Routes>
-      )}
+          <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex', maxHeight: '30px' }}>
+            {audioEnabled && (
+              <>
+                {/* <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
+                Play recorded audio
+              </OwnButton> */}
+                <Select
+                  value={languageCode}
+                  onChange={handleLanguageChange}
+                  sx={{ minWidth: 120, minHeight: '1.75rem' }}
+                >
+                  <Option value="pl">pl</Option>
+                  <Option value="cs-CZ">cs</Option>
+                  <Option value="ru-RU">ru</Option>
+                  <Option value="en-US">en</Option>
+                </Select>
+              </>
+            )}
+            <OwnButton
+              type="button"
+              color="success"
+              onClick={() => {
+                setAudioEnabled(!audioEnabled);
+              }}
+            >
+              {audioEnabled ? 'Disable stt' : 'Enable stt'}
+            </OwnButton>
+          </div>
+        </header>
+
+        {isLoggedIn && (
+          <div className={css.content}>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <AudioSwitch
+                    audioElement={
+                      <MicrophoneContextProvider>
+                        <DeepgramContextProvider language={languageCode === 'cs-CZ' ? 'cs' : languageCode}>
+                          <AudioProvider>
+                            <SpeechToTextContextProvider onBlob={handleOnGetBlob}>
+                              <AgentsPage />
+                            </SpeechToTextContextProvider>
+                          </AudioProvider>
+                        </DeepgramContextProvider>
+                      </MicrophoneContextProvider>
+                    }
+                    nonAudioElement={<AgentsPage />}
+                  />
+                }
+              />
+              {hasExperimentsFeature && <Route path="/experiments" element={<ExperimentsPage />} />}
+            </Routes>
+          </div>
+        )}
+      </main>
     </GoogleOAuthProvider>
   ) : null;
 }
