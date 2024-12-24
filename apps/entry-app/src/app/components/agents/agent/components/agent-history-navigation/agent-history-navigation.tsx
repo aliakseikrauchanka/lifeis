@@ -41,9 +41,9 @@ export const AgentHistoryNavigation = ({
       <IconButton aria-label="Copy" size="sm" color="primary" disabled={index === 0} onClick={handleNextClick}>
         <ChevronRight />
       </IconButton>
-      <IconButton aria-label="Copy" size="sm" color="primary" disabled={index === 0} onClick={handleReset}>
+      {/* <IconButton aria-label="Copy" size="sm" color="primary" disabled={index === 0} onClick={handleReset}>
         <LastPage />
-      </IconButton>
+      </IconButton> */}
       <OwnButton
         type="button"
         onClick={onHistoryClick}
