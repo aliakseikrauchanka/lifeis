@@ -26,11 +26,9 @@ export const UserSession = ({ isLoggedIn, isOfflineMode, onLoginSuccess, onLogOu
       {isLoggedIn ? (
         <div className={css.userSessionContent}>
           <h2>
-            Welcome,{' '}
             <span onClick={() => alert('Срочно! Только что было определено, что Серега Я - космический бульбозавт')}>
-              User
+              Velkommen!
             </span>
-            !
           </h2>
           {!isOfflineMode && (
             <div>
