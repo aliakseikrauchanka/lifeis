@@ -19,6 +19,7 @@ import.meta.env.VITE_SENTRY_DSN &&
         // Additional SDK configuration goes in here, for example:
         colorScheme: 'system',
         isNameRequired: true,
+        position: 'bottom-left',
       }),
     ],
     // Tracing
