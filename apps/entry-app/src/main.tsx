@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import flagsmith from 'flagsmith';
 import { FlagsmithProvider } from 'flagsmith/react';
 import * as Sentry from '@sentry/react';
+import './styles.scss';
 
 import App from './app/app';
 import { BrowserRouter } from 'react-router-dom';
@@ -19,7 +20,6 @@ import.meta.env.VITE_SENTRY_DSN &&
         // Additional SDK configuration goes in here, for example:
         colorScheme: 'system',
         isNameRequired: true,
-        position: 'bottom-left',
       }),
     ],
     // Tracing
