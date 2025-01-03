@@ -75,6 +75,16 @@ export default function App() {
     setIsInitialized(true);
   }, []);
 
+  const getDeepgramLanguage = useCallback(() => {
+    if (languageCode === 'cs-CZ') {
+      return 'cs';
+    }
+    if (languageCode === 'de-DE') {
+      return 'de';
+    }
+    return languageCode;
+  }, [languageCode]);
+
   return isIniitialized ? (
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
       <main className={css.main}>
@@ -101,9 +111,10 @@ export default function App() {
                   sx={{ minWidth: 120, minHeight: '1.75rem' }}
                 >
                   <Option value="pl">pl</Option>
-                  <Option value="cs-CZ">cs</Option>
                   <Option value="ru-RU">ru</Option>
                   <Option value="en-US">en</Option>
+                  <Option value="de-DE">de</Option>
+                  <Option value="cs-CZ">cs</Option>
                 </Select>
               </>
             )}
@@ -128,7 +139,7 @@ export default function App() {
                   <AudioSwitch
                     audioElement={
                       <MicrophoneContextProvider>
-                        <DeepgramContextProvider language={languageCode === 'cs-CZ' ? 'cs' : languageCode}>
+                        <DeepgramContextProvider language={getDeepgramLanguage()}>
                           <AudioProvider>
                             <SpeechToTextContextProvider onBlob={handleOnGetBlob}>
                               <AgentsPage />
