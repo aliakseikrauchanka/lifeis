@@ -28,7 +28,7 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
 
   const [loggedInUserId, setLoggedInUserId] = useState<string>(isOfflineModeOn ? 'local_user' : getGoogleUserId());
 
-  const [languageCode, setLanguageCode] = useState<string>('cs-CZ');
+  const [languageCode, setLanguageCode] = useState<string>('pl');
 
   const [pinnedAgentsIds, setPinnedAgents] = useState<string[]>([]);
 
