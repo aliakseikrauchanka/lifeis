@@ -32,7 +32,7 @@ export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn() || isOfflineModeOn);
   const { audioEnabled, setAudioEnabled, loggedInUserId, setLoggedInUserId, languageCode, setLanguageCode } =
     useStorageContext();
-  const [isIniitialized, setIsInitialized] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -85,7 +85,7 @@ export default function App() {
     return languageCode;
   }, [languageCode]);
 
-  return isIniitialized ? (
+  return isInitialized ? (
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
       <main className={css.main}>
         <audio ref={audioRef} />
