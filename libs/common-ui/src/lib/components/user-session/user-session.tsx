@@ -26,7 +26,9 @@ export const UserSession = ({ isLoggedIn, isOfflineMode, onLoginSuccess, onLogOu
       {isLoggedIn ? (
         <div className={css.userSessionContent}>
           <h2>
-            <span onClick={() => alert('Срочно! Только что было определено, что Серега Я - космический бульбозавт')}>
+            <span
+              onDoubleClick={() => alert('Срочно! Только что было определено, что Серега Я - космический бульбозавр!')}
+            >
               Velkommen!
             </span>
           </h2>
