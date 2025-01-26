@@ -9,6 +9,7 @@ import { useStorageContext } from '../../contexts/storage.context';
 import { Accordion, AccordionDetails, AccordionSummary } from '@mui/joy';
 import classNames from 'classnames';
 import { textToSpeech } from '../../api/assistants/assistants.api';
+import { AgentSearch } from './agent-search/agent-search';
 
 const AVAILABLE_KEYS = ['1', '2', '3', '4', '5'];
 
@@ -19,6 +20,41 @@ export const AllAgents = () => {
 
   const [focusedAgentIndex, setFocusedAgentIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const agents = query.data?.filter((agent) => agent.type === 'agent' || !agent.type) ?? [];
+  const nonArchivedAgents = agents.filter((agent) => !agent.isArchived);
+  const archivedAgents = agents.filter((agent) => !!agent.isArchived);
+
+  const pinnedAgents = pinnedAgentsIds
+    .map((id) => nonArchivedAgents.find((agent) => agent._id === id))
+    .filter((agent) => !!agent) as IAgentResponse[]; // TODO: ???
+  const nonPinnedAgents = nonArchivedAgents.filter((agent) => !pinnedAgentsIds.includes(agent._id));
+  const sortedAgents = [...pinnedAgents, ...nonPinnedAgents];
+
+  const agentTemplates = query.data?.filter((agent) => agent.type === 'template') ?? [];
+
+  // Inside your component:
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const handleAgentSelect = (agentId: string) => {
+    // Logic to focus/scroll to selected agent
+    // const element = document.getElementById(`agent-${agentId}`);
+    setFocusedAgentIndex(sortedAgents.findIndex((agent) => agent._id === agentId));
+    // element?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Add keyboard shortcut to open search
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
 
   useEffect(() => {
     if (!query.data?.length) {
@@ -118,20 +154,11 @@ export const AllAgents = () => {
     return <div>Loading...</div>;
   }
 
-  const agents = query.data.filter((agent) => agent.type === 'agent' || !agent.type);
-  const nonArchivedAgents = agents.filter((agent) => !agent.isArchived);
-  const archivedAgents = agents.filter((agent) => !!agent.isArchived);
-
-  const pinnedAgents = pinnedAgentsIds
-    .map((id) => nonArchivedAgents.find((agent) => agent._id === id))
-    .filter((agent) => !!agent) as IAgentResponse[]; // TODO: ???
-  const nonPinnedAgents = nonArchivedAgents.filter((agent) => !pinnedAgentsIds.includes(agent._id));
-  const sortedAgents = [...pinnedAgents, ...nonPinnedAgents];
-
-  const agentTemplates = query.data.filter((agent) => agent.type === 'template');
-
   return (
     <div>
+      {isSearchOpen && (
+        <AgentSearch agents={sortedAgents} onSelect={handleAgentSelect} onClose={() => setIsSearchOpen(false)} />
+      )}
       <div>
         <div className={css.agents}>
           {sortedAgents.map((agent, i: number) => (

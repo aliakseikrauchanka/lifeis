@@ -82,6 +82,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   const [imageIsParsing, setImageIsParsing] = useState(false);
   const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
   const [savedCaptions, setSavedCaptions] = useState<string[]>([]);
+  const formRef = useRef<HTMLFormElement | null>(null);
 
   const { loggedInUserId } = useStorageContext();
 
@@ -184,6 +185,9 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
 
   useEffect(() => {
     if (textAreaRef.current && focused) {
+      formRef.current?.scrollTo({
+        behavior: 'smooth',
+      });
       textAreaRef?.current.focus();
     }
   }, [focused]);
@@ -352,7 +356,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
   }, [isResizing]);
 
   return (
-    <form onSubmit={handleSubmitForm} className={css.agent}>
+    <form onSubmit={handleSubmitForm} className={css.agent} id={`agent-${id}`} ref={formRef}>
       <header className={css.agentHeader}>
         <IconButton size="sm" color="primary">
           {pinnedAgents.includes(id) ? (
