@@ -43,6 +43,7 @@ interface IAgentProps {
   focused?: boolean;
   number?: number;
   isArchived?: boolean;
+  onBlur?: () => void;
 }
 
 const emptyHistoryItem: IAgentHistoryItem = {
@@ -57,7 +58,17 @@ const emptyHistoryItem: IAgentHistoryItem = {
 
 const defaultAiModelName = 'gemini-2.0-flash-exp';
 
-export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchived: isArchivedProp }: IAgentProps) => {
+export const Agent = ({
+  id,
+  name,
+  prefix,
+  focused,
+  number,
+  type,
+  userId,
+  isArchived: isArchivedProp,
+  onBlur,
+}: IAgentProps) => {
   const [historyCurrentIndex, setHistoryCurrentIndex] = useState(0);
   const [initLoad, setInitLoad] = useState(true);
   const [message, setMessage] = useState('');
@@ -414,6 +425,7 @@ export const Agent = ({ id, name, prefix, focused, number, type, userId, isArchi
         <textarea
           onDrop={handleDrop}
           ref={textAreaRef}
+          onBlur={onBlur}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onPaste={handlePaste}

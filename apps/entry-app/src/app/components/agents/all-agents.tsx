@@ -37,10 +37,7 @@ export const AllAgents = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleAgentSelect = (agentId: string) => {
-    // Logic to focus/scroll to selected agent
-    // const element = document.getElementById(`agent-${agentId}`);
     setFocusedAgentIndex(sortedAgents.findIndex((agent) => agent._id === agentId));
-    // element?.scrollIntoView({ behavior: 'smooth' });
   };
 
   // Add keyboard shortcut to open search
@@ -171,6 +168,7 @@ export const AllAgents = () => {
               key={agent._id}
               number={AVAILABLE_KEYS.includes(String(i + 1)) ? i + 1 : undefined}
               focused={i === focusedAgentIndex}
+              onBlur={() => setFocusedAgentIndex(-1)}
               isArchived={!!agent.isArchived}
             />
           ))}

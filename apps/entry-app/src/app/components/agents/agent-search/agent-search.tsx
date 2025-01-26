@@ -23,6 +23,8 @@ export const AgentSearch = ({ agents, onSelect, onClose }: AgentSearchProps) => 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'Enter':
+        e.preventDefault();
+
         if (searchResults[selectedIndex]) {
           onSelect(searchResults[selectedIndex].item._id);
           onClose();
