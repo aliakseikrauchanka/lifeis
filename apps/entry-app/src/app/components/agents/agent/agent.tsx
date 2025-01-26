@@ -487,6 +487,7 @@ export const Agent = ({
           <Option value="gemini-2.0-flash-exp">Gemini Flash 2</Option>
           <Option value="gemini-1.5-pro">Gemini Pro</Option>
           <Option value="openai">OpenAI</Option>
+          <Option value="deepseek-r1">Deepseek R1</Option>
         </Select>
         <label htmlFor={`photo-${number}`} className={css.agentButtonsPhoto}>
           <CameraAlt fontSize="large" color="inherit" />

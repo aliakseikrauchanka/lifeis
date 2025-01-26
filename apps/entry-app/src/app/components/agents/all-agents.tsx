@@ -230,7 +230,7 @@ export const AllAgents = () => {
           </AccordionSummary>
           <AccordionDetails>
             <div className={classNames(css.agentsArchived, css.agents)}>
-              {archivedAgents.map((agent, i: number) => (
+              {archivedAgents.map((agent) => (
                 <Agent
                   type="agent"
                   id={agent._id}

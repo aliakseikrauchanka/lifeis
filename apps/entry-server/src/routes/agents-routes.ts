@@ -11,6 +11,11 @@ import OpenAI from 'openai';
 import multer from 'multer';
 const fileManager = new GoogleAIFileManager(process.env.GOOGLE_API_KEY);
 
+const deepSeek = new OpenAI({
+  baseURL: 'https://api.deepseek.com',
+  apiKey: process.env.DEEPSEEK_API_KEY,
+});
+
 const router = Router();
 
 const storage = multer.diskStorage({
@@ -309,6 +314,23 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
               ],
             },
           ],
+        });
+
+        responseText = response.choices[0].message.content;
+      } else if (aiProvider === 'deepseek-r1') {
+        const response = await deepSeek.chat.completions.create({
+          messages: [
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
+                  text: prompt,
+                },
+              ],
+            },
+          ],
+          model: 'deepseek-chat',
         });
 
         responseText = response.choices[0].message.content;
