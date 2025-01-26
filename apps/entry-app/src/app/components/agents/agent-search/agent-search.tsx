@@ -47,7 +47,13 @@ export const AgentSearch = ({ agents, onSelect, onClose }: AgentSearchProps) => 
   }, [searchTerm]);
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div
+      style={{
+        position: 'fixed',
+        zIndex: 100,
+        marginTop: '-36px',
+      }}
+    >
       <Input
         autoFocus
         value={searchTerm}
