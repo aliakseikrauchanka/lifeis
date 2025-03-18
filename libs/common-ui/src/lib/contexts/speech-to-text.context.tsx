@@ -76,7 +76,6 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
     setFailsafeTimeout(
       setTimeout(() => {
         if (currentUtterance) {
-          console.log('failsafe fires! pew pew!!');
           setFailsafeTriggered(true);
           setCaption((prevCaption) => {
             if (activeId === undefined) {
