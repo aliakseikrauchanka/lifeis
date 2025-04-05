@@ -71,6 +71,8 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
     const microphone = new MediaRecorder(stream);
 
     setMicrophone(microphone);
+
+    return microphone;
   }, []);
 
   const resetMicrophone = useCallback(() => {
@@ -78,14 +80,7 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
     setMicrophone(null);
     setStream(undefined);
     clearBlobs();
-    setupMicrophone();
   }, [clearBlobs, setupMicrophone]);
-
-  useEffect(() => {
-    if (!microphone) {
-      setupMicrophone();
-    }
-  }, [enqueueBlob, microphone, microphoneState, setupMicrophone]);
 
   const pauseMicrophone = useCallback(() => {
     setMicrophoneState(MicrophoneState.Pausing);
@@ -96,17 +91,21 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
     }
   }, [microphone]);
 
-  const startMicrophone = useCallback(() => {
+  const startMicrophone = useCallback(async () => {
     setMicrophoneState(MicrophoneState.Opening);
 
     if (microphone?.state === 'paused') {
       microphone.resume();
     } else {
-      microphone?.start(250);
+      let newMic = microphone;
+      if (!microphone) {
+        newMic = await setupMicrophone();
+      }
+      newMic?.start(250);
     }
 
     setMicrophoneState(MicrophoneState.Open);
-  }, [microphone]);
+  }, [microphone, setupMicrophone]);
 
   useEffect(() => {
     if (!microphone) return;
