@@ -33,10 +33,36 @@ export default function App() {
   const { audioEnabled, setAudioEnabled, loggedInUserId, setLoggedInUserId, languageCode, setLanguageCode } =
     useStorageContext();
   const [isInitialized, setIsInitialized] = useState(false);
+  const prevFocusedElement = useRef<HTMLElement | null>(null);
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const blobsRef = useRef<Blob[]>([]);
+  const selectRef = useRef(null);
+
+  useEffect(() => {
+    //global event listener that will open language select on ctrl + l
+    const keydownHandler = (event: any) => {
+      if (event.ctrlKey && event.key === 'l') {
+        event.preventDefault();
+        const a = selectRef.current as any;
+        if (!a) {
+          return;
+        }
+        prevFocusedElement.current = document.activeElement as HTMLElement;
+        const selectButton = a.querySelector('button');
+        if (selectButton) {
+          selectButton.focus();
+          selectButton.click();
+        }
+      }
+    };
+    document.addEventListener('keydown', keydownHandler);
+
+    return () => {
+      document.removeEventListener('keydown', keydownHandler);
+    };
+  }, [selectRef]);
 
   const handlePlayRecordedAudio = useCallback(() => {
     if (audioRef.current) {
@@ -59,10 +85,21 @@ export default function App() {
     blobsRef.current.push(blob);
   }, []);
 
-  const handleLanguageChange = useCallback(
-    (_: any, newLanguageValue: string | null) => setLanguageCode(newLanguageValue as string),
-    [],
-  );
+  const handleLanguageChange = useCallback((_: any, newLanguageValue: string | null) => {
+    setLanguageCode(newLanguageValue as string);
+    // if (prevFocusedElement.current) {
+    //   prevFocusedElement.current.focus();
+    // }
+  }, []);
+
+  const handleLanguageClose = useCallback(() => {
+    if (prevFocusedElement.current) {
+      setTimeout(() => {
+        prevFocusedElement.current?.focus();
+        prevFocusedElement.current = null;
+      }, 100);
+    }
+  }, [prevFocusedElement]);
 
   const { hasAudioFeature, hasLogsFeature, hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInUserId);
 
@@ -106,8 +143,10 @@ export default function App() {
                   Play recorded audio
                 </OwnButton>
                 <Select
+                  slotProps={{ root: { ref: selectRef } }}
                   value={languageCode}
                   onChange={handleLanguageChange}
+                  onClose={handleLanguageClose}
                   sx={{ minWidth: 120, minHeight: '1.75rem' }}
                 >
                   <Option value="pl">pl</Option>

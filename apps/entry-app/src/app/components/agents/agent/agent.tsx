@@ -88,6 +88,7 @@ export const Agent = ({
   const queryClient = useQueryClient();
   const { audioEnabled } = useStorageContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isListeningFired, setIsListeningFired] = useState(false);
   const [selectedAiProvider, setSelectedAiProvider] = useState(defaultAiModelName);
   const [snackBarText, setSnackBarText] = useState('');
   const [imageIsParsing, setImageIsParsing] = useState(false);
@@ -239,9 +240,13 @@ export const Agent = ({
     submitPrompt();
   };
 
-  const handleKeyPress = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && e.ctrlKey) {
       submitPrompt();
+      return;
+    }
+    if (e.key === 's' && e.ctrlKey) {
+      setIsListeningFired(true);
     }
   };
 
@@ -429,7 +434,7 @@ export const Agent = ({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onPaste={handlePaste}
-          onKeyPress={handleKeyPress}
+          onKeyDown={handleKeyDown}
           className={classNames(css.agentInput, isMobile && css.agentInputMinimized)}
           style={{
             height: `${height}px`,
@@ -522,6 +527,10 @@ export const Agent = ({
             id={id}
             onCleared={() => setIsCaptionsNeedClear(false)}
             isNeedClear={isCaptionsNeedClear}
+            isToggledListening={isListeningFired}
+            onListeningToggled={() => {
+              setIsListeningFired((prev) => !prev);
+            }}
           />
         )}
         <OwnButton type="submit" style={{ height: '100%' }} disabled={!message || isSubmitting}>

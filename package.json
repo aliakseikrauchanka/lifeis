@@ -19,7 +19,7 @@
     "@google/generative-ai": "^0.15.0",
     "@million/lint": "^1.0.0",
     "@mui/icons-material": "^5.16.6",
-    "@mui/joy": "^5.0.0-beta.48",
+    "@mui/joy": "^5.0.0-beta.52",
     "@mui/material": "^5.16.6",
     "@notionhq/client": "^2.2.15",
     "@react-oauth/google": "^0.12.1",
