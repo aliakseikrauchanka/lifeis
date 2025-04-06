@@ -102,9 +102,9 @@ export default function App() {
           <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex', maxHeight: '30px' }}>
             {audioEnabled && (
               <>
-                {/* <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
-                Play recorded audio
-              </OwnButton> */}
+                <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
+                  Play recorded audio
+                </OwnButton>
                 <Select
                   value={languageCode}
                   onChange={handleLanguageChange}
