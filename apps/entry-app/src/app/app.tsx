@@ -43,7 +43,7 @@ export default function App() {
   useEffect(() => {
     //global event listener that will open language select on ctrl + l
     const keydownHandler = (event: any) => {
-      if (event.ctrlKey && event.key === 'l') {
+      if (event.ctrlKey && event.code === 'KeyL') {
         event.preventDefault();
         const a = selectRef.current as any;
         if (!a) {

@@ -245,7 +245,7 @@ export const Agent = ({
       submitPrompt();
       return;
     }
-    if (e.key === 's' && e.ctrlKey) {
+    if (e.code === 'KeyS' && e.ctrlKey) {
       setIsListeningFired(true);
     }
   };
