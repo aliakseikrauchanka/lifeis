@@ -154,6 +154,7 @@ export default function App() {
                   <Option value="en-US">en</Option>
                   <Option value="de-DE">de</Option>
                   <Option value="cs-CZ">cs</Option>
+                  <Option value="sr-RS">sr</Option>
                 </Select>
               </>
             )}
