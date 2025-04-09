@@ -56,7 +56,7 @@ const emptyHistoryItem: IAgentHistoryItem = {
   timestamp: new Date(),
 } as const;
 
-const defaultAiModelName = 'gemini-2.0-flash-exp';
+const defaultAiModelName = 'gemini-2.0-flash';
 
 export const Agent = ({
   id,
@@ -489,7 +489,7 @@ export const Agent = ({
           sx={{ minHeight: 30, minWidth: 95 }}
         >
           <Option value="gemini-1.5-flash-latest">Gemini Flash 1.5</Option>
-          <Option value="gemini-2.0-flash-exp">Gemini Flash 2</Option>
+          <Option value="gemini-2.0-flash">Gemini Flash 2</Option>
           <Option value="gemini-1.5-pro">Gemini Pro</Option>
           <Option value="openai">OpenAI</Option>
           <Option value="deepseek-r1">Deepseek R1</Option>
