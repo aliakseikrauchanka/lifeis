@@ -250,15 +250,15 @@ export const Agent = ({
     setIsHistoryOpen(true);
   };
 
-  const handleSubmitForm = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  const handleSubmitForm = async (e?: FormEvent<HTMLFormElement>) => {
+    e?.preventDefault();
     setIsCaptionsNeedClear(true);
     submitPrompt();
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && e.ctrlKey) {
-      submitPrompt();
+      handleSubmitForm();
       return;
     }
     if (e.code === 'KeyS' && e.ctrlKey) {
