@@ -197,8 +197,9 @@ export const Agent = ({
 
   useEffect(() => {
     if (textAreaRef.current && focused) {
-      formRef.current?.scrollTo({
-        behavior: 'smooth',
+      formRef.current?.scrollIntoView({
+        behavior: 'auto',
+        block: 'center',
       });
       textAreaRef?.current.focus();
     }
