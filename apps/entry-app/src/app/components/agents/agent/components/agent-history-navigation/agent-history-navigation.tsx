@@ -24,9 +24,9 @@ export const AgentHistoryNavigation = ({
   const handleNextClick = () => {
     onIndexChange(index - 1);
   };
-  const handleReset = () => {
-    onIndexChange(0);
-  };
+  // const handleReset = () => {
+  //   onIndexChange(0);
+  // };
   return (
     <div className={className}>
       <IconButton
@@ -38,7 +38,7 @@ export const AgentHistoryNavigation = ({
       >
         <ChevronLeft />
       </IconButton>
-      <IconButton aria-label="Copy" size="sm" color="primary" disabled={index === 0} onClick={handleNextClick}>
+      <IconButton aria-label="Copy" size="sm" color="primary" disabled={index <= 0} onClick={handleNextClick}>
         <ChevronRight />
       </IconButton>
       {/* <IconButton aria-label="Copy" size="sm" color="primary" disabled={index === 0} onClick={handleReset}>

@@ -248,6 +248,14 @@ export const Agent = ({
     if (e.code === 'KeyS' && e.ctrlKey) {
       setIsListeningFired(true);
     }
+    // handle ctrl + shift + left arrow
+    if (e.code === 'ArrowLeft' && e.ctrlKey && e.shiftKey) {
+      handleHistoryIndexChange(historyCurrentIndex + 1);
+    }
+
+    if (e.code === 'ArrowRight' && e.ctrlKey && e.shiftKey) {
+      handleHistoryIndexChange(historyCurrentIndex - 1);
+    }
   };
 
   const handleRemoveAgent = async (e: MouseEvent<HTMLButtonElement>) => {
@@ -321,6 +329,13 @@ export const Agent = ({
     setAnswer('');
     setImageBuffer(null);
     setIsCaptionsNeedClear(true);
+  };
+
+  const handleHistoryIndexChange = (index: number) => {
+    setHistoryCurrentIndex(index);
+    const historyItem = clientHistoryItems?.[index];
+    setMessage(historyItem?.message || '');
+    setAnswer(historyItem?.response || '');
   };
 
   const handleCopyResponse = () => {
@@ -474,12 +489,7 @@ export const Agent = ({
           historyItems={clientHistoryItems}
           index={historyCurrentIndex}
           onHistoryClick={handleOpenAgentHistory}
-          onIndexChange={(index) => {
-            setHistoryCurrentIndex(index);
-            const historyItem = clientHistoryItems?.[index];
-            setMessage(historyItem?.message || '');
-            setAnswer(historyItem?.response || '');
-          }}
+          onIndexChange={handleHistoryIndexChange}
         />
       </div>
       <div className={css.agentButtons}>
