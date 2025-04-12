@@ -13,6 +13,7 @@ import {
   OwnButton,
   SpeechToTextContextProvider,
   UserSession,
+  LanguageSelector,
 } from '@lifeis/common-ui';
 import { CONFIG } from '../config';
 
@@ -24,7 +25,6 @@ import './styles/reset.css';
 import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
-import { Select, Option } from '@mui/joy';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
@@ -87,8 +87,6 @@ export default function App() {
 
   const handleLanguageChange = useCallback((_: any, newLanguageValue: string | null) => {
     setLanguageCode(newLanguageValue as string);
-    // if (prevFocusedElement.current) {
-    //   prevFocusedElement.current.focus();
     // }
   }, []);
 
@@ -142,20 +140,12 @@ export default function App() {
                 <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
                   Play recorded audio
                 </OwnButton>
-                <Select
-                  slotProps={{ root: { ref: selectRef } }}
-                  value={languageCode}
-                  onChange={handleLanguageChange}
-                  onClose={handleLanguageClose}
-                  sx={{ minWidth: 120, minHeight: '1.75rem' }}
-                >
-                  <Option value="pl">pl</Option>
-                  <Option value="ru-RU">ru</Option>
-                  <Option value="en-US">en</Option>
-                  <Option value="de-DE">de</Option>
-                  <Option value="cs-CZ">cs</Option>
-                  <Option value="sr-RS">sr</Option>
-                </Select>
+                <LanguageSelector
+                  languageCode={languageCode}
+                  selectRef={selectRef}
+                  handleLanguageChange={handleLanguageChange}
+                  handleLanguageClose={handleLanguageClose}
+                />
               </>
             )}
             <OwnButton

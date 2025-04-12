@@ -9,6 +9,8 @@ export interface IAgentResponse extends IAgentBasic {
   type: 'agent';
   ownerId: string;
   isArchived?: boolean;
+  listenLanguageCode?: string;
+  readLanguageCode?: string;
 }
 
 export interface IAgentTemplateResponse extends IAgentBasic {

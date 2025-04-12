@@ -19,9 +19,10 @@ export const AllAgents = () => {
   const { pinnedAgentsIds, languageCode } = useStorageContext();
 
   const [focusedAgentIndex, setFocusedAgentIndex] = useState(0);
+  const [focusedAgentId, setFocusedAgentId] = useState<string>('');
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const agents = query.data?.filter((agent) => agent.type === 'agent' || !agent.type) ?? [];
+  const agents: IAgentResponse[] = query.data?.filter((agent) => agent.type === 'agent' || !agent.type) ?? [];
   const nonArchivedAgents = agents.filter((agent) => !agent.isArchived);
   const archivedAgents = agents.filter((agent) => !!agent.isArchived);
 
@@ -169,7 +170,10 @@ export const AllAgents = () => {
               number={AVAILABLE_KEYS.includes(String(i + 1)) ? i + 1 : undefined}
               focused={i === focusedAgentIndex}
               onBlur={() => setFocusedAgentIndex(-1)}
+              onAgentFocus={() => setFocusedAgentId(agent._id)}
               isArchived={!!agent.isArchived}
+              listenLanguageCode={agent.listenLanguageCode}
+              readLanguageCode={agent.readLanguageCode}
             />
           ))}
         </div>
@@ -198,7 +202,10 @@ export const AllAgents = () => {
                 onClick={async () => {
                   let audioContent;
                   if (!curAudioBase64) {
-                    audioContent = await textToSpeech(selectionText, languageCode);
+                    audioContent = await textToSpeech(
+                      selectionText,
+                      sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode,
+                    );
                   } else {
                     audioContent = curAudioBase64;
                   }

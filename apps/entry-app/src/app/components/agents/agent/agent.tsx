@@ -1,4 +1,4 @@
-import { EditableInput, OwnButton, SpeechToText } from '@lifeis/common-ui';
+import { EditableInput, LanguageSelector, OwnButton, SpeechToText } from '@lifeis/common-ui';
 import {
   getAgentHistory,
   removeAgent,
@@ -43,7 +43,10 @@ interface IAgentProps {
   focused?: boolean;
   number?: number;
   isArchived?: boolean;
+  listenLanguageCode?: string;
+  readLanguageCode?: string;
   onBlur?: () => void;
+  onAgentFocus?: () => void;
 }
 
 const emptyHistoryItem: IAgentHistoryItem = {
@@ -67,7 +70,10 @@ export const Agent = ({
   type,
   userId,
   isArchived: isArchivedProp,
+  listenLanguageCode = '',
+  readLanguageCode,
   onBlur,
+  onAgentFocus,
 }: IAgentProps) => {
   const [historyCurrentIndex, setHistoryCurrentIndex] = useState(0);
   const [initLoad, setInitLoad] = useState(true);
@@ -95,6 +101,7 @@ export const Agent = ({
   const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
   const [savedCaptions, setSavedCaptions] = useState<string[]>([]);
   const formRef = useRef<HTMLFormElement | null>(null);
+  const prevFocusedElement = useRef<HTMLElement | null>(null);
 
   const { loggedInUserId } = useStorageContext();
 
@@ -191,7 +198,7 @@ export const Agent = ({
     }
   }, [agentHistory]);
 
-  const { pinnedAgentsIds: pinnedAgents, pinAgent, unpinAgent } = useStorageContext();
+  const { pinnedAgentsIds: pinnedAgents, pinAgent, unpinAgent, languageCode, setLanguageCode } = useStorageContext();
 
   const clientHistoryItems = initLoad ? (agentHistory ? [emptyHistoryItem, ...agentHistory] : []) : agentHistory;
 
@@ -203,7 +210,7 @@ export const Agent = ({
       });
       textAreaRef?.current.focus();
     }
-  }, [focused]);
+  }, [focused, listenLanguageCode, languageCode, setLanguageCode]);
 
   useEffect(() => {
     if (message !== currentMessageRef.current && !message) {
@@ -211,6 +218,8 @@ export const Agent = ({
     }
     currentMessageRef.current = message;
   }, [message]);
+
+  const selectRef = useRef(null);
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
@@ -230,6 +239,12 @@ export const Agent = ({
       setIsSubmitting(false);
     }
   };
+
+  const handleAgentFocus = useCallback(() => {
+    if (!!listenLanguageCode && listenLanguageCode !== languageCode) {
+      setLanguageCode(listenLanguageCode);
+    }
+  }, [listenLanguageCode, languageCode, setLanguageCode]);
 
   const handleOpenAgentHistory = async () => {
     setIsHistoryOpen(true);
@@ -256,6 +271,21 @@ export const Agent = ({
 
     if (e.code === 'ArrowRight' && e.ctrlKey && e.shiftKey) {
       handleHistoryIndexChange(historyCurrentIndex - 1);
+    }
+
+    if (e.code === 'KeyL' && e.ctrlKey && e.shiftKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      const a = selectRef.current as any;
+      if (!a) {
+        return;
+      }
+      prevFocusedElement.current = document.activeElement as HTMLElement;
+      const selectButton = a.querySelector('button');
+      if (selectButton) {
+        selectButton.focus();
+        selectButton.click();
+      }
     }
   };
 
@@ -287,6 +317,21 @@ export const Agent = ({
         console.error('Failed to update agent prefix:', error);
       }
     }
+  };
+
+  const handleListenLanguageChange = (event: any, newValue: string | null) => {
+    updateMutation.mutate({ id, name, prefix, listenLanguageCode: newValue || '' });
+    setLanguageCode(newValue || '');
+    if (prevFocusedElement.current) {
+      setTimeout(() => {
+        prevFocusedElement.current?.focus();
+        prevFocusedElement.current = null;
+      }, 100);
+    }
+  };
+
+  const handleReadLanguageChange = (event: any, newValue: string | null) => {
+    updateMutation.mutate({ id, name, prefix, readLanguageCode: newValue || '' });
   };
 
   const handleInstructionsToggle = (isInstructionsOpen: boolean) => {
@@ -387,8 +432,12 @@ export const Agent = ({
     };
   }, [isResizing]);
 
+  const onFormFocus = () => {
+    onAgentFocus?.();
+  };
+
   return (
-    <form onSubmit={handleSubmitForm} className={css.agent} id={`agent-${id}`} ref={formRef}>
+    <form onSubmit={handleSubmitForm} className={css.agent} id={`agent-${id}`} ref={formRef} onClick={onFormFocus}>
       <header className={css.agentHeader}>
         <IconButton size="sm" color="primary">
           {pinnedAgents.includes(id) ? (
@@ -446,6 +495,7 @@ export const Agent = ({
         <textarea
           onDrop={handleDrop}
           ref={textAreaRef}
+          onFocus={handleAgentFocus}
           onBlur={onBlur}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
@@ -456,8 +506,14 @@ export const Agent = ({
             height: `${height}px`,
           }}
         />
+        <LanguageSelector
+          selectRef={selectRef}
+          sx={{ position: 'absolute', right: '32px', top: '2px', opacity: 0.5, minWidth: '20px' }}
+          languageCode={listenLanguageCode || languageCode}
+          handleLanguageChange={handleListenLanguageChange}
+        />
         <IconButton
-          sx={{ position: 'absolute', right: '32px', top: '2px', opacity: 0.5 }}
+          sx={{ position: 'absolute', right: '32px', top: '32px', opacity: 0.5 }}
           size="sm"
           onClick={handleCopyMessage}
         >
@@ -569,6 +625,11 @@ export const Agent = ({
               </IconButton>
             </>
           )}
+          <LanguageSelector
+            languageCode={readLanguageCode || languageCode}
+            sx={{ minWidth: '20px' }}
+            handleLanguageChange={handleReadLanguageChange}
+          />
         </h4>
         {isSubmitting ? (
           'Generating ...'

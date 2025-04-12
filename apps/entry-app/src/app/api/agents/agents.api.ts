@@ -45,6 +45,8 @@ export const updateAgent = async (data: {
   name?: string;
   prefix?: string;
   isArchived?: boolean;
+  listenLanguageCode?: string;
+  readLanguageCode?: string;
 }): Promise<void> => {
   const response = await utilFetch(`/agents/${data.id}`, {
     method: 'PUT',
