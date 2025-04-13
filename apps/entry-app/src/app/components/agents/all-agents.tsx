@@ -216,13 +216,13 @@ export const AllAgents = () => {
               >
                 Speak
               </button>
-              <button
+              {/* <button
                 onClick={() => {
                   audioRef.current?.pause();
                 }}
               >
                 Stop
-              </button>
+              </button> */}
               <audio ref={audioRef}>
                 <source type="audio/mpeg" />
               </audio>

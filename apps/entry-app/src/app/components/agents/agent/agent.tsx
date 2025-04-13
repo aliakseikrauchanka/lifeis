@@ -506,12 +506,14 @@ export const Agent = ({
             height: `${height}px`,
           }}
         />
-        <LanguageSelector
-          selectRef={selectRef}
-          sx={{ position: 'absolute', right: '32px', top: '2px', opacity: 0.5, minWidth: '20px' }}
-          languageCode={listenLanguageCode || languageCode}
-          handleLanguageChange={handleListenLanguageChange}
-        />
+        {audioEnabled && (
+          <LanguageSelector
+            selectRef={selectRef}
+            sx={{ position: 'absolute', right: '32px', top: '2px', opacity: 0.5, minWidth: '20px' }}
+            languageCode={listenLanguageCode || languageCode}
+            handleLanguageChange={handleListenLanguageChange}
+          />
+        )}
         <IconButton
           sx={{ position: 'absolute', right: '32px', top: '32px', opacity: 0.5 }}
           size="sm"
