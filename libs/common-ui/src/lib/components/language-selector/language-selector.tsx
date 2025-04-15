@@ -29,6 +29,7 @@ export const LanguageSelector = ({
       <Option value="en-US">en</Option>
       <Option value="de-DE">de</Option>
       <Option value="cs-CZ">cs</Option>
+      <Option value="fr-FR">fr</Option>
       <Option value="sr-RS">sr</Option>
       <Option value="">reset</Option>
     </Select>

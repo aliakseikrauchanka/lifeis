@@ -117,6 +117,9 @@ export default function App() {
     if (languageCode === 'de-DE') {
       return 'de';
     }
+    if (languageCode === 'fr-FR') {
+      return 'fr';
+    }
     return languageCode;
   }, [languageCode]);
 
