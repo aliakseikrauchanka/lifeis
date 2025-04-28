@@ -21,12 +21,14 @@ export const createGeminiRoutes = (geminiModel: GenerativeModel) => {
 
   routes.post('/text-to-speech', verifyAccessToken, async (req, res) => {
     const languageCode = req.query.l || 'ru-RU';
+
     const raw = JSON.stringify({
       input: {
         text: req.body.message,
       },
       voice: {
-        languageCode,
+        languageCode: languageCode === 'lt-LT"' ? `${languageCode}-Wavenet-A` : languageCode,
+        // ssmlGender: 'NEUTRAL',
       },
       audioConfig: {
         audioEncoding: 'MP3',
