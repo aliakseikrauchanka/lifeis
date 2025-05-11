@@ -20,7 +20,7 @@
     "@million/lint": "^1.0.0",
     "@mui/icons-material": "^5.16.6",
     "@mui/joy": "^5.0.0-beta.52",
-    "@mui/material": "^5.16.6",
+    "@mui/material": "^7.0.0",
     "@notionhq/client": "^2.2.15",
     "@react-oauth/google": "^0.12.1",
     "@ricky0123/vad-react": "^0.0.24",
