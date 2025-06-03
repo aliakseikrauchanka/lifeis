@@ -16,11 +16,11 @@ if (import.meta.env.VITE_SENTRY_DSN) {
     integrations: [
       Sentry.browserTracingIntegration(),
       Sentry.replayIntegration(),
-      Sentry.feedbackIntegration({
-        // Additional SDK configuration goes in here, for example:
-        colorScheme: 'system',
-        isNameRequired: true,
-      }),
+      // Sentry.feedbackIntegration({
+      //   // Additional SDK configuration goes in here, for example:
+      //   colorScheme: 'system',
+      //   isNameRequired: true,
+      // }),
     ],
     // Tracing
     tracesSampleRate: 1.0, //  Capture 100% of the transactions
