@@ -21,6 +21,11 @@ import {
   Dashboard,
   Delete,
   DragHandle,
+  Fullscreen,
+  FullscreenExit,
+  InsertChart,
+  InsertComment,
+  PlayForWork,
   PushPin,
   PushPinOutlined,
   Unarchive,
@@ -102,6 +107,7 @@ export const Agent = ({
   const [savedCaptions, setSavedCaptions] = useState<string[]>([]);
   const formRef = useRef<HTMLFormElement | null>(null);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const { loggedInUserId } = useStorageContext();
 
@@ -366,6 +372,16 @@ export const Agent = ({
     setMessage(data);
   };
 
+  const handleFullScreenToggle = () => {
+    setIsFullScreen((prev) => !prev);
+  };
+
+  const handleInsertFromClipboard = () => {
+    navigator.clipboard.readText().then((text) => {
+      setMessage(text);
+    });
+  };
+
   const handleCopyMessage = () => {
     navigator.clipboard.writeText(message);
   };
@@ -437,7 +453,15 @@ export const Agent = ({
   };
 
   return (
-    <form onSubmit={handleSubmitForm} className={css.agent} id={`agent-${id}`} ref={formRef} onClick={onFormFocus}>
+    <form
+      onSubmit={handleSubmitForm}
+      className={classNames(css.agent, {
+        [css.agentFullScreen]: isFullScreen,
+      })}
+      id={`agent-${id}`}
+      ref={formRef}
+      onClick={onFormFocus}
+    >
       <header className={css.agentHeader}>
         <IconButton size="sm" color="primary">
           {pinnedAgents.includes(id) ? (
@@ -515,11 +539,26 @@ export const Agent = ({
           />
         )}
         <IconButton
-          sx={{ position: 'absolute', right: '32px', top: '32px', opacity: 0.5 }}
+          sx={{ position: 'absolute', right: audioEnabled ? '96px' : '32px', top: '2px', opacity: 0.5 }}
           size="sm"
           onClick={handleCopyMessage}
         >
           <CopyAll />
+        </IconButton>
+        <IconButton
+          sx={{ position: 'absolute', right: audioEnabled ? '124px' : '64px', top: '2px', opacity: 0.5 }}
+          size="sm"
+          onClick={handleInsertFromClipboard}
+        >
+          <PlayForWork />
+        </IconButton>
+
+        <IconButton
+          sx={{ position: 'absolute', right: '32px', bottom: '12px', opacity: 0.5 }}
+          size="sm"
+          onClick={handleFullScreenToggle}
+        >
+          {isFullScreen ? <FullscreenExit /> : <Fullscreen />}
         </IconButton>
 
         <div
