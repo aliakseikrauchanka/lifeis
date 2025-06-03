@@ -8,15 +8,9 @@
   max-width: 700px;
 
   &--full-screen {
-    background-color: white;
-    position: fixed;
-    top: 35px;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 10;
+    width: 100%;
     max-width: unset;
-    overflow: auto;
+    min-width: unset;
   }
 
   &-header {
