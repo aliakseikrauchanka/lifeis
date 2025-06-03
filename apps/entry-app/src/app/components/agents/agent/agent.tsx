@@ -263,6 +263,12 @@ export const Agent = ({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // handle escape key
+    if (e.key === 'Escape') {
+      setIsFullScreen(false);
+      setIsListeningFired(false);
+    }
+
     if (e.key === 'Enter' && e.ctrlKey) {
       handleSubmitForm();
       return;
@@ -270,6 +276,11 @@ export const Agent = ({
     if (e.code === 'KeyS' && e.ctrlKey) {
       setIsListeningFired(true);
     }
+
+    if (e.code === 'KeyF' && e.ctrlKey) {
+      handleFullScreenToggle();
+    }
+
     // handle ctrl + shift + left arrow
     if (e.code === 'ArrowLeft' && e.ctrlKey && e.shiftKey) {
       handleHistoryIndexChange(historyCurrentIndex + 1);
