@@ -23,8 +23,6 @@ import {
   DragHandle,
   Fullscreen,
   FullscreenExit,
-  InsertChart,
-  InsertComment,
   PlayForWork,
   PushPin,
   PushPinOutlined,
@@ -229,7 +227,7 @@ export const Agent = ({
 
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
-  const submitPrompt = async () => {
+  const submitPrompt = async (message: string) => {
     setIsSubmitting(true);
     try {
       const response = await submitMutation.mutateAsync({
@@ -259,7 +257,7 @@ export const Agent = ({
   const handleSubmitForm = async (e?: FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
     setIsCaptionsNeedClear(true);
-    submitPrompt();
+    submitPrompt(message);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -388,9 +386,12 @@ export const Agent = ({
   };
 
   const handleInsertFromClipboard = () => {
-    navigator.clipboard.readText().then((text) => {
-      setMessage(text);
-    });
+    if (navigator.clipboard) {
+      navigator.clipboard.readText().then((text) => {
+        setMessage(text);
+        submitPrompt(text);
+      });
+    }
   };
 
   const handleCopyMessage = () => {
