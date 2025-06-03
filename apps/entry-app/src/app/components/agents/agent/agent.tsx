@@ -36,6 +36,7 @@ import { AgentHistoryNavigation } from './components/agent-history-navigation/ag
 import { IAgentHistoryItem } from '../../../domains/agent.domain';
 import { useStorageContext } from '../../../contexts/storage.context';
 import { ImagePreviewFromBuffer } from './components/image-preview-from-buffer';
+import { readClipboardText } from './agent.helpers';
 
 interface IAgentProps {
   type: 'agent' | 'template';
@@ -386,12 +387,10 @@ export const Agent = ({
   };
 
   const handleInsertFromClipboard = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.readText().then((text) => {
-        setMessage(text);
-        submitPrompt(text);
-      });
-    }
+    readClipboardText().then((text) => {
+      setMessage(text);
+      submitPrompt(text);
+    });
   };
 
   const handleCopyMessage = () => {
