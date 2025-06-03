@@ -118,6 +118,10 @@
     min-height: 50px;
     font-size: 14px;
 
+    &-body * {
+      font-size: 14px !important;
+    }
+
     &-delete-btn {
       position: absolute;
       top: 0
