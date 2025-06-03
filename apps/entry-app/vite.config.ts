@@ -2,6 +2,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
+import legacy from '@vitejs/plugin-legacy';
 // import MillionLint from '@million/lint';
 
 // const wasmPaths = [
@@ -55,6 +56,11 @@ export default defineConfig(
       plugins: [
         /*MillionLint.vite(), */ react(),
         nxViteTsPaths(),
+        legacy({
+          targets: ['Safari >= 12.1'],
+          additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
+          modernPolyfills: true,
+        }),
         // viteStaticCopy({
         //   targets: wasmPaths.map((path) => ({
         //     src: path,
