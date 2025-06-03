@@ -83,6 +83,10 @@ export const AllAgents = () => {
   const [curAudioBase64, setCurAudioBase64] = useState('');
 
   useEffect(() => {
+    const isIPad = /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
+
+    if (isIPad) return;
+
     document.addEventListener('selectionchange', handleSelectionChange);
     return () => {
       document.removeEventListener('selectionchange', handleSelectionChange);
