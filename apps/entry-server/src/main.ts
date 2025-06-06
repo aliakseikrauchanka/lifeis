@@ -24,7 +24,7 @@ const client = getMongoDbClient();
 
 // create gemini model
 const genAi = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-const defaultGeminiModel = genAi.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
+const defaultGeminiModel = genAi.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
 const openAiModel = new OpenAI();
 
 const host = process.env.HOST ?? '0.0.0.0';

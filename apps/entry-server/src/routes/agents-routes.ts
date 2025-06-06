@@ -57,9 +57,9 @@ interface IAgentTemplate extends IAgentBasic {
 
 type IAgentDocument = Document & IAgent & IAgentTemplate;
 
-const defaultGeminiModelName = 'gemini-1.5-flash-latest';
+const defaultGeminiModelName = 'gemini-2.0-flash-lite';
 const defaultOpenAiModelName = 'gpt-4o-mini';
-const allowedGeminiModelsNames = ['gemini-1.5-flash-latest', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+const allowedGeminiModelsNames = ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-pro-preview-06-05'];
 
 export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeAI, openAiModel: OpenAI) => {
   const router = Router();
