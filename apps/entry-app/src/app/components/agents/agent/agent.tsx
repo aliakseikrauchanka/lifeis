@@ -96,7 +96,7 @@ export const Agent = ({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const queryClient = useQueryClient();
-  const { audioEnabled } = useStorageContext();
+  const { audioEnabled, setIsWideModeOn, isWideModeOn } = useStorageContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isListeningFired, setIsListeningFired] = useState(false);
   const [selectedAiProvider, setSelectedAiProvider] = useState(defaultAiModelName);
@@ -265,6 +265,7 @@ export const Agent = ({
     // handle escape key
     if (e.key === 'Escape') {
       setIsWideMode(false);
+      setIsWideModeOn(false);
       setIsListeningFired(false);
     }
 
@@ -384,6 +385,7 @@ export const Agent = ({
 
   const handleFullScreenToggle = () => {
     setIsWideMode((prev) => !prev);
+    setIsWideModeOn(!isWideModeOn);
   };
 
   const handleInsertFromClipboard = () => {

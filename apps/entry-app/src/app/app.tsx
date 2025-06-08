@@ -25,13 +25,22 @@ import './styles/reset.css';
 import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
+import classNames from 'classnames';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn() || isOfflineModeOn);
-  const { audioEnabled, setAudioEnabled, loggedInUserId, setLoggedInUserId, languageCode, setLanguageCode } =
-    useStorageContext();
+  const {
+    audioEnabled,
+    setAudioEnabled,
+    loggedInUserId,
+    setLoggedInUserId,
+    languageCode,
+    setLanguageCode,
+    setIsWideModeOn,
+    isWideModeOn,
+  } = useStorageContext();
   const [isInitialized, setIsInitialized] = useState(false);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
 
@@ -127,7 +136,11 @@ export default function App() {
     <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
       <main className={css.main}>
         <audio ref={audioRef} />
-        <header className={css.header}>
+        <header
+          className={classNames(css.header, {
+            [css.headerHidden]: isWideModeOn,
+          })}
+        >
           <UserSession
             isOfflineMode={isOfflineModeOn}
             isLoggedIn={isLoggedIn}

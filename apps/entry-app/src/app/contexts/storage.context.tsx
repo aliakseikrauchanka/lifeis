@@ -14,6 +14,8 @@ export interface StorageContextType {
   unpinAgent: (agentId: string) => void;
   audioEnabled: boolean;
   setAudioEnabled: (enabled: boolean) => void;
+  isWideModeOn: boolean;
+  setIsWideModeOn: (isWideModeOn: boolean) => void;
 }
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
@@ -31,6 +33,8 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
   const [languageCode, setLanguageCode] = useState<string>('pl');
 
   const [pinnedAgentsIds, setPinnedAgents] = useState<string[]>([]);
+
+  const [isWideModeOn, setIsWideModeOn] = useState<boolean>(false);
 
   useEffect(() => {
     const restorePinnedAgents = async () => {
@@ -71,6 +75,8 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
     pinAgent,
     unpinAgent,
     audioEnabled,
+    isWideModeOn,
+    setIsWideModeOn,
     setAudioEnabled: (value: boolean) => {
       setAudioEnabled(value);
       localStorage.setItem(audioEnabledKey, JSON.stringify(value));
