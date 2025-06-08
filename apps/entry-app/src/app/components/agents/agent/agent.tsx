@@ -184,6 +184,7 @@ export const Agent = ({
       queryClient.invalidateQueries({ queryKey: ['agents'] });
     },
   });
+
   const submitMutation = useMutation({
     mutationFn: submitMessage,
     onSuccess: () => {

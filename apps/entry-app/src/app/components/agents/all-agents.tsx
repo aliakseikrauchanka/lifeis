@@ -1,20 +1,23 @@
-import { getAllAgents } from '../../api/agents/agents.api';
-import React, { useEffect, useRef, useState } from 'react';
+import { getAllAgents, updateAgent } from '../../api/agents/agents.api';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Agent } from './agent/agent';
 import AgentForm from './agent-create/agent-create';
 import css from './all-agents.module.scss';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { IAgentResponse } from '../../domains/agent.domain';
 import { useStorageContext } from '../../contexts/storage.context';
 import { Accordion, AccordionDetails, AccordionSummary } from '@mui/joy';
 import classNames from 'classnames';
 import { textToSpeech } from '../../api/assistants/assistants.api';
 import { AgentSearch } from './agent-search/agent-search';
+import { LanguageSelector, OwnButton } from '@lifeis/common-ui';
 
 const AVAILABLE_KEYS = ['1', '2', '3', '4', '5'];
 
 export const AllAgents = () => {
   const query = useQuery({ queryKey: ['agents'], queryFn: getAllAgents, select: (data) => data.agents });
+
+  const queryClient = useQueryClient();
 
   const { pinnedAgentsIds, languageCode } = useStorageContext();
 
@@ -30,7 +33,7 @@ export const AllAgents = () => {
     .map((id) => nonArchivedAgents.find((agent) => agent._id === id))
     .filter((agent) => !!agent) as IAgentResponse[]; // TODO: ???
   const nonPinnedAgents = nonArchivedAgents.filter((agent) => !pinnedAgentsIds.includes(agent._id));
-  const sortedAgents = [...pinnedAgents, ...nonPinnedAgents];
+  const sortedAgents = useMemo(() => [...pinnedAgents, ...nonPinnedAgents], [pinnedAgents, nonPinnedAgents]);
 
   const agentTemplates = query.data?.filter((agent) => agent.type === 'template') ?? [];
 
@@ -40,6 +43,25 @@ export const AllAgents = () => {
   const handleAgentSelect = (agentId: string) => {
     setFocusedAgentIndex(sortedAgents.findIndex((agent) => agent._id === agentId));
   };
+
+  const updateMutation = useMutation({
+    mutationFn: updateAgent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+    },
+  });
+
+  const handleReadLanguageChange = useCallback(
+    (event: any, newValue: string | null) => {
+      const focusedAgent = sortedAgents.find((agent) => agent._id === focusedAgentId);
+      if (!focusedAgent) {
+        return;
+      }
+      const { _id: id, name, prefix } = focusedAgent;
+      updateMutation.mutate({ id, name, prefix, readLanguageCode: newValue || '' });
+    },
+    [focusedAgentId, sortedAgents, updateMutation],
+  );
 
   // Add keyboard shortcut to open search
   useEffect(() => {
@@ -119,12 +141,29 @@ export const AllAgents = () => {
 
       setSelectionText(text);
     } else {
-      setSelectionRect(null);
+      setTimeout(() => {
+        setSelectionRect(null);
+      }, 50);
       setSelectionText('');
       setCurAudioBase64('');
       audioRef.current?.pause();
     }
   };
+
+  const handleSpeak = useCallback(async () => {
+    // let audioContent;
+    // if (!curAudioBase64) {
+    const audioContent = await textToSpeech(
+      selectionText,
+      sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode,
+    );
+    // } else {
+    //   audioContent = curAudioBase64;
+    // }
+    if (audioContent) {
+      playBase64Audio(audioContent);
+    }
+  }, [curAudioBase64, selectionText, sortedAgents, focusedAgentId, languageCode]);
 
   const playBase64Audio = (base64Audio: string) => {
     setCurAudioBase64(base64Audio);
@@ -201,25 +240,20 @@ export const AllAgents = () => {
                 color: 'white',
               }}
             >
-              {/* {selectionText} */}
-              <button
-                onClick={async () => {
-                  let audioContent;
-                  if (!curAudioBase64) {
-                    audioContent = await textToSpeech(
-                      selectionText,
-                      sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode,
-                    );
-                  } else {
-                    audioContent = curAudioBase64;
-                  }
-                  if (audioContent) {
-                    playBase64Audio(audioContent);
-                  }
+              <OwnButton onClick={handleSpeak}>Speak</OwnButton>
+              <div
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
                 }}
               >
-                Speak
-              </button>
+                <LanguageSelector
+                  languageCode={sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode}
+                  sx={{ minWidth: '20px' }}
+                  handleLanguageChange={handleReadLanguageChange}
+                />
+              </div>
+
               {/* <button
                 onClick={() => {
                   audioRef.current?.pause();

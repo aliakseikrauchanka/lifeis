@@ -38,7 +38,6 @@ export default function App() {
     setLoggedInUserId,
     languageCode,
     setLanguageCode,
-    setIsWideModeOn,
     isWideModeOn,
   } = useStorageContext();
   const [isInitialized, setIsInitialized] = useState(false);
