@@ -696,7 +696,7 @@ export const Agent = ({
             {isSubmitting ? (
               'Generating ...'
             ) : (
-              <div className={classNames('response-body', css.agentResponseBody)} ref={responseRef}>
+              <div className={'response-body'} ref={responseRef}>
                 {<ReactMarkdown>{answer}</ReactMarkdown>}
               </div>
             )}
