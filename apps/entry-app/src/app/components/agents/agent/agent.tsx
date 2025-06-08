@@ -21,12 +21,12 @@ import {
   Dashboard,
   Delete,
   DragHandle,
-  Fullscreen,
-  FullscreenExit,
   PlayForWork,
   PushPin,
   PushPinOutlined,
   Unarchive,
+  WidthFull,
+  WidthNormal,
 } from '@mui/icons-material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { AgentHistoryModal } from './components/agent-history';
@@ -106,7 +106,7 @@ export const Agent = ({
   const [savedCaptions, setSavedCaptions] = useState<string[]>([]);
   const formRef = useRef<HTMLFormElement | null>(null);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
-  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isWideMode, setIsWideMode] = useState(false);
 
   const { loggedInUserId } = useStorageContext();
 
@@ -264,7 +264,7 @@ export const Agent = ({
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // handle escape key
     if (e.key === 'Escape') {
-      setIsFullScreen(false);
+      setIsWideMode(false);
       setIsListeningFired(false);
     }
 
@@ -383,7 +383,7 @@ export const Agent = ({
   };
 
   const handleFullScreenToggle = () => {
-    setIsFullScreen((prev) => !prev);
+    setIsWideMode((prev) => !prev);
   };
 
   const handleInsertFromClipboard = () => {
@@ -467,7 +467,7 @@ export const Agent = ({
     <form
       onSubmit={handleSubmitForm}
       className={classNames(css.agent, {
-        [css.agentFullScreen]: isFullScreen,
+        [css.agentWideMode]: isWideMode,
       })}
       id={`agent-${id}`}
       ref={formRef}
@@ -514,202 +514,212 @@ export const Agent = ({
         </div>
       </header>
 
-      <div className={classNames(css.agentPrefixContainer, isInstructionsOpen && css.agentPrefixContainerExpanded)}>
-        <EditableInput initialValue={prefix} onValueChange={handleBlurPrefix} onToggle={handleInstructionsToggle} />
-      </div>
-
-      <div
-        className={classNames(css.agentInputWrapper, {
-          [css.agentInputWrapperMinimized]: isMobile,
-        })}
-        style={{
-          height: `${height}px`,
-        }}
-        ref={textareaWrapperRef}
-      >
-        <textarea
-          onDrop={handleDrop}
-          ref={textAreaRef}
-          onFocus={handleAgentFocus}
-          onBlur={onBlur}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onPaste={handlePaste}
-          onKeyDown={handleKeyDown}
-          className={classNames(css.agentInput, isMobile && css.agentInputMinimized)}
-          style={{
-            height: `${height}px`,
-          }}
-        />
-        {audioEnabled && (
-          <LanguageSelector
-            selectRef={selectRef}
-            sx={{ position: 'absolute', right: '32px', top: '2px', opacity: 0.5, minWidth: '20px' }}
-            languageCode={listenLanguageCode || languageCode}
-            handleLanguageChange={handleListenLanguageChange}
-          />
-        )}
-        <IconButton
-          sx={{ position: 'absolute', right: audioEnabled ? '96px' : '32px', top: '2px', opacity: 0.5 }}
-          size="sm"
-          onClick={handleCopyMessage}
-        >
-          <CopyAll />
-        </IconButton>
-        <IconButton
-          sx={{ position: 'absolute', right: audioEnabled ? '124px' : '64px', top: '2px', opacity: 0.5 }}
-          size="sm"
-          onClick={handleInsertFromClipboard}
-        >
-          <PlayForWork />
-        </IconButton>
-
-        <IconButton
-          sx={{ position: 'absolute', right: '32px', bottom: '12px', opacity: 0.5 }}
-          size="sm"
-          onClick={handleFullScreenToggle}
-        >
-          {isFullScreen ? <FullscreenExit /> : <Fullscreen />}
-        </IconButton>
+      <div>
+        <div className={classNames(css.agentPrefixContainer, isInstructionsOpen && css.agentPrefixContainerExpanded)}>
+          <EditableInput initialValue={prefix} onValueChange={handleBlurPrefix} onToggle={handleInstructionsToggle} />
+        </div>
 
         <div
-          ref={resizerRef}
-          className={classNames(css.agentInputResizer, isResizing && css.agentInputResizerActive)}
-          onMouseDown={startResizing}
-          onTouchStart={startResizing}
-          tabIndex={0}
-          role="slider"
-          aria-valuemin={50}
-          aria-valuemax={500}
-          aria-valuenow={height}
-          aria-orientation="vertical"
-          aria-label="Resize textarea"
-        />
-        {imageBuffer instanceof ArrayBuffer && (
-          <ImagePreviewFromBuffer
-            buffer={imageBuffer}
-            onClose={() => setImageBuffer(null)}
-            isLoading={imageIsParsing}
-          />
-        )}
-
-        <AgentHistoryNavigation
-          className={css.agentHistoryNavigation}
-          historyItems={clientHistoryItems}
-          index={historyCurrentIndex}
-          onHistoryClick={handleOpenAgentHistory}
-          onIndexChange={handleHistoryIndexChange}
-        />
-      </div>
-      <div className={css.agentButtons}>
-        <Select
-          value={selectedAiProvider}
-          onChange={(_, newValue) => setSelectedAiProvider(newValue as string)}
-          sx={{ minHeight: 30, minWidth: 95 }}
+          className={classNames(css.agentBody, {
+            [css.agentBodyWide]: isWideMode,
+          })}
         >
-          <Option value="gemini-2.0-flash-lite">Gemini Flash 2 Lite</Option>
-          <Option value="gemini-2.0-flash">Gemini Flash 2</Option>
-          <Option value="gemini-2.5-pro-preview-06-05">Gemini Pro 2.5</Option>
-          <Option value="openai">OpenAI</Option>
-          <Option value="deepseek-r1">Deepseek R1</Option>
-        </Select>
-        <label htmlFor={`photo-${number}`} className={css.agentButtonsPhoto}>
-          <CameraAlt fontSize="large" color="inherit" />
-        </label>
-        <input
-          type="file"
-          id={`photo-${number}`}
-          capture="environment"
-          accept="image/*,video/*"
-          style={{ display: 'none' }}
-          onChangeCapture={handleCapture}
-        />
-        <OwnButton
-          type="button"
-          color="danger"
-          onClick={handleClearText}
-          style={{ marginLeft: 'auto', height: '100%' }}
-          disabled={!message && !answer}
-        >
-          Clear All
-        </OwnButton>
-        {audioEnabled && (
-          <SpeechToText
-            className={css.agentButtonsStt}
-            onCaption={(caption) => {
-              if (!caption || !caption.length) return;
-              setSavedCaptions(caption);
-              const differenceIndex = caption.findIndex((item, index) => savedCaptions[index] !== item);
-              const additionalMessage = caption.slice(differenceIndex).join(' ');
-              setMessage((message) => (message ? `${message} ${additionalMessage}` : additionalMessage));
-            }}
-            id={id}
-            onCleared={() => setIsCaptionsNeedClear(false)}
-            isNeedClear={isCaptionsNeedClear}
-            isToggledListening={isListeningFired}
-            onListeningToggled={() => {
-              setIsListeningFired((prev) => !prev);
-            }}
-          />
-        )}
-        <OwnButton type="submit" style={{ height: '100%' }} disabled={!message || isSubmitting}>
-          Submit
-        </OwnButton>
-      </div>
-      <div className={css.agentResponse}>
-        <h4 className={css.agentResponseTitle}>
-          Response:{' '}
-          {!isSubmitting && answer && (
-            <>
-              <IconButton aria-label="Copy" size="sm" color="primary" onClick={handleCopyResponse}>
+          <div>
+            <div
+              className={classNames(css.agentInputWrapper, {
+                [css.agentInputWrapperMinimized]: isMobile,
+              })}
+              style={{
+                height: `${height}px`,
+              }}
+              ref={textareaWrapperRef}
+            >
+              <textarea
+                onDrop={handleDrop}
+                ref={textAreaRef}
+                onFocus={handleAgentFocus}
+                onBlur={onBlur}
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                onPaste={handlePaste}
+                onKeyDown={handleKeyDown}
+                className={classNames(css.agentInput, isMobile && css.agentInputMinimized)}
+                style={{
+                  height: `${height}px`,
+                }}
+              />
+              {audioEnabled && (
+                <LanguageSelector
+                  selectRef={selectRef}
+                  sx={{ position: 'absolute', right: '32px', top: '2px', opacity: 0.5, minWidth: '20px' }}
+                  languageCode={listenLanguageCode || languageCode}
+                  handleLanguageChange={handleListenLanguageChange}
+                />
+              )}
+              <IconButton
+                sx={{ position: 'absolute', right: audioEnabled ? '96px' : '32px', top: '2px', opacity: 0.5 }}
+                size="sm"
+                onClick={handleCopyMessage}
+              >
                 <CopyAll />
+              </IconButton>
+              <IconButton
+                sx={{ position: 'absolute', right: audioEnabled ? '124px' : '64px', top: '2px', opacity: 0.5 }}
+                size="sm"
+                onClick={handleInsertFromClipboard}
+              >
+                <PlayForWork />
               </IconButton>
 
               <IconButton
-                aria-label="Copy"
+                sx={{ position: 'absolute', right: '32px', bottom: '12px', opacity: 0.5 }}
                 size="sm"
-                color="primary"
-                onClick={handleCopyResponse}
-                draggable
-                onDragStart={handleDragStart}
+                onClick={handleFullScreenToggle}
               >
-                <DragHandle />
+                {isWideMode ? <WidthNormal /> : <WidthFull />}
               </IconButton>
-            </>
-          )}
-          <LanguageSelector
-            languageCode={readLanguageCode || languageCode}
-            sx={{ minWidth: '20px' }}
-            handleLanguageChange={handleReadLanguageChange}
-          />
-        </h4>
-        {isSubmitting ? (
-          'Generating ...'
-        ) : (
-          <div className="response-body" ref={responseRef}>
-            {<ReactMarkdown>{answer}</ReactMarkdown>}
+
+              <div
+                ref={resizerRef}
+                className={classNames(css.agentInputResizer, isResizing && css.agentInputResizerActive)}
+                onMouseDown={startResizing}
+                onTouchStart={startResizing}
+                tabIndex={0}
+                role="slider"
+                aria-valuemin={50}
+                aria-valuemax={500}
+                aria-valuenow={height}
+                aria-orientation="vertical"
+                aria-label="Resize textarea"
+              />
+              {imageBuffer instanceof ArrayBuffer && (
+                <ImagePreviewFromBuffer
+                  buffer={imageBuffer}
+                  onClose={() => setImageBuffer(null)}
+                  isLoading={imageIsParsing}
+                />
+              )}
+
+              <AgentHistoryNavigation
+                className={css.agentHistoryNavigation}
+                historyItems={clientHistoryItems}
+                index={historyCurrentIndex}
+                onHistoryClick={handleOpenAgentHistory}
+                onIndexChange={handleHistoryIndexChange}
+              />
+            </div>
+            <div className={css.agentButtons}>
+              <Select
+                value={selectedAiProvider}
+                onChange={(_, newValue) => setSelectedAiProvider(newValue as string)}
+                sx={{ minHeight: 30, minWidth: 95 }}
+              >
+                <Option value="gemini-2.0-flash-lite">Gemini Flash 2 Lite</Option>
+                <Option value="gemini-2.0-flash">Gemini Flash 2</Option>
+                <Option value="gemini-2.5-pro-preview-06-05">Gemini Pro 2.5</Option>
+                <Option value="openai">OpenAI</Option>
+                <Option value="deepseek-r1">Deepseek R1</Option>
+              </Select>
+              <label htmlFor={`photo-${number}`} className={css.agentButtonsPhoto}>
+                <CameraAlt fontSize="large" color="inherit" />
+              </label>
+              <input
+                type="file"
+                id={`photo-${number}`}
+                capture="environment"
+                accept="image/*,video/*"
+                style={{ display: 'none' }}
+                onChangeCapture={handleCapture}
+              />
+              <OwnButton
+                type="button"
+                color="danger"
+                onClick={handleClearText}
+                style={{ marginLeft: 'auto', height: '100%' }}
+                disabled={!message && !answer}
+              >
+                Clear All
+              </OwnButton>
+              {audioEnabled && (
+                <SpeechToText
+                  className={css.agentButtonsStt}
+                  onCaption={(caption) => {
+                    if (!caption || !caption.length) return;
+                    setSavedCaptions(caption);
+                    const differenceIndex = caption.findIndex((item, index) => savedCaptions[index] !== item);
+                    const additionalMessage = caption.slice(differenceIndex).join(' ');
+                    setMessage((message) => (message ? `${message} ${additionalMessage}` : additionalMessage));
+                  }}
+                  id={id}
+                  onCleared={() => setIsCaptionsNeedClear(false)}
+                  isNeedClear={isCaptionsNeedClear}
+                  isToggledListening={isListeningFired}
+                  onListeningToggled={() => {
+                    setIsListeningFired((prev) => !prev);
+                  }}
+                />
+              )}
+              <OwnButton type="submit" style={{ height: '100%' }} disabled={!message || isSubmitting}>
+                Submit
+              </OwnButton>
+            </div>
           </div>
-        )}
+          <div className={css.agentResponse}>
+            <h4 className={css.agentResponseTitle}>
+              Response:{' '}
+              {!isSubmitting && answer && (
+                <>
+                  <IconButton aria-label="Copy" size="sm" color="primary" onClick={handleCopyResponse}>
+                    <CopyAll />
+                  </IconButton>
+
+                  <IconButton
+                    aria-label="Copy"
+                    size="sm"
+                    color="primary"
+                    onClick={handleCopyResponse}
+                    draggable
+                    onDragStart={handleDragStart}
+                  >
+                    <DragHandle />
+                  </IconButton>
+                </>
+              )}
+              <LanguageSelector
+                languageCode={readLanguageCode || languageCode}
+                sx={{ minWidth: '20px' }}
+                handleLanguageChange={handleReadLanguageChange}
+              />
+            </h4>
+            {isSubmitting ? (
+              'Generating ...'
+            ) : (
+              <div className="response-body" ref={responseRef}>
+                {<ReactMarkdown>{answer}</ReactMarkdown>}
+              </div>
+            )}
+          </div>
+          <AgentHistoryModal open={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} agentId={id} />
+          <Snackbar
+            anchorOrigin={{
+              horizontal: 'center',
+              vertical: 'bottom',
+            }}
+            color="danger"
+            autoHideDuration={2000}
+            open={!!snackBarText}
+            variant="solid"
+            onClose={(event, reason) => {
+              if (reason === 'clickaway') {
+                return;
+              }
+              setSnackBarText('');
+            }}
+          >
+            {snackBarText}
+          </Snackbar>
+        </div>
       </div>
-      <AgentHistoryModal open={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} agentId={id} />
-      <Snackbar
-        anchorOrigin={{
-          horizontal: 'center',
-          vertical: 'bottom',
-        }}
-        color="danger"
-        autoHideDuration={2000}
-        open={!!snackBarText}
-        variant="solid"
-        onClose={(event, reason) => {
-          if (reason === 'clickaway') {
-            return;
-          }
-          setSnackBarText('');
-        }}
-      >
-        {snackBarText}
-      </Snackbar>
     </form>
   );
 };

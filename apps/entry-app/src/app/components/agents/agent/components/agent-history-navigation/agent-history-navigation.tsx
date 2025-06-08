@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, LastPage } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, History } from '@mui/icons-material';
 import { IconButton } from '@mui/joy';
 import { IAgentHistoryItem } from '../../../../../domains/agent.domain';
 import { OwnButton } from '@lifeis/common-ui';
@@ -47,11 +47,11 @@ export const AgentHistoryNavigation = ({
       <OwnButton
         type="button"
         onClick={onHistoryClick}
-        color="neutral"
         disabled={!historyItems?.length}
+        variant="plain"
         style={{ marginTop: 'auto', marginBottom: '20px', height: '50px' }}
       >
-        Full
+        <History />
       </OwnButton>
     </div>
   );
