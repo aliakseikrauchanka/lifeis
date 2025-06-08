@@ -292,12 +292,22 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
 
     const aiProvider = req.body.aiProvider ?? 'gemini'; // gemini is default
 
-    let prompt: string;
-    if (prefix.indexOf('{}') > -1) {
-      prompt = prefix.replace('{}', req.body.message);
-    } else {
-      prompt = `${prefix} ${req.body.message}`;
+    let prompt = '';
+
+    const language = req.body.language;
+    console.log('debug', { language });
+
+    if (language) {
+      prompt += 'Язык оригинального текста: ' + language + '\n';
     }
+
+    if (prefix.indexOf('{}') > -1) {
+      prompt += prefix.replace('{}', req.body.message);
+    } else {
+      prompt += `${prefix} ${req.body.message}`;
+    }
+
+    console.log('debug', { prompt });
 
     let responseText: string;
 

@@ -12,7 +12,7 @@ import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect, useC
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
 import ReactMarkdown from 'react-markdown';
-import { IconButton, Select, useTheme, Option, Snackbar } from '@mui/joy';
+import { IconButton, Select, useTheme, Option, Snackbar, Switch } from '@mui/joy';
 import {
   Archive,
   CameraAlt,
@@ -107,6 +107,7 @@ export const Agent = ({
   const formRef = useRef<HTMLFormElement | null>(null);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
   const [isWideMode, setIsWideMode] = useState(false);
+  const [isExplicitLanguage, setIsExplicitLanguage] = useState(false);
 
   const { loggedInUserId } = useStorageContext();
 
@@ -235,6 +236,7 @@ export const Agent = ({
         id,
         message,
         aiProvider: selectedAiProvider,
+        language: isExplicitLanguage ? listenLanguageCode || languageCode : undefined,
       });
       const purifiedDom = domPurify.sanitize(response.answer);
       setAnswer(purifiedDom);
@@ -550,29 +552,41 @@ export const Agent = ({
                   height: `${height}px`,
                 }}
               />
-              {audioEnabled && (
-                <LanguageSelector
-                  selectRef={selectRef}
-                  sx={{ position: 'absolute', right: '32px', top: '2px', opacity: 0.5, minWidth: '20px' }}
-                  languageCode={listenLanguageCode || languageCode}
-                  handleLanguageChange={handleListenLanguageChange}
-                />
-              )}
+              <LanguageSelector
+                selectRef={selectRef}
+                sx={{ position: 'absolute', right: '32px', top: '2px', opacity: 0.5, minWidth: '20px' }}
+                languageCode={listenLanguageCode || languageCode}
+                handleLanguageChange={handleListenLanguageChange}
+              />
               <IconButton
-                sx={{ position: 'absolute', right: audioEnabled ? '96px' : '32px', top: '2px', opacity: 0.5 }}
+                sx={{ position: 'absolute', right: '96px', top: '2px', opacity: 0.5 }}
                 size="sm"
                 onClick={handleCopyMessage}
               >
                 <CopyAll />
               </IconButton>
               <IconButton
-                sx={{ position: 'absolute', right: audioEnabled ? '124px' : '64px', top: '2px', opacity: 0.5 }}
+                sx={{ position: 'absolute', right: '124px', top: '2px', opacity: 0.5 }}
                 size="sm"
                 onClick={handleInsertFromClipboard}
               >
                 <PlayForWork />
               </IconButton>
-
+              <Switch
+                checked={isExplicitLanguage}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIsExplicitLanguage(event.target.checked)}
+                color={isExplicitLanguage ? 'success' : 'neutral'}
+                variant={isExplicitLanguage ? 'solid' : 'outlined'}
+                // endDecorator={isExplicitLanguage ? 'On' : 'Off'}
+                sx={{ position: 'absolute', right: '46px', top: '36px', opacity: 0.5 }}
+                slotProps={{
+                  endDecorator: {
+                    sx: {
+                      minWidth: 22,
+                    },
+                  },
+                }}
+              />
               <IconButton
                 sx={{ position: 'absolute', right: '32px', bottom: '12px', opacity: 0.5 }}
                 size="sm"

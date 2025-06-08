@@ -93,11 +93,13 @@ export const submitMessage = async ({
   message,
   imageBuffer,
   aiProvider,
+  language,
 }: {
   id: string;
   message: string;
   imageBuffer?: string | ArrayBuffer | null;
   aiProvider: string;
+  language?: string;
 }): Promise<{
   answer: string;
 }> => {
@@ -106,6 +108,9 @@ export const submitMessage = async ({
   formData.append('aiProvider', aiProvider);
   if (imageBuffer) {
     formData.append('image', new Blob([imageBuffer]), 'image.png');
+  }
+  if (language) {
+    formData.append('language', language);
   }
 
   const response = await utilFetch(`/agents/${id}`, {
