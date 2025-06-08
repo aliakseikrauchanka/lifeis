@@ -295,7 +295,6 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
     let prompt = '';
 
     const language = req.body.language;
-    console.log('debug', { language });
 
     if (language) {
       prompt += 'Язык оригинального текста: ' + language + '\n';
@@ -306,8 +305,6 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
     } else {
       prompt += `${prefix} ${req.body.message}`;
     }
-
-    console.log('debug', { prompt });
 
     let responseText: string;
 

@@ -690,7 +690,7 @@ export const Agent = ({
                     <CopyAll />
                   </IconButton>
 
-                  <IconButton
+                  {/* <IconButton
                     aria-label="Copy"
                     size="sm"
                     color="primary"
@@ -699,14 +699,14 @@ export const Agent = ({
                     onDragStart={handleDragStart}
                   >
                     <DragHandle />
-                  </IconButton>
+                  </IconButton> */}
                 </>
               )}
-              <LanguageSelector
+              {/* <LanguageSelector
                 languageCode={readLanguageCode || languageCode}
                 sx={{ minWidth: '20px' }}
                 handleLanguageChange={handleReadLanguageChange}
-              />
+              /> */}
             </h4>
             {isSubmitting ? (
               'Generating ...'
