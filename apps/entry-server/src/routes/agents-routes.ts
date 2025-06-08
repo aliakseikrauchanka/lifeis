@@ -202,7 +202,9 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
       let responseText: string;
 
       try {
-        const geminiRequestBody: GenerateContentRequest | string | Array<string | Part> = ['Get text from the image'];
+        const geminiRequestBody: GenerateContentRequest | string | Array<string | Part> = [
+          'Get only text from the image',
+        ];
         if (uploadResult) {
           geminiRequestBody.push({
             fileData: {
