@@ -86,15 +86,15 @@ export const Agent = ({
   const [isInstructionsOpen, setIsInstructionsOpen] = useState(false);
   const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
   const textareaWrapperRef = useRef(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   // resizer
   const resizerRef = useRef(null);
   const [isResizing, setIsResizing] = useState(false);
-  const [height, setHeight] = useState(140); // Initial height
+  const [height, setHeight] = useState(isMobile ? 200 : 140); // Initial height
 
   const responseRef = useRef<HTMLDivElement | null>(null);
   const currentMessageRef = useRef<string>(message);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const queryClient = useQueryClient();
   const { audioEnabled, setIsWideModeOn, isWideModeOn } = useStorageContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -537,6 +537,7 @@ export const Agent = ({
             <div
               className={classNames(css.agentInputWrapper, {
                 [css.agentInputWrapperMinimized]: isMobile,
+                [css.agentInputWrapperWide]: isWideMode,
               })}
               style={{
                 height: `${height}px`,
