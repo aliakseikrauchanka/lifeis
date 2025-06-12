@@ -89,7 +89,7 @@ export const Agent = ({
   // resizer
   const resizerRef = useRef(null);
   const [isResizing, setIsResizing] = useState(false);
-  const [height, setHeight] = useState(100); // Initial height
+  const [height, setHeight] = useState(140); // Initial height
 
   const responseRef = useRef<HTMLDivElement | null>(null);
   const currentMessageRef = useRef<string>(message);
@@ -681,16 +681,25 @@ export const Agent = ({
               </OwnButton>
             </div>
           </div>
-          <div className={css.agentResponse}>
-            <h4 className={css.agentResponseTitle}>
-              Response:{' '}
-              {!isSubmitting && answer && (
-                <>
-                  <IconButton aria-label="Copy" size="sm" color="primary" onClick={handleCopyResponse}>
-                    <CopyAll />
-                  </IconButton>
+          <div
+            className={classNames(css.agentResponse, {
+              [css.agentResponseWide]: isWideMode,
+            })}
+          >
+            <div
+              className={classNames(css.agentResponseContent, {
+                [css.agentResponseContentWide]: isWideMode,
+              })}
+            >
+              <h4 className={css.agentResponseTitle}>
+                Response:{' '}
+                {!isSubmitting && answer && (
+                  <>
+                    <IconButton aria-label="Copy" size="sm" color="primary" onClick={handleCopyResponse}>
+                      <CopyAll />
+                    </IconButton>
 
-                  {/* <IconButton
+                    {/* <IconButton
                     aria-label="Copy"
                     size="sm"
                     color="primary"
@@ -700,21 +709,22 @@ export const Agent = ({
                   >
                     <DragHandle />
                   </IconButton> */}
-                </>
-              )}
-              {/* <LanguageSelector
+                  </>
+                )}
+                {/* <LanguageSelector
                 languageCode={readLanguageCode || languageCode}
                 sx={{ minWidth: '20px' }}
                 handleLanguageChange={handleReadLanguageChange}
               /> */}
-            </h4>
-            {isSubmitting ? (
-              'Generating ...'
-            ) : (
-              <div className={'response-body'} ref={responseRef}>
-                {<ReactMarkdown>{answer}</ReactMarkdown>}
-              </div>
-            )}
+              </h4>
+              {isSubmitting ? (
+                'Generating ...'
+              ) : (
+                <div className={'response-body'} ref={responseRef}>
+                  {<ReactMarkdown>{answer}</ReactMarkdown>}
+                </div>
+              )}
+            </div>
           </div>
           <AgentHistoryModal open={isHistoryOpen} onClose={() => setIsHistoryOpen(false)} agentId={id} />
           <Snackbar

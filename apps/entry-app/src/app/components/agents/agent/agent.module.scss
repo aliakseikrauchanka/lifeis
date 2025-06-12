@@ -43,7 +43,7 @@
     margin: 5px;
 
     &-minimized {
-      min-height: 120px;
+      min-height: 140px;
     }
   }
 
@@ -123,7 +123,24 @@
   }
 
   &-response {
-    margin-top: 10px;
+    &--wide {
+      position: relative;
+      flex-grow: 1;
+    }
+
+    &-content {
+      display: block;
+
+      &--wide {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+      }
+    }
+
     min-height: 50px;
     font-size: 14px;
 
