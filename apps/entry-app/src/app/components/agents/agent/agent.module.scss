@@ -1,3 +1,5 @@
+$min-input-height-minimized: 200px;
+
 .agent {
   flex: 1;
   display: flex;
@@ -53,7 +55,7 @@
     }
 
     &-minimized {
-      min-height: 200px;
+      min-height: $min-input-height-minimized;
     }
   }
 
@@ -64,7 +66,7 @@
 
     min-height: 200px;
     &-minimized {
-      min-height: 120px;
+      min-height: $min-input-height-minimized;
     }
 
     &-resizer {
