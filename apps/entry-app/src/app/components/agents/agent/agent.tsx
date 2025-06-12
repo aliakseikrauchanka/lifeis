@@ -91,7 +91,7 @@ export const Agent = ({
   // resizer
   const resizerRef = useRef(null);
   const [isResizing, setIsResizing] = useState(false);
-  const [height, setHeight] = useState(isMobile ? 200 : 140); // Initial height
+  const [height, setHeight] = useState(isMobile ? 190 : 140); // Initial height
 
   const responseRef = useRef<HTMLDivElement | null>(null);
   const currentMessageRef = useRef<string>(message);
