@@ -529,7 +529,11 @@ export const Agent = ({
             [css.agentBodyWide]: isWideMode,
           })}
         >
-          <div>
+          <div
+            className={classNames({
+              [css.agentInputPartWide]: isWideMode,
+            })}
+          >
             <div
               className={classNames(css.agentInputWrapper, {
                 [css.agentInputWrapperMinimized]: isMobile,

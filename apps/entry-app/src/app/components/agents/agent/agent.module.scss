@@ -16,6 +16,7 @@
   &-body {
     display: flex;
     flex-direction: column;
+    gap: 5px;
 
     &--wide {
       flex-direction: row;
@@ -33,6 +34,10 @@
       overflow: hidden;
       text-overflow: ellipsis;
     }
+  }
+
+  &-input-part--wide {
+    width: 40%;
   }
 
   &-input-wrapper {
