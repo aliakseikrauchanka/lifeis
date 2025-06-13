@@ -21,6 +21,7 @@ import {
   Dashboard,
   Delete,
   DragHandle,
+  PlayCircle,
   PlayForWork,
   PushPin,
   PushPinOutlined,
@@ -37,6 +38,7 @@ import { IAgentHistoryItem } from '../../../domains/agent.domain';
 import { useStorageContext } from '../../../contexts/storage.context';
 import { ImagePreviewFromBuffer } from './components/image-preview-from-buffer';
 import { readClipboardText } from './agent.helpers';
+import { speak } from '../all-agents.helpers';
 
 interface IAgentProps {
   type: 'agent' | 'template';
@@ -108,6 +110,8 @@ export const Agent = ({
   const prevFocusedElement = useRef<HTMLElement | null>(null);
   const [isWideMode, setIsWideMode] = useState(false);
   const [isExplicitLanguage, setIsExplicitLanguage] = useState(false);
+  const [isAutoDictation, setIsAutoDictation] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
   const { loggedInUserId } = useStorageContext();
 
@@ -241,6 +245,19 @@ export const Agent = ({
       });
       const purifiedDom = domPurify.sanitize(response.answer);
       setAnswer(purifiedDom);
+      if (isAutoDictation) {
+        speak(message, listenLanguageCode || languageCode, (audioUrl) => {
+          if (audioRef.current) {
+            audioRef.current.src = audioUrl;
+            audioRef.current.play();
+
+            // Cleanup
+            audioRef.current.onended = () => {
+              URL.revokeObjectURL(audioUrl);
+            };
+          }
+        });
+      }
     } catch (e) {
       setSnackBarText('Problems on submitting query to AI service' + e);
     } finally {
@@ -558,33 +575,32 @@ export const Agent = ({
                   height: `${height}px`,
                 }}
               />
-              <LanguageSelector
-                selectRef={selectRef}
-                sx={{ position: 'absolute', right: '32px', top: '2px', opacity: 0.5, minWidth: '20px' }}
-                languageCode={listenLanguageCode || languageCode}
-                handleLanguageChange={handleListenLanguageChange}
-              />
               <IconButton
-                sx={{ position: 'absolute', right: '96px', top: '2px', opacity: 0.5 }}
+                sx={{ position: 'absolute', right: '36px', top: '2px', opacity: 0.5 }}
                 size="sm"
                 onClick={handleCopyMessage}
               >
                 <CopyAll />
               </IconButton>
               <IconButton
-                sx={{ position: 'absolute', right: '124px', top: '2px', opacity: 0.5 }}
+                sx={{ position: 'absolute', right: '66px', top: '2px', opacity: 0.5 }}
                 size="sm"
                 onClick={handleInsertFromClipboard}
               >
                 <PlayForWork />
               </IconButton>
+              <LanguageSelector
+                selectRef={selectRef}
+                sx={{ position: 'absolute', right: '75px', top: '36px', opacity: 0.5, minWidth: '20px' }}
+                languageCode={listenLanguageCode || languageCode}
+                handleLanguageChange={handleListenLanguageChange}
+              />
               <Switch
                 checked={isExplicitLanguage}
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIsExplicitLanguage(event.target.checked)}
                 color={isExplicitLanguage ? 'success' : 'neutral'}
                 variant={isExplicitLanguage ? 'solid' : 'outlined'}
-                // endDecorator={isExplicitLanguage ? 'On' : 'Off'}
-                sx={{ position: 'absolute', right: '46px', top: '36px', opacity: 0.5 }}
+                sx={{ position: 'absolute', right: '36px', top: '40px', opacity: 0.5 }}
                 slotProps={{
                   endDecorator: {
                     sx: {
@@ -593,6 +609,41 @@ export const Agent = ({
                   },
                 }}
               />
+              <IconButton
+                sx={{ position: 'absolute', right: '75px', top: '64px', opacity: 0.5 }}
+                size="sm"
+                onClick={() => {
+                  if (!message) return;
+                  speak(message, listenLanguageCode || languageCode, (audioUrl) => {
+                    if (audioRef.current) {
+                      audioRef.current.src = audioUrl;
+                      audioRef.current.play();
+
+                      // Cleanup
+                      audioRef.current.onended = () => {
+                        URL.revokeObjectURL(audioUrl);
+                      };
+                    }
+                  });
+                }}
+              >
+                <PlayCircle />
+              </IconButton>
+              <Switch
+                checked={isAutoDictation}
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIsAutoDictation(event.target.checked)}
+                color={isAutoDictation ? 'success' : 'neutral'}
+                variant={isAutoDictation ? 'solid' : 'outlined'}
+                sx={{ position: 'absolute', right: '36px', top: '70px', opacity: 0.5 }}
+                slotProps={{
+                  endDecorator: {
+                    sx: {
+                      minWidth: 22,
+                    },
+                  },
+                }}
+              />
+
               <IconButton
                 sx={{ position: 'absolute', right: '32px', bottom: '12px', opacity: 0.5 }}
                 size="sm"
@@ -750,6 +801,9 @@ export const Agent = ({
           >
             {snackBarText}
           </Snackbar>
+          <audio ref={audioRef}>
+            <source type="audio/mpeg" />
+          </audio>
         </div>
       </div>
     </form>

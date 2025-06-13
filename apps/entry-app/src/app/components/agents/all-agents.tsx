@@ -8,9 +8,9 @@ import { IAgentResponse } from '../../domains/agent.domain';
 import { useStorageContext } from '../../contexts/storage.context';
 import { Accordion, AccordionDetails, AccordionSummary } from '@mui/joy';
 import classNames from 'classnames';
-import { textToSpeech } from '../../api/assistants/assistants.api';
 import { AgentSearch } from './agent-search/agent-search';
 import { LanguageSelector, OwnButton } from '@lifeis/common-ui';
+import { speak } from './all-agents.helpers';
 
 const AVAILABLE_KEYS = ['1', '2', '3', '4', '5'];
 
@@ -151,45 +151,19 @@ export const AllAgents = () => {
   };
 
   const handleSpeak = useCallback(async () => {
-    // let audioContent;
-    // if (!curAudioBase64) {
-    const audioContent = await textToSpeech(
-      selectionText,
-      sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode,
-    );
-    // } else {
-    //   audioContent = curAudioBase64;
-    // }
-    if (audioContent) {
-      playBase64Audio(audioContent);
-    }
-  }, [curAudioBase64, selectionText, sortedAgents, focusedAgentId, languageCode]);
+    const language = sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode;
+    speak(selectionText, language, (audioUrl) => {
+      if (audioRef.current) {
+        audioRef.current.src = audioUrl;
+        audioRef.current.play();
 
-  const playBase64Audio = (base64Audio: string) => {
-    setCurAudioBase64(base64Audio);
-    if (audioRef.current) {
-      // Convert base64 to blob
-      const byteCharacters = atob(base64Audio);
-      const byteNumbers = new Array(byteCharacters.length);
-
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+        // Cleanup
+        audioRef.current.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+        };
       }
-
-      const byteArray = new Uint8Array(byteNumbers);
-      const audioBlob = new Blob([byteArray], { type: 'audio/mp3' });
-
-      // Create and play audio
-      const audioUrl = URL.createObjectURL(audioBlob);
-      audioRef.current.src = audioUrl;
-      audioRef.current.play();
-
-      // Cleanup
-      audioRef.current.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-      };
-    }
-  };
+    });
+  }, [selectionText, sortedAgents, focusedAgentId, languageCode]);
 
   if (!query.data) {
     return <div>Loading...</div>;
