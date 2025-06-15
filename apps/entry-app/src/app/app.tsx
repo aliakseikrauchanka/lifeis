@@ -26,6 +26,7 @@ import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
 import classNames from 'classnames';
+import { PlayArrow } from '@mui/icons-material';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
@@ -151,18 +152,25 @@ export default function App() {
           />
           <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex', maxHeight: '30px' }}>
             {audioEnabled && (
-              <>
-                <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
-                  Play recorded audio
-                </OwnButton>
-                <LanguageSelector
-                  languageCode={languageCode}
-                  selectRef={selectRef}
-                  handleLanguageChange={handleLanguageChange}
-                  handleLanguageClose={handleLanguageClose}
-                />
-              </>
+              <LanguageSelector
+                languageCode={languageCode}
+                selectRef={selectRef}
+                handleLanguageChange={handleLanguageChange}
+                handleLanguageClose={handleLanguageClose}
+                sx={{ minWidth: '50px' }}
+              />
             )}
+            <OwnButton
+              type="button"
+              onClick={handlePlayRecordedAudio}
+              color="success"
+              style={{
+                marginLeft: '10px',
+                marginRight: '10px',
+              }}
+            >
+              <PlayArrow />
+            </OwnButton>
             <OwnButton
               type="button"
               color="success"

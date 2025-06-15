@@ -29,9 +29,12 @@ export const AgentSearch = ({ agents, onSelect, onClose }: AgentSearchProps) => 
           onSelect(searchResults[selectedIndex].item._id);
           onClose();
         }
+        setSearchTerm('');
+
         break;
       case 'Escape':
         onClose();
+        setSearchTerm('');
         break;
       case 'ArrowDown':
         setSelectedIndex((prev) => Math.min(prev + 1, searchResults.length - 1));
