@@ -583,7 +583,7 @@ export const Agent = ({
                 <CopyAll />
               </IconButton>
               <IconButton
-                sx={{ position: 'absolute', right: '66px', top: '2px', opacity: 0.5 }}
+                sx={{ position: 'absolute', right: '68px', top: '2px', opacity: 0.5 }}
                 size="sm"
                 onClick={handleInsertFromClipboard}
               >
@@ -591,7 +591,7 @@ export const Agent = ({
               </IconButton>
               <LanguageSelector
                 selectRef={selectRef}
-                sx={{ position: 'absolute', right: '75px', top: '36px', opacity: 0.5, minWidth: '20px' }}
+                sx={{ position: 'absolute', left: '5px', bottom: '18px', opacity: 0.5, minWidth: '20px' }}
                 languageCode={listenLanguageCode || languageCode}
                 handleLanguageChange={handleListenLanguageChange}
               />
@@ -600,7 +600,7 @@ export const Agent = ({
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIsExplicitLanguage(event.target.checked)}
                 color={isExplicitLanguage ? 'success' : 'neutral'}
                 variant={isExplicitLanguage ? 'solid' : 'outlined'}
-                sx={{ position: 'absolute', right: '36px', top: '40px', opacity: 0.5 }}
+                sx={{ position: 'absolute', left: '78px', bottom: '21px', opacity: 0.5 }}
                 slotProps={{
                   endDecorator: {
                     sx: {
@@ -610,7 +610,7 @@ export const Agent = ({
                 }}
               />
               <IconButton
-                sx={{ position: 'absolute', right: '75px', top: '64px', opacity: 0.5 }}
+                sx={{ position: 'absolute', right: '68px', top: '30px', opacity: 0.5 }}
                 size="sm"
                 onClick={() => {
                   if (!message) return;
@@ -634,7 +634,7 @@ export const Agent = ({
                 onChange={(event: React.ChangeEvent<HTMLInputElement>) => setIsAutoDictation(event.target.checked)}
                 color={isAutoDictation ? 'success' : 'neutral'}
                 variant={isAutoDictation ? 'solid' : 'outlined'}
-                sx={{ position: 'absolute', right: '36px', top: '70px', opacity: 0.5 }}
+                sx={{ position: 'absolute', right: '36px', top: '36px', opacity: 0.5 }}
                 slotProps={{
                   endDecorator: {
                     sx: {
