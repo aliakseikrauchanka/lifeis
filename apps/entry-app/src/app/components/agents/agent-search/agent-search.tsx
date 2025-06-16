@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Fuse from 'fuse.js';
 import { Input } from '@mui/joy';
 import { IAgentResponse } from '../../../domains/agent.domain';
+import { createPortal } from 'react-dom';
 
 interface AgentSearchProps {
   agents: Array<IAgentResponse>;
@@ -12,6 +13,7 @@ interface AgentSearchProps {
 export const AgentSearch = ({ agents, onSelect, onClose }: AgentSearchProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const fuse = new Fuse(agents, {
     keys: ['name'],
@@ -45,16 +47,31 @@ export const AgentSearch = ({ agents, onSelect, onClose }: AgentSearchProps) => 
     }
   };
 
+  const handleClickAway = (e: MouseEvent) => {
+    if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      onClose();
+    }
+  };
+
   useEffect(() => {
     setSelectedIndex(0);
   }, [searchTerm]);
 
-  return (
+  useEffect(() => {
+    document.addEventListener('mousedown', handleClickAway);
+    return () => {
+      document.removeEventListener('mousedown', handleClickAway);
+    };
+  }, []);
+
+  const agentSearch = (
     <div
+      ref={containerRef}
       style={{
         position: 'fixed',
-        zIndex: 100,
-        marginTop: '-36px',
+        zIndex: 101,
+        top: 0,
+        width: '150px',
       }}
     >
       <Input
@@ -99,4 +116,6 @@ export const AgentSearch = ({ agents, onSelect, onClose }: AgentSearchProps) => 
       )}
     </div>
   );
+
+  return createPortal(agentSearch, document.body.querySelector('#root')!);
 };

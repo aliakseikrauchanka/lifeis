@@ -5,6 +5,8 @@ import { getPinnedAgents, savePinnedAgents } from '../api/agents/agents.api';
 const audioEnabledKey = 'audio';
 
 export interface StorageContextType {
+  isSearchOpened: boolean;
+  setIsSearchOpened: (arg: boolean | ((prevValue: boolean) => boolean)) => void;
   languageCode: string;
   setLanguageCode: (code: string) => void;
   loggedInUserId: string;
@@ -35,6 +37,8 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
   const [pinnedAgentsIds, setPinnedAgents] = useState<string[]>([]);
 
   const [isWideModeOn, setIsWideModeOn] = useState<boolean>(false);
+
+  const [isSearchOpened, setIsSearchOpened] = useState(false);
 
   useEffect(() => {
     const restorePinnedAgents = async () => {
@@ -67,6 +71,8 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const returnValue: StorageContextType = {
+    isSearchOpened,
+    setIsSearchOpened,
     languageCode,
     setLanguageCode,
     loggedInUserId,

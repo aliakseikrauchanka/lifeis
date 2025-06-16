@@ -19,7 +19,7 @@ export const AllAgents = () => {
 
   const queryClient = useQueryClient();
 
-  const { pinnedAgentsIds, languageCode } = useStorageContext();
+  const { pinnedAgentsIds, languageCode, isSearchOpened, setIsSearchOpened } = useStorageContext();
 
   const [focusedAgentIndex, setFocusedAgentIndex] = useState(0);
   const [focusedAgentId, setFocusedAgentId] = useState<string>('');
@@ -38,7 +38,7 @@ export const AllAgents = () => {
   const agentTemplates = query.data?.filter((agent) => agent.type === 'template') ?? [];
 
   // Inside your component:
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  // const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleAgentSelect = (agentId: string) => {
     setFocusedAgentIndex(sortedAgents.findIndex((agent) => agent._id === agentId));
@@ -68,7 +68,7 @@ export const AllAgents = () => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'p') {
         e.preventDefault();
-        setIsSearchOpen((prev) => !prev);
+        setIsSearchOpened((prev) => !prev);
       }
     };
 
@@ -171,8 +171,8 @@ export const AllAgents = () => {
 
   return (
     <div>
-      {isSearchOpen && (
-        <AgentSearch agents={sortedAgents} onSelect={handleAgentSelect} onClose={() => setIsSearchOpen(false)} />
+      {isSearchOpened && (
+        <AgentSearch agents={sortedAgents} onSelect={handleAgentSelect} onClose={() => setIsSearchOpened(false)} />
       )}
       <div>
         <div className={css.agents}>

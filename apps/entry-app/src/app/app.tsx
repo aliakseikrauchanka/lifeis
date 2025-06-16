@@ -26,7 +26,8 @@ import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
 import classNames from 'classnames';
-import { PlayArrow } from '@mui/icons-material';
+import { PlayArrow, SearchRounded, SearchSharp } from '@mui/icons-material';
+import { IconButton } from '@mui/joy';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
@@ -40,6 +41,7 @@ export default function App() {
     languageCode,
     setLanguageCode,
     isWideModeOn,
+    setIsSearchOpened,
   } = useStorageContext();
   const [isInitialized, setIsInitialized] = useState(false);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
@@ -160,6 +162,13 @@ export default function App() {
                 sx={{ minWidth: '50px' }}
               />
             )}
+            <OwnButton
+              onClick={() => {
+                setIsSearchOpened((prev) => !prev);
+              }}
+            >
+              <SearchRounded />
+            </OwnButton>
             <OwnButton
               type="button"
               onClick={handlePlayRecordedAudio}
