@@ -171,9 +171,9 @@ export const AllAgents = () => {
 
   return (
     <div>
-      {/* {isSearchOpen && ( */}
-      <AgentSearch agents={sortedAgents} onSelect={handleAgentSelect} onClose={() => setIsSearchOpen(false)} />
-      {/* )} */}
+      {isSearchOpen && (
+        <AgentSearch agents={sortedAgents} onSelect={handleAgentSelect} onClose={() => setIsSearchOpen(false)} />
+      )}
       <div>
         <div className={css.agents}>
           {sortedAgents.map((agent, i: number) => (
