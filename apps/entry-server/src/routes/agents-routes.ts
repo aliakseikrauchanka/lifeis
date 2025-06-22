@@ -27,6 +27,14 @@ const storage = multer.diskStorage({
     cb(null, d);
   },
   filename: (req, file, cb) => {
+    const uploadDir = path.join(__dirname, 'uploads');
+    const filePath = path.join(uploadDir, 'image_upload.jpg');
+
+    // Check if file exists and delete it
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath); // or use fs.promises.unlink for async/await
+    }
+
     cb(null, 'image_upload.jpg');
   },
 });
