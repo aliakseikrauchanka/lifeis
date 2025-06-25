@@ -225,7 +225,7 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
         const geminiModel = genAi.getGenerativeModel({ model: defaultGeminiModelName });
         const response = await geminiModel.generateContent(geminiRequestBody);
         try {
-          uploadResult.file.url && fileManager.deleteFile(uploadResult.file.id);
+          uploadResult.file.url && (await fileManager.deleteFile(uploadResult.file.id));
           filePath && fs.unlinkSync(filePath);
         } catch (e) {
           console.log('error', e, 'error on deleting file');
@@ -366,8 +366,8 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
         const geminiModel = genAi.getGenerativeModel({ model });
         const response = await geminiModel.generateContent(geminiRequestBody);
         try {
-          uploadResult.file.url && fileManager.deleteFile(uploadResult.file.id);
-          filePath && fs.unlinkSync(filePath);
+          uploadResult?.file.url && (await fileManager.deleteFile(uploadResult?.file.id));
+          fs.existsSync(filePath) && fs.unlinkSync(filePath);
         } catch (e) {
           console.log('error', e, 'error on deleting file');
         }
