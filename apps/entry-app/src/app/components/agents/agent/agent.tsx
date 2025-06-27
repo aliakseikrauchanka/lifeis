@@ -11,6 +11,7 @@ import {
 import { useState, KeyboardEvent, FormEvent, MouseEvent, useRef, useEffect, useCallback } from 'react';
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
+import * as Sentry from '@sentry/react';
 import ReactMarkdown from 'react-markdown';
 import { IconButton, Select, useTheme, Option, Snackbar, Switch } from '@mui/joy';
 import {
@@ -260,6 +261,7 @@ export const Agent = ({
       }
     } catch (e) {
       setSnackBarText('Problems on submitting query to AI service' + e);
+      Sentry.captureException(e);
     } finally {
       setIsSubmitting(false);
     }
