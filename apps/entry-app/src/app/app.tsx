@@ -110,7 +110,7 @@ export default function App() {
     }
   }, [prevFocusedElement]);
 
-  const { hasAudioFeature, hasLogsFeature, hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInUserId);
+  const { hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInUserId);
 
   useEffect(() => {
     init({

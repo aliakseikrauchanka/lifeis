@@ -242,50 +242,8 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
     },
   );
 
-  router.post('/:id', [verifyAccessToken, uploadMiddlewareFactory.single('image')], async (req: Request, res) => {
+  router.post('/:id', [verifyAccessToken, multer().none()], async (req: Request, res) => {
     const agentId = req.params.id;
-
-    // create directory if not exists
-    // const directoryPath = path.join(__dirname, 'uploads', res.locals.userId);
-    // if (!fs.existsSync(directoryPath)) {
-    //   fs.mkdirSync(directoryPath);
-    // }
-    const filePath = path.join(__dirname, 'uploads', 'image_upload.jpg');
-    // read file from filePath
-    let imageBuffer;
-    try {
-      imageBuffer = fs.readFileSync(filePath);
-      try {
-        imageBuffer = await sharp(imageBuffer)
-          .resize({
-            width: 1200,
-            // Example dimensions
-            fit: sharp.fit.inside, // Or other fit options as needed
-            withoutEnlargement: true, // Prevent upscaling
-          })
-          .jpeg({ quality: 100 }) // Adjust quality as needed
-          .toBuffer();
-        console.log('debug size', imageBuffer.length);
-
-        // ... save resizedBuffer ...
-      } catch (error) {
-        // ... handle error ...
-      }
-    } catch (error) {
-      console.log('error', error);
-    }
-
-    console.log('debug', filePath, req.file);
-
-    let uploadResult;
-    if (imageBuffer) {
-      uploadResult = await fileManager.uploadFile(filePath, {
-        mimeType: 'image/jpeg',
-        displayName: 'Jetpack drawing',
-      });
-      console.log(`Uploaded file ${uploadResult.file.displayName} as: ${uploadResult.file.uri}`);
-    }
-    // View the response.
 
     const foundAgent: IAgent | IAgentTemplate = await client
       .db('lifeis')
@@ -352,25 +310,13 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
 
         responseText = response.choices[0].message.content;
       } else {
+        // default gemini
+        console.log('debug', req.body, prompt);
         const geminiRequestBody: GenerateContentRequest | string | Array<string | Part> = [prompt];
-        if (uploadResult) {
-          console.log('debug', 'uploading image', uploadResult.file.uri, uploadResult.file.mimeType);
-          geminiRequestBody.push({
-            fileData: {
-              fileUri: uploadResult.file.uri,
-              mimeType: uploadResult.file.mimeType,
-            },
-          });
-        }
+
         const model = allowedGeminiModelsNames.includes(aiProvider) ? aiProvider : defaultGeminiModelName;
         const geminiModel = genAi.getGenerativeModel({ model });
         const response = await geminiModel.generateContent(geminiRequestBody);
-        try {
-          uploadResult?.file.url && (await fileManager.deleteFile(uploadResult?.file.id));
-          fs.existsSync(filePath) && fs.unlinkSync(filePath);
-        } catch (e) {
-          console.log('error', e, 'error on deleting file');
-        }
 
         responseText = response.response.text();
       }

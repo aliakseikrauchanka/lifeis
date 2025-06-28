@@ -21,7 +21,6 @@ import {
   CopyAll,
   Dashboard,
   Delete,
-  DragHandle,
   PlayCircle,
   PlayForWork,
   PushPin,
