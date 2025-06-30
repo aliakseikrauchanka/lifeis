@@ -311,7 +311,6 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
         responseText = response.choices[0].message.content;
       } else {
         // default gemini
-        console.log('debug', req.body, prompt);
         const geminiRequestBody: GenerateContentRequest | string | Array<string | Part> = [prompt];
 
         const model = allowedGeminiModelsNames.includes(aiProvider) ? aiProvider : defaultGeminiModelName;
