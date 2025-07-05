@@ -103,6 +103,21 @@ export const AllAgents = () => {
   const [selectionText, setSelectionText] = useState('');
   const textRef = useRef(null);
   const [curAudioBase64, setCurAudioBase64] = useState('');
+  const [expandedAccordions, setExpandedAccordions] = useState<{
+    archived: boolean;
+    templates: boolean;
+  }>({
+    archived: false,
+    templates: false,
+  });
+
+  const handleAccordionChange =
+    (accordion: 'archived' | 'templates') => (event: React.SyntheticEvent, expanded: boolean) => {
+      setExpandedAccordions((prev) => ({
+        ...prev,
+        [accordion]: expanded,
+      }));
+    };
 
   useEffect(() => {
     const isIPad = /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
@@ -243,44 +258,48 @@ export const AllAgents = () => {
         </div>
 
         <br />
-        <Accordion>
+        <Accordion expanded={expandedAccordions.archived} onChange={handleAccordionChange('archived')}>
           <AccordionSummary sx={{ marginRight: '28px', backgroundColor: '#f5f5f5', height: '60px' }}>
             <h3>Your archived agents:</h3>
           </AccordionSummary>
           <AccordionDetails>
-            <div className={classNames(css.agentsArchived, css.agents)}>
-              {archivedAgents.map((agent) => (
-                <Agent
-                  type="agent"
-                  id={agent._id}
-                  userId={agent.ownerId}
-                  name={agent.name}
-                  prefix={agent.prefix}
-                  key={agent._id}
-                  isArchived={agent.isArchived}
-                />
-              ))}
-            </div>
+            {expandedAccordions.archived && (
+              <div className={classNames(css.agentsArchived, css.agents)}>
+                {archivedAgents.map((agent) => (
+                  <Agent
+                    type="agent"
+                    id={agent._id}
+                    userId={agent.ownerId}
+                    name={agent.name}
+                    prefix={agent.prefix}
+                    key={agent._id}
+                    isArchived={agent.isArchived}
+                  />
+                ))}
+              </div>
+            )}
           </AccordionDetails>
         </Accordion>
         <br />
-        <Accordion>
+        <Accordion expanded={expandedAccordions.templates} onChange={handleAccordionChange('templates')}>
           <AccordionSummary sx={{ marginRight: '28px', backgroundColor: '#f5f5f5', height: '60px' }}>
             <h3>Template agents</h3>
           </AccordionSummary>
           <AccordionDetails>
-            <div className={css.agents}>
-              {agentTemplates.map((agent, i: number) => (
-                <Agent
-                  type="template"
-                  id={agent._id}
-                  userId={agent.creatorId}
-                  name={agent.name}
-                  prefix={agent.prefix}
-                  key={agent._id}
-                />
-              ))}
-            </div>
+            {expandedAccordions.templates && (
+              <div className={css.agents}>
+                {agentTemplates.map((agent, i: number) => (
+                  <Agent
+                    type="template"
+                    id={agent._id}
+                    userId={agent.creatorId}
+                    name={agent.name}
+                    prefix={agent.prefix}
+                    key={agent._id}
+                  />
+                ))}
+              </div>
+            )}
           </AccordionDetails>
         </Accordion>
       </div>

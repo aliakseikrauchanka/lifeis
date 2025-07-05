@@ -1,7 +1,8 @@
-import { ChevronLeft, ChevronRight, History } from '@mui/icons-material';
+import { ChevronLeft, ChevronRight, History, HistoryEdu } from '@mui/icons-material';
 import { IconButton } from '@mui/joy';
 import { IAgentHistoryItem } from '../../../../../domains/agent.domain';
 import { OwnButton } from '@lifeis/common-ui';
+import { useCallback } from 'react';
 
 interface IAgentHistoryNavigationProps {
   className: string;
@@ -10,6 +11,8 @@ interface IAgentHistoryNavigationProps {
   onIndexChange: (index: number) => void;
   onHistoryClick: () => void;
 }
+
+const clipboardItemsLenth = 50;
 
 export const AgentHistoryNavigation = ({
   className,
@@ -21,12 +24,19 @@ export const AgentHistoryNavigation = ({
   const handlePreviousClick = () => {
     onIndexChange(index + 1);
   };
-  const handleNextClick = () => {
+  const handleNextClick = async () => {
     onIndexChange(index - 1);
   };
-  // const handleReset = () => {
-  //   onIndexChange(0);
-  // };
+
+  const handleHistoryEduClick = useCallback(async () => {
+    const text =
+      historyItems
+        ?.slice(0, clipboardItemsLenth)
+        .map((item) => item.message)
+        .join('\n') || '';
+    await navigator.clipboard.writeText(text);
+  }, [historyItems]);
+
   return (
     <div className={className}>
       <IconButton
@@ -46,10 +56,19 @@ export const AgentHistoryNavigation = ({
       </IconButton> */}
       <OwnButton
         type="button"
+        onClick={handleHistoryEduClick}
+        disabled={!historyItems?.length}
+        variant="plain"
+        style={{ marginTop: 'auto', marginBottom: '10px', height: '30px' }}
+      >
+        <HistoryEdu />
+      </OwnButton>
+      <OwnButton
+        type="button"
         onClick={onHistoryClick}
         disabled={!historyItems?.length}
         variant="plain"
-        style={{ marginTop: 'auto', marginBottom: '20px', height: '50px' }}
+        style={{ marginBottom: '20px', height: '30px' }}
       >
         <History />
       </OwnButton>

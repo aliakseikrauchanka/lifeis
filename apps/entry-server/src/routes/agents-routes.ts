@@ -325,8 +325,7 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
       });
     }
 
-    // save entry to db
-    //
+    // save entry to db`
     await client
       .db('lifeis')
       .collection('agent_history')
