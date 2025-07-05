@@ -26,8 +26,7 @@ import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
 import classNames from 'classnames';
-import { PlayArrow, SearchRounded, SearchSharp } from '@mui/icons-material';
-import { IconButton } from '@mui/joy';
+import { PlayArrow, SearchRounded } from '@mui/icons-material';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
@@ -40,7 +39,7 @@ export default function App() {
     setLoggedInUserId,
     languageCode,
     setLanguageCode,
-    isWideModeOn,
+    isFullScreen,
     setIsSearchOpened,
   } = useStorageContext();
   const [isInitialized, setIsInitialized] = useState(false);
@@ -140,7 +139,7 @@ export default function App() {
         <audio ref={audioRef} />
         <header
           className={classNames(css.header, {
-            [css.headerHidden]: isWideModeOn,
+            [css.headerHidden]: isFullScreen,
           })}
         >
           <UserSession

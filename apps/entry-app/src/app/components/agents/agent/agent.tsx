@@ -51,6 +51,7 @@ interface IAgentProps {
   isArchived?: boolean;
   listenLanguageCode?: string;
   readLanguageCode?: string;
+  onFullScreen: (isAgentFullScreen: boolean) => void;
   onBlur?: () => void;
   onAgentFocus?: () => void;
 }
@@ -67,6 +68,8 @@ const emptyHistoryItem: IAgentHistoryItem = {
 
 const defaultAiModelName = 'gemini-2.0-flash';
 
+const CLIPBOARD_ITEMS_LENGTH = 50;
+
 export const Agent = ({
   id,
   name,
@@ -80,7 +83,9 @@ export const Agent = ({
   readLanguageCode,
   onBlur,
   onAgentFocus,
+  onFullScreen,
 }: IAgentProps) => {
+  const wideModeSettings = JSON.parse(localStorage.getItem('wideModeSettings') || '{}');
   const [historyCurrentIndex, setHistoryCurrentIndex] = useState(0);
   const [initLoad, setInitLoad] = useState(true);
   const [message, setMessage] = useState('');
@@ -98,7 +103,7 @@ export const Agent = ({
   const responseRef = useRef<HTMLDivElement | null>(null);
   const currentMessageRef = useRef<string>(message);
   const queryClient = useQueryClient();
-  const { audioEnabled, setIsWideModeOn, isWideModeOn } = useStorageContext();
+  const { audioEnabled, recalculateFullScreen } = useStorageContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isListeningFired, setIsListeningFired] = useState(false);
   const [selectedAiProvider, setSelectedAiProvider] = useState(defaultAiModelName);
@@ -108,7 +113,7 @@ export const Agent = ({
   const [savedCaptions, setSavedCaptions] = useState<string[]>([]);
   const formRef = useRef<HTMLFormElement | null>(null);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
-  const [isWideMode, setIsWideMode] = useState(false);
+  const [isWideMode, setIsWideMode] = useState(wideModeSettings[id] || false);
   const [isExplicitLanguage, setIsExplicitLanguage] = useState(false);
   const [isAutoDictation, setIsAutoDictation] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -276,6 +281,16 @@ export const Agent = ({
     setIsHistoryOpen(true);
   };
 
+  const handleHistoryEduClick = useCallback(async () => {
+    const clipboardText =
+      'Let us traing unique polish words from the list: \n' +
+        clientHistoryItems
+          ?.slice(0, CLIPBOARD_ITEMS_LENGTH)
+          .map((item) => `- ${item.message}`)
+          .join('\n') || '';
+    await navigator.clipboard.writeText(clipboardText);
+  }, [clientHistoryItems]);
+
   const handleSubmitForm = async (e?: FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
     setIsCaptionsNeedClear(true);
@@ -285,8 +300,6 @@ export const Agent = ({
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // handle escape key
     if (e.key === 'Escape') {
-      setIsWideMode(false);
-      setIsWideModeOn(false);
       setIsListeningFired(false);
     }
 
@@ -299,7 +312,7 @@ export const Agent = ({
     }
 
     if (e.code === 'KeyF' && e.ctrlKey) {
-      handleFullScreenToggle();
+      handleWideMode();
     }
 
     // handle ctrl + shift + left arrow
@@ -394,9 +407,9 @@ export const Agent = ({
     }
   };
 
-  const handleDragStart = (e: React.DragEvent<HTMLAnchorElement>) => {
-    e.dataTransfer.setData('text/plain', responseRef.current?.textContent || '');
-  };
+  // const handleDragStart = (e: React.DragEvent<HTMLAnchorElement>) => {
+  //   e.dataTransfer.setData('text/plain', responseRef.current?.textContent || '');
+  // };
 
   const handleDrop = (e: React.DragEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
@@ -404,10 +417,19 @@ export const Agent = ({
     setMessage(data);
   };
 
-  const handleFullScreenToggle = () => {
-    setIsWideMode((prev) => !prev);
-    setIsWideModeOn(!isWideModeOn);
-  };
+  const handleWideMode = useCallback(() => {
+    setIsWideMode((prev: boolean) => {
+      // get param of agent with current id from local storage
+      const wideModeSettings = JSON.parse(localStorage.getItem('wideModeSettings') || '{}');
+      const newWideModeSettings = {
+        ...wideModeSettings,
+        [id]: !prev,
+      };
+      localStorage.setItem('wideModeSettings', JSON.stringify(newWideModeSettings));
+      return !prev;
+    });
+    recalculateFullScreen();
+  }, [id, isWideMode, onFullScreen]);
 
   const handleInsertFromClipboard = () => {
     readClipboardText().then((text) => {
@@ -648,7 +670,7 @@ export const Agent = ({
               <IconButton
                 sx={{ position: 'absolute', right: '32px', bottom: '12px', opacity: 0.5 }}
                 size="sm"
-                onClick={handleFullScreenToggle}
+                onClick={handleWideMode}
               >
                 {isWideMode ? <WidthNormal /> : <WidthFull />}
               </IconButton>
@@ -678,7 +700,9 @@ export const Agent = ({
                 className={css.agentHistoryNavigation}
                 historyItems={clientHistoryItems}
                 index={historyCurrentIndex}
+                isEduEnabled={readLanguageCode === 'pl' || listenLanguageCode === 'pl'}
                 onHistoryClick={handleOpenAgentHistory}
+                onHistoryEduClick={handleHistoryEduClick}
                 onIndexChange={handleHistoryIndexChange}
               />
             </div>

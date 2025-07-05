@@ -16,9 +16,13 @@ export interface StorageContextType {
   unpinAgent: (agentId: string) => void;
   audioEnabled: boolean;
   setAudioEnabled: (enabled: boolean) => void;
-  isWideModeOn: boolean;
-  setIsWideModeOn: (isWideModeOn: boolean) => void;
+  isFullScreen: boolean;
+  recalculateFullScreen: () => void;
 }
+
+const isFullScreenEnabled = Object.values(JSON.parse(localStorage.getItem('wideModeSettings') || '{}')).some(
+  (value) => value,
+);
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
@@ -36,7 +40,7 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
 
   const [pinnedAgentsIds, setPinnedAgents] = useState<string[]>([]);
 
-  const [isWideModeOn, setIsWideModeOn] = useState<boolean>(false);
+  const [isFullScreen, setIsFullScreen] = useState<boolean>(isFullScreenEnabled || false);
 
   const [isSearchOpened, setIsSearchOpened] = useState(false);
 
@@ -81,8 +85,12 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
     pinAgent,
     unpinAgent,
     audioEnabled,
-    isWideModeOn,
-    setIsWideModeOn,
+    isFullScreen,
+    recalculateFullScreen: () => {
+      const wideModeSettings = JSON.parse(localStorage.getItem('wideModeSettings') || '{}');
+      const isFullScreen = Object.values(wideModeSettings).some((value) => value);
+      setIsFullScreen(isFullScreen);
+    },
     setAudioEnabled: (value: boolean) => {
       setAudioEnabled(value);
       localStorage.setItem(audioEnabledKey, JSON.stringify(value));

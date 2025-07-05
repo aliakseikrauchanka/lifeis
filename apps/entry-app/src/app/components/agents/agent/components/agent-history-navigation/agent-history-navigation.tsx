@@ -8,18 +8,20 @@ interface IAgentHistoryNavigationProps {
   className: string;
   index: number;
   historyItems: IAgentHistoryItem[] | undefined;
+  isEduEnabled: boolean;
   onIndexChange: (index: number) => void;
   onHistoryClick: () => void;
+  onHistoryEduClick: () => void;
 }
-
-const clipboardItemsLenth = 50;
 
 export const AgentHistoryNavigation = ({
   className,
   index,
   historyItems,
+  isEduEnabled,
   onIndexChange,
   onHistoryClick,
+  onHistoryEduClick,
 }: IAgentHistoryNavigationProps) => {
   const handlePreviousClick = () => {
     onIndexChange(index + 1);
@@ -27,15 +29,6 @@ export const AgentHistoryNavigation = ({
   const handleNextClick = async () => {
     onIndexChange(index - 1);
   };
-
-  const handleHistoryEduClick = useCallback(async () => {
-    const text =
-      historyItems
-        ?.slice(0, clipboardItemsLenth)
-        .map((item) => item.message)
-        .join('\n') || '';
-    await navigator.clipboard.writeText(text);
-  }, [historyItems]);
 
   return (
     <div className={className}>
@@ -54,15 +47,17 @@ export const AgentHistoryNavigation = ({
       {/* <IconButton aria-label="Copy" size="sm" color="primary" disabled={index === 0} onClick={handleReset}>
         <LastPage />
       </IconButton> */}
-      <OwnButton
-        type="button"
-        onClick={handleHistoryEduClick}
-        disabled={!historyItems?.length}
-        variant="plain"
-        style={{ marginTop: 'auto', marginBottom: '10px', height: '30px' }}
-      >
-        <HistoryEdu />
-      </OwnButton>
+      {isEduEnabled && (
+        <OwnButton
+          type="button"
+          onClick={onHistoryEduClick}
+          disabled={!historyItems?.length}
+          variant="plain"
+          style={{ marginTop: 'auto', marginBottom: '10px', height: '30px' }}
+        >
+          <HistoryEdu />
+        </OwnButton>
+      )}
       <OwnButton
         type="button"
         onClick={onHistoryClick}
