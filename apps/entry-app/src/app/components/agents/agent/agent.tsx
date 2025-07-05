@@ -51,7 +51,6 @@ interface IAgentProps {
   isArchived?: boolean;
   listenLanguageCode?: string;
   readLanguageCode?: string;
-  onFullScreen: (isAgentFullScreen: boolean) => void;
   onBlur?: () => void;
   onAgentFocus?: () => void;
 }
@@ -83,7 +82,6 @@ export const Agent = ({
   readLanguageCode,
   onBlur,
   onAgentFocus,
-  onFullScreen,
 }: IAgentProps) => {
   const wideModeSettings = JSON.parse(localStorage.getItem('wideModeSettings') || '{}');
   const [historyCurrentIndex, setHistoryCurrentIndex] = useState(0);
@@ -429,7 +427,7 @@ export const Agent = ({
       return !prev;
     });
     recalculateFullScreen();
-  }, [id, isWideMode, onFullScreen]);
+  }, [id, isWideMode, recalculateFullScreen, setIsWideMode]);
 
   const handleInsertFromClipboard = () => {
     readClipboardText().then((text) => {
