@@ -38,9 +38,12 @@ $min-input-height-minimized: 190px;
     }
   }
 
-  &-input-part--wide {
-    width: 40%;
-    min-width: 200px;
+  &-input-part {
+    z-index: 1;
+    &--wide {
+      width: 40%;
+      min-width: 200px;
+    }
   }
 
   &-input-wrapper {
@@ -70,7 +73,8 @@ $min-input-height-minimized: 190px;
     }
 
     &-resizer {
-      width: 100%;
+      width: calc(100% - 30px);
+      border-radius: 0 0 2px 2px;
       height: 15px;
       background: #f0f0f0;
       position: absolute;

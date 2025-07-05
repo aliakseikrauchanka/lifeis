@@ -568,7 +568,7 @@ export const Agent = ({
           })}
         >
           <div
-            className={classNames({
+            className={classNames(css.agentInputPart, {
               [css.agentInputPartWide]: isWideMode,
             })}
           >
