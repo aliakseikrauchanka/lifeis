@@ -165,20 +165,24 @@ export default function App() {
               onClick={() => {
                 setIsSearchOpened((prev) => !prev);
               }}
-            >
-              <SearchRounded />
-            </OwnButton>
-            <OwnButton
-              type="button"
-              onClick={handlePlayRecordedAudio}
-              color="success"
               style={{
-                marginLeft: '10px',
                 marginRight: '10px',
               }}
             >
-              <PlayArrow />
+              <SearchRounded />
             </OwnButton>
+            {audioEnabled && (
+              <OwnButton
+                type="button"
+                onClick={handlePlayRecordedAudio}
+                color="success"
+                style={{
+                  marginRight: '10px',
+                }}
+              >
+                <PlayArrow />
+              </OwnButton>
+            )}
             <OwnButton
               type="button"
               color="success"
