@@ -65,7 +65,6 @@ export function App() {
                 path="/baskets"
                 element={
                   <div>
-                    <Link to="/">Click here to go back to root page.</Link>
                     <BasketsPage />
                   </div>
                 }
