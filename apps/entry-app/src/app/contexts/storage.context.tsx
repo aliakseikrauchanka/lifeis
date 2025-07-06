@@ -45,6 +45,10 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
   const [isSearchOpened, setIsSearchOpened] = useState(false);
 
   useEffect(() => {
+    if (!loggedInUserId) {
+      return;
+    }
+
     const restorePinnedAgents = async () => {
       const pinnedAgentsIdsResponse = await getPinnedAgents();
       setPinnedAgents(pinnedAgentsIdsResponse.agentsIds);

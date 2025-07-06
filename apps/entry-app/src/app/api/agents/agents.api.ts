@@ -185,7 +185,7 @@ export const getPinnedAgents = async (): Promise<IPinnedAgentsResponse> => {
   });
 
   if (!response.ok) {
-    throw new Error('Failed to update pinned agents');
+    throw new Error('Failed to get pinned agents');
   }
 
   return await response.json();

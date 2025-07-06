@@ -1,5 +1,5 @@
 import { getAllAgents, updateAgent } from '../../api/agents/agents.api';
-import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Agent, IAgentHandle } from './agent/agent';
 import AgentForm from './agent-create/agent-create';
 import css from './all-agents.module.scss';
