@@ -1,6 +1,6 @@
 import { getAllAgents, updateAgent } from '../../api/agents/agents.api';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Agent } from './agent/agent';
+import React, { RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Agent, IAgentHandle } from './agent/agent';
 import AgentForm from './agent-create/agent-create';
 import css from './all-agents.module.scss';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,8 @@ const AVAILABLE_KEYS = ['1', '2', '3', '4', '5'];
 
 export const AllAgents = () => {
   const query = useQuery({ queryKey: ['agents'], queryFn: getAllAgents, select: (data) => data.agents });
+
+  const agentsRef = useRef<Record<string, IAgentHandle>>({});
 
   const queryClient = useQueryClient();
 
@@ -165,6 +167,13 @@ export const AllAgents = () => {
     }
   };
 
+  const handleSetNewMessage = useCallback(() => {
+    const agentRef = agentsRef.current[focusedAgentId];
+    if (!agentRef) return;
+
+    agentRef.setNewMessage(selectionText);
+  }, [agentsRef, focusedAgentId, selectionText]);
+
   const handleSpeak = useCallback(async () => {
     const language = sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode;
     speak(selectionText, language, (audioUrl) => {
@@ -206,6 +215,11 @@ export const AllAgents = () => {
               isArchived={!!agent.isArchived}
               listenLanguageCode={agent.listenLanguageCode}
               readLanguageCode={agent.readLanguageCode}
+              ref={(el: IAgentHandle) => {
+                if (el) {
+                  agentsRef.current[agent._id] = el;
+                }
+              }}
             />
           ))}
         </div>
@@ -215,32 +229,29 @@ export const AllAgents = () => {
         <div style={{ position: 'relative', padding: '20px' }} ref={textRef}>
           {selectionRect && (
             <div
+              className={css.agentsMenu}
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                position: 'absolute',
                 top: selectionRect.top + selectionRect.height + 10, // TODO: Adjust as needed
                 left: selectionRect.left,
-                backgroundColor: 'rebeccapurple',
-                // height: selectionRect.height,
-                overflow: 'hidden',
-                zIndex: 1000,
-                fontSize: '13px',
-                color: 'white',
               }}
             >
-              <OwnButton onClick={handleSpeak}>Speak</OwnButton>
-              <div
-                onMouseDown={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                }}
-              >
-                <LanguageSelector
-                  languageCode={sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode}
-                  sx={{ minWidth: '20px' }}
-                  handleLanguageChange={handleReadLanguageChange}
-                />
+              <div className={css.agentsMenuItem}>
+                <OwnButton onClick={handleSpeak}>Speak</OwnButton>
+                <div
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                >
+                  <LanguageSelector
+                    languageCode={sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode}
+                    sx={{ minWidth: '20px' }}
+                    handleLanguageChange={handleReadLanguageChange}
+                  />
+                </div>
+              </div>
+              <div className={css.agentsMenuItem}>
+                <OwnButton onClick={handleSetNewMessage}>Submit</OwnButton>
               </div>
 
               {/* <button
