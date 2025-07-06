@@ -17,8 +17,20 @@ export const createLog = async (message: string): Promise<void> => {
   return await response.json();
 };
 
-export const getAllLogs = async <T>(): Promise<IDiaryLog[]> => {
-  const response = await utilFetch(`/logs`);
+export const getAllLogs = async (from?: Date): Promise<IDiaryLog[]> => {
+  const urlQueryParameters = new URLSearchParams();
+  if (from) {
+    urlQueryParameters.append('from', from.toISOString());
+  }
+
+  const url = `/logs?${urlQueryParameters.toString()}`;
+
+  const response = await utilFetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
 
   if (!response.ok) {
     throw new Error('Failed to get logs');

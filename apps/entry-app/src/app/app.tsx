@@ -133,95 +133,97 @@ export default function App() {
     return languageCode;
   }, [languageCode]);
 
-  return isInitialized ? (
-    <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
-      <main className={css.main}>
-        <audio ref={audioRef} />
-        <header
-          className={classNames(css.header, {
-            [css.headerHidden]: isFullScreen,
-          })}
-        >
-          <UserSession
-            isOfflineMode={isOfflineModeOn}
-            isLoggedIn={isLoggedIn}
-            onLoginSuccess={(googleUserId) => {
-              setIsLoggedIn(true);
-              setLoggedInUserId(googleUserId);
-            }}
-            onLogOut={() => setIsLoggedIn(false)}
-          />
-          <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex', maxHeight: '30px' }}>
-            {audioEnabled && (
-              <LanguageSelector
-                languageCode={languageCode}
-                selectRef={selectRef}
-                handleLanguageChange={handleLanguageChange}
-                handleLanguageClose={handleLanguageClose}
-                sx={{ minWidth: '50px' }}
-              />
-            )}
-            <OwnButton
-              onClick={() => {
-                setIsSearchOpened((prev) => !prev);
+  return (
+    isInitialized && (
+      <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
+        <main className={css.main}>
+          <audio ref={audioRef} />
+          <header
+            className={classNames(css.header, {
+              [css.headerHidden]: isFullScreen,
+            })}
+          >
+            <UserSession
+              isOfflineMode={isOfflineModeOn}
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={(googleUserId) => {
+                setIsLoggedIn(true);
+                setLoggedInUserId(googleUserId);
               }}
-              style={{
-                marginRight: '10px',
-              }}
-            >
-              <SearchRounded />
-            </OwnButton>
-            {audioEnabled && (
+              onLogOut={() => setIsLoggedIn(false)}
+            />
+            <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex', maxHeight: '30px' }}>
+              {audioEnabled && (
+                <LanguageSelector
+                  languageCode={languageCode}
+                  selectRef={selectRef}
+                  handleLanguageChange={handleLanguageChange}
+                  handleLanguageClose={handleLanguageClose}
+                  sx={{ minWidth: '50px' }}
+                />
+              )}
               <OwnButton
-                type="button"
-                onClick={handlePlayRecordedAudio}
-                color="success"
+                onClick={() => {
+                  setIsSearchOpened((prev) => !prev);
+                }}
                 style={{
                   marginRight: '10px',
                 }}
               >
-                <PlayArrow />
+                <SearchRounded />
               </OwnButton>
-            )}
-            <OwnButton
-              type="button"
-              color="success"
-              onClick={() => {
-                setAudioEnabled(!audioEnabled);
-              }}
-            >
-              {audioEnabled ? 'Disable stt' : 'Enable stt'}
-            </OwnButton>
-          </div>
-        </header>
+              {audioEnabled && (
+                <OwnButton
+                  type="button"
+                  onClick={handlePlayRecordedAudio}
+                  color="success"
+                  style={{
+                    marginRight: '10px',
+                  }}
+                >
+                  <PlayArrow />
+                </OwnButton>
+              )}
+              <OwnButton
+                type="button"
+                color="success"
+                onClick={() => {
+                  setAudioEnabled(!audioEnabled);
+                }}
+              >
+                {audioEnabled ? 'Disable stt' : 'Enable stt'}
+              </OwnButton>
+            </div>
+          </header>
 
-        {isLoggedIn && (
-          <div className={css.content}>
-            <Routes>
-              <Route
-                path="/"
-                element={
-                  <AudioSwitch
-                    audioElement={
-                      <MicrophoneContextProvider>
-                        <DeepgramContextProvider language={getDeepgramLanguage()}>
-                          <AudioProvider>
-                            <SpeechToTextContextProvider onBlob={handleOnGetBlob}>
-                              <AgentsPage />
-                            </SpeechToTextContextProvider>
-                          </AudioProvider>
-                        </DeepgramContextProvider>
-                      </MicrophoneContextProvider>
-                    }
-                    nonAudioElement={<AgentsPage />}
-                  />
-                }
-              />
-              {hasExperimentsFeature && <Route path="/experiments" element={<ExperimentsPage />} />}
-            </Routes>
-          </div>
-        )}
-      </main>
-    </GoogleOAuthProvider>
-  ) : null;
+          {isLoggedIn && (
+            <div className={css.content}>
+              <Routes>
+                <Route
+                  path="/"
+                  element={
+                    <AudioSwitch
+                      audioElement={
+                        <MicrophoneContextProvider>
+                          <DeepgramContextProvider language={getDeepgramLanguage()}>
+                            <AudioProvider>
+                              <SpeechToTextContextProvider onBlob={handleOnGetBlob}>
+                                <AgentsPage />
+                              </SpeechToTextContextProvider>
+                            </AudioProvider>
+                          </DeepgramContextProvider>
+                        </MicrophoneContextProvider>
+                      }
+                      nonAudioElement={<AgentsPage />}
+                    />
+                  }
+                />
+                {hasExperimentsFeature && <Route path="/experiments" element={<ExperimentsPage />} />}
+              </Routes>
+            </div>
+          )}
+        </main>
+      </GoogleOAuthProvider>
+    )
+  );
 }

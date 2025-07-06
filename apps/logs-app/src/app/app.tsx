@@ -14,6 +14,8 @@ import { Route, Routes, Link } from 'react-router-dom';
 import { CONFIG } from '../config';
 import { useEffect, useState } from 'react';
 import { LogsPage } from './pages/logs.page';
+import { BasketsPage } from './pages/baskets.page';
+import { AppBar, Stack, Toolbar, Typography } from '@mui/material';
 
 export function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
@@ -28,53 +30,51 @@ export function App() {
   }, []);
 
   return (
-    <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
-      <header>
-        <UserSession
-          isLoggedIn={isLoggedIn}
-          onLoginSuccess={() => setIsLoggedIn(true)}
-          onLogOut={() => setIsLoggedIn(false)}
-        />
-      </header>
-      {isLoggedIn && isInitialized && (
-        <div>
-          <div role="navigation">
-            <ul>
-              <li>
-                <Link to="/">Home</Link>
-              </li>
-              <li>
-                <Link to="/page-2">main page</Link>
-              </li>
-            </ul>
+    isInitialized && (
+      <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
+        <header>
+          <UserSession
+            isLoggedIn={isLoggedIn}
+            onLoginSuccess={() => setIsLoggedIn(true)}
+            onLogOut={() => setIsLoggedIn(false)}
+          />
+        </header>
+        {isLoggedIn && (
+          <div>
+            <Stack direction="row" spacing={2}>
+              <Link to="/">Home</Link>
+              <Link to="/baskets">Baskets</Link>
+            </Stack>
+
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <MicrophoneContextProvider>
+                    <DeepgramContextProvider>
+                      <AudioProvider>
+                        <SpeechToTextContextProvider>
+                          <LogsPage />
+                        </SpeechToTextContextProvider>
+                      </AudioProvider>
+                    </DeepgramContextProvider>
+                  </MicrophoneContextProvider>
+                }
+              />
+              <Route
+                path="/baskets"
+                element={
+                  <div>
+                    <Link to="/">Click here to go back to root page.</Link>
+                    <BasketsPage />
+                  </div>
+                }
+              />
+            </Routes>
           </div>
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <MicrophoneContextProvider>
-                  <DeepgramContextProvider>
-                    <AudioProvider>
-                      <SpeechToTextContextProvider>
-                        <LogsPage />
-                      </SpeechToTextContextProvider>
-                    </AudioProvider>
-                  </DeepgramContextProvider>
-                </MicrophoneContextProvider>
-              }
-            />
-            <Route
-              path="/page-2"
-              element={
-                <div>
-                  <Link to="/">Click here to go back to root page.</Link>
-                </div>
-              }
-            />
-          </Routes>
-        </div>
-      )}
-    </GoogleOAuthProvider>
+        )}
+      </GoogleOAuthProvider>
+    )
   );
 }
 

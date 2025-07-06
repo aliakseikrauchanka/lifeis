@@ -3,6 +3,7 @@ import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { IDiaryLog, IDiaryResponseLog } from '../domain';
 import { MongoClient } from 'mongodb';
 import { GenerativeModel } from '@google/generative-ai';
+import { endOfToday } from 'date-fns';
 
 export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeModel) => {
   const router = Router();
@@ -40,12 +41,29 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
     res.status(200).send({ message: 'log submitted' });
   });
 
-  router.get('/', verifyAccessToken, async (_, res) => {
+  router.get('/', verifyAccessToken, async (req, res) => {
+    // from in query params in ISO format
+    const from = req.query.from as string;
+    let dateFilter = {};
+    if (from) {
+      const fromDate = new Date(from); // "2025-07-05T00:00:00.000Z"
+      const fromDateUnix = fromDate.getTime();
+
+      const toDate = endOfToday().getTime();
+
+      dateFilter = {
+        timestamp: {
+          $gte: fromDateUnix,
+          $lt: toDate,
+        },
+      };
+    }
     const baskets = await client.db('lifeis').collection('baskets').find().toArray();
     client
       .db('lifeis')
       .collection('logs')
-      .find()
+      .find(dateFilter)
+      .sort({ timestamp: -1 })
       .toArray()
       .then((dbLogs) => {
         const logs: IDiaryLog[] = dbLogs.map((dbLog) => ({
