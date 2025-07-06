@@ -1,4 +1,4 @@
-import React, { useState, KeyboardEvent } from 'react';
+import React, { useState, KeyboardEvent, KeyboardEventHandler } from 'react';
 import { OwnButton, SpeechToText } from '@lifeis/common-ui';
 import { createLog } from '../../api/logs/logs.api';
 import css from './log-form.module.scss';
@@ -34,7 +34,7 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
     setIsCaptionsNeedClear(true);
   };
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement> | KeyboardEventHandler<HTMLDivElement>) => {
+  const handleKeyDown = (e: any) => {
     // handle escape key
     if (e.key === 'Escape') {
       setIsListeningFired(false);
