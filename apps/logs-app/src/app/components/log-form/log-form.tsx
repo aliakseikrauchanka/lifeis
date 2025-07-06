@@ -34,7 +34,7 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
     setIsCaptionsNeedClear(true);
   };
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement> | KeyboardEventHandler<HTMLDivElement>) => {
     // handle escape key
     if (e.key === 'Escape') {
       setIsListeningFired(false);
