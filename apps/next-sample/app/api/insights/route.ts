@@ -7,19 +7,19 @@ const notion = new Client({ auth: process.env.NEXT_NOTION_API_KEY });
 const insightsDatabaseId = 'caae7cadc59c43fe920dd5ce4048dade';
 
 export const GET = async (req: NextRequest, res: NextResponse) => {
-  // const { userId } = getAuth(req);
+  const { userId } = getAuth(req);
 
-  // if (!userId) {
-  //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  // }
+  if (!userId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
 
-  // const response = await notion.databases.query({
-  //   database_id: insightsDatabaseId,
-  // });
+  const response = await notion.databases.query({
+    database_id: insightsDatabaseId,
+  });
 
-  // const insights = response.results.map((obj) =>
-  //   ((obj as PageObjectResponse).properties.insight as any).title.map((title: any) => title.plain_text).join(', '),
-  // );
+  const insights = response.results.map((obj) =>
+    ((obj as PageObjectResponse).properties.insight as any).title.map((title: any) => title.plain_text).join(', '),
+  );
 
-  return NextResponse.json([], { status: 200 });
+  return NextResponse.json(insights, { status: 200 });
 };

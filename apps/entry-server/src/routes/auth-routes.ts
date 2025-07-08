@@ -68,10 +68,14 @@ router.post('/google/refresh', async (req, res) => {
   let clientSecret;
   let redirectUri;
   // TODO: we use auth for couple of applications which seems not good idea
-  if (app === 'insights') {
+  if (app === 'logs') {
     clientId = process.env.LOGS_CLIENT_ID;
     clientSecret = process.env.LOGS_CLIENT_SECRET;
     redirectUri = process.env.LOGS_REDIRECT_URL;
+  } else if (app === 'insights') {
+    clientId = process.env.INSIGHTS_CLIENT_ID;
+    clientSecret = process.env.INSIGHTS_CLIENT_SECRET;
+    redirectUri = process.env.INSIGHTS_REDIRECT_URL;
   } else {
     clientId = process.env.CLIENT_ID;
     clientSecret = process.env.CLIENT_SECRET;
