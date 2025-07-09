@@ -1,4 +1,4 @@
-import React, { useState, KeyboardEvent, KeyboardEventHandler } from 'react';
+import React, { useState, KeyboardEvent, KeyboardEventHandler, useEffect } from 'react';
 import { OwnButton, SpeechToText } from '@lifeis/common-ui';
 import { createLog } from '../../api/logs/logs.api';
 import css from './log-form.module.scss';
@@ -49,6 +49,27 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
     }
   };
 
+  // Add document-level event listener
+  useEffect(() => {
+    const handleDocumentKeyDown = (e: globalThis.KeyboardEvent) => {
+      // Convert native KeyboardEvent to React KeyboardEvent-like object
+      const reactEvent = {
+        key: e.key,
+        code: e.code,
+        ctrlKey: e.ctrlKey,
+        preventDefault: () => e.preventDefault(),
+      } as KeyboardEvent;
+
+      handleKeyDown(reactEvent);
+    };
+
+    document.addEventListener('keydown', handleDocumentKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleDocumentKeyDown);
+    };
+  }, [message, onSubmit]); // Include dependencies that handleKeyDown uses
+
   return (
     <form onSubmit={handleSubmit}>
       <Box
@@ -71,7 +92,7 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
           placeholder="Enter your message here"
           value={message}
           onChange={handleChange}
-          onKeyDown={handleKeyDown}
+          // onKeyDown={handleKeyDown}
           fullWidth
         />
 
