@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { IDiaryLog, IDiaryResponseLog } from '../domain';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import { GenerativeModel } from '@google/generative-ai';
 import { endOfToday } from 'date-fns';
 
@@ -10,6 +10,7 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
 
   router.post('/', verifyAccessToken, async (req, res) => {
     const message = req.body.message;
+    const userId = res.locals.userId;
     const logsCollection = await client.db('lifeis').collection('logs');
 
     const baskets = await client.db('lifeis').collection('baskets').find().toArray();
@@ -35,6 +36,7 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
       message,
       timestamp: Date.now(),
       basket_id: baskets.find((basket) => basket.name === finalMatchedBasket)._id,
+      owner_id: userId,
     };
 
     logsCollection.insertOne(log);
@@ -43,15 +45,18 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
 
   router.get('/', verifyAccessToken, async (req, res) => {
     // from in query params in ISO format
+    const userId = res.locals.userId;
     const from = req.query.from as string;
-    let dateFilter = {};
+    let filter: any = {
+      owner_id: userId,
+    };
     if (from) {
       const fromDate = new Date(from); // "2025-07-05T00:00:00.000Z"
       const fromDateUnix = fromDate.getTime();
 
       const toDate = endOfToday().getTime();
-
-      dateFilter = {
+      filter = {
+        ...filter,
         timestamp: {
           $gte: fromDateUnix,
           $lt: toDate,
@@ -62,7 +67,7 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
     client
       .db('lifeis')
       .collection('logs')
-      .find(dateFilter)
+      .find(filter)
       .sort({ timestamp: -1 })
       .toArray()
       .then((dbLogs) => {
@@ -71,6 +76,7 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
           message: dbLog.message,
           timestamp: dbLog.timestamp,
           basket_id: dbLog.basket_id.toString(),
+          owner_id: dbLog.owner_id.toString(),
         }));
 
         const responseLogs: IDiaryResponseLog[] = logs.map((log) => {
@@ -79,6 +85,7 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
             message: log.message,
             timestamp: log.timestamp,
             basket_name: baskets.find((basket) => basket._id.toString() === log.basket_id.toString()).name,
+            owner_id: log.owner_id,
           };
         });
 

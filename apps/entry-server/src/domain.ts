@@ -5,6 +5,7 @@ export interface IDiaryLog {
   message: string;
   timestamp: number;
   basket_id: ObjectId;
+  owner_id: string;
 }
 
 export interface IDiaryResponseLog {
@@ -12,9 +13,11 @@ export interface IDiaryResponseLog {
   message: string;
   timestamp: number;
   basket_name: string;
+  owner_id: string;
 }
 
 export interface IBasket {
   _id?: string;
   name: string;
+  owner_id: string;
 }
