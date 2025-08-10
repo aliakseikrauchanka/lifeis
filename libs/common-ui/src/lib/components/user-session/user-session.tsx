@@ -4,6 +4,8 @@ import css from './user-session.module.scss';
 import { removeAuthData } from '../../services/auth-storage.service';
 import OwnButton from '../button/button';
 
+import { Logout } from '@mui/icons-material';
+
 interface IUserSessionProps {
   isLoggedIn: boolean;
   isOfflineMode?: boolean;
@@ -34,7 +36,9 @@ export const UserSession = ({ isLoggedIn, isOfflineMode, onLoginSuccess, onLogOu
           </h2>
           {!isOfflineMode && (
             <div>
-              <OwnButton onClick={handleLogout}>Logout</OwnButton>
+              <OwnButton onClick={handleLogout}>
+                <Logout />
+              </OwnButton>
             </div>
           )}
         </div>

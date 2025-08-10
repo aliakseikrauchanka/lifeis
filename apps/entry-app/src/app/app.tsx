@@ -26,7 +26,7 @@ import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
 import classNames from 'classnames';
-import { PlayArrow, SearchRounded } from '@mui/icons-material';
+import { ArrowDownwardRounded, ArrowUpward, Mic, MicOff, PlayArrow, SearchRounded } from '@mui/icons-material';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
@@ -41,6 +41,8 @@ export default function App() {
     setLanguageCode,
     isFullScreen,
     setIsSearchOpened,
+    focusedAgentIndex,
+    setFocusedAgentIndex,
   } = useStorageContext();
   const [isInitialized, setIsInitialized] = useState(false);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
@@ -74,40 +76,40 @@ export default function App() {
     };
   }, [selectRef]);
 
-  const handlePlayRecordedAudio = useCallback(() => {
-    if (audioRef.current) {
-      const concatenatedBlob = new Blob(blobsRef.current, { type: 'audio/webm' });
-      const audioUrl = URL.createObjectURL(concatenatedBlob);
+  // const handlePlayRecordedAudio = useCallback(() => {
+  //   if (audioRef.current) {
+  //     const concatenatedBlob = new Blob(blobsRef.current, { type: 'audio/webm' });
+  //     const audioUrl = URL.createObjectURL(concatenatedBlob);
 
-      // can I open it in separate tab?
-      window.open(audioUrl, '_blank');
+  //     // can I open it in separate tab?
+  //     window.open(audioUrl, '_blank');
 
-      audioRef.current.src = audioUrl;
-      audioRef.current.play();
+  //     audioRef.current.src = audioUrl;
+  //     audioRef.current.play();
 
-      // audioRef.current.onended = () => {
-      //   URL.revokeObjectURL(audioUrl);
-      // };
-    }
-  }, [blobsRef]);
+  //     // audioRef.current.onended = () => {
+  //     //   URL.revokeObjectURL(audioUrl);
+  //     // };
+  //   }
+  // }, [blobsRef]);
 
   const handleOnGetBlob = useCallback((blob: Blob) => {
     blobsRef.current.push(blob);
   }, []);
 
-  const handleLanguageChange = useCallback((_: any, newLanguageValue: string | null) => {
-    setLanguageCode(newLanguageValue as string);
-    // }
-  }, []);
+  // const handleLanguageChange = useCallback((_: any, newLanguageValue: string | null) => {
+  //   setLanguageCode(newLanguageValue as string);
+  //   // }
+  // }, []);
 
-  const handleLanguageClose = useCallback(() => {
-    if (prevFocusedElement.current) {
-      setTimeout(() => {
-        prevFocusedElement.current?.focus();
-        prevFocusedElement.current = null;
-      }, 100);
-    }
-  }, [prevFocusedElement]);
+  // const handleLanguageClose = useCallback(() => {
+  //   if (prevFocusedElement.current) {
+  //     setTimeout(() => {
+  //       prevFocusedElement.current?.focus();
+  //       prevFocusedElement.current = null;
+  //     }, 100);
+  //   }
+  // }, [prevFocusedElement]);
 
   const { hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInUserId);
 
@@ -136,11 +138,15 @@ export default function App() {
   return (
     isInitialized && (
       <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
-        <main className={css.main}>
+        <main
+          className={classNames(css.main, {
+            [css.mainFullScreen]: isFullScreen,
+          })}
+        >
           <audio ref={audioRef} />
           <header
             className={classNames(css.header, {
-              [css.headerHidden]: isFullScreen,
+              [css.headerFullScreen]: isFullScreen,
             })}
           >
             <UserSession
@@ -152,8 +158,12 @@ export default function App() {
               }}
               onLogOut={() => setIsLoggedIn(false)}
             />
-            <div style={{ position: 'absolute', top: '4px', right: '70px', display: 'flex', maxHeight: '30px' }}>
-              {audioEnabled && (
+            <div
+              className={classNames(css.headerIcons, {
+                [css.headerIconsFullScreen]: isFullScreen,
+              })}
+            >
+              {/* {audioEnabled && (
                 <LanguageSelector
                   languageCode={languageCode}
                   selectRef={selectRef}
@@ -161,29 +171,39 @@ export default function App() {
                   handleLanguageClose={handleLanguageClose}
                   sx={{ minWidth: '50px' }}
                 />
-              )}
+              )} */}
               <OwnButton
                 onClick={() => {
                   setIsSearchOpened((prev) => !prev);
                 }}
-                style={{
-                  marginRight: '10px',
-                }}
               >
                 <SearchRounded />
               </OwnButton>
-              {audioEnabled && (
-                <OwnButton
-                  type="button"
-                  onClick={handlePlayRecordedAudio}
-                  color="success"
-                  style={{
-                    marginRight: '10px',
-                  }}
-                >
+              <OwnButton
+                onClick={() => {
+                  setFocusedAgentIndex((prev) => {
+                    const newValue = prev - 1;
+                    if (newValue < 0) {
+                      return 0;
+                    }
+                    return newValue;
+                  });
+                }}
+              >
+                <ArrowUpward />
+              </OwnButton>
+              <OwnButton
+                onClick={() => {
+                  setFocusedAgentIndex((prev) => prev + 1);
+                }}
+              >
+                <ArrowDownwardRounded />
+              </OwnButton>
+              {/* {audioEnabled && (
+                <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
                   <PlayArrow />
                 </OwnButton>
-              )}
+              )} */}
               <OwnButton
                 type="button"
                 color="success"
@@ -191,7 +211,7 @@ export default function App() {
                   setAudioEnabled(!audioEnabled);
                 }}
               >
-                {audioEnabled ? 'Disable stt' : 'Enable stt'}
+                {audioEnabled ? <MicOff /> : <Mic />}
               </OwnButton>
             </div>
           </header>

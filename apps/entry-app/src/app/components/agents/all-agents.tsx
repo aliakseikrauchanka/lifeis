@@ -21,10 +21,15 @@ export const AllAgents = () => {
 
   const queryClient = useQueryClient();
 
-  const { pinnedAgentsIds, languageCode, isSearchOpened, setIsSearchOpened } = useStorageContext();
+  const { pinnedAgentsIds, languageCode, isSearchOpened, setIsSearchOpened, setFocusedAgentIndex, focusedAgentIndex } =
+    useStorageContext();
 
-  const [focusedAgentIndex, setFocusedAgentIndex] = useState(0);
-  const [focusedAgentId, setFocusedAgentId] = useState<string>('');
+  const focusedAgentId = useMemo(() => {
+    return query.data?.[focusedAgentIndex]?._id || '';
+  }, [query.data, focusedAgentIndex]);
+
+  // const [focusedAgentId, setFocusedAgentId] = useState<string>('');
+
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const agents: IAgentResponse[] = query.data?.filter((agent) => agent.type === 'agent' || !agent.type) ?? [];
@@ -210,8 +215,7 @@ export const AllAgents = () => {
               key={agent._id}
               number={AVAILABLE_KEYS.includes(String(i + 1)) ? i + 1 : undefined}
               focused={i === focusedAgentIndex}
-              onBlur={() => setFocusedAgentIndex(-1)}
-              onAgentFocus={() => setFocusedAgentId(agent._id)}
+              onAgentFocus={() => setFocusedAgentIndex(i)}
               isArchived={!!agent.isArchived}
               listenLanguageCode={agent.listenLanguageCode}
               readLanguageCode={agent.readLanguageCode}

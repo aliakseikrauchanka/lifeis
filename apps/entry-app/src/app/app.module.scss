@@ -2,6 +2,11 @@
   display: grid;
   grid-template-rows: auto 1fr;
   min-height: 100vh;
+
+  &--full-screen {
+    display: flex;
+    flex-flow: row-reverse;
+  }
 }
 
 .header {
@@ -9,8 +14,27 @@
   top: 0;
   z-index: 100;
 
-  &--hidden {
-    display: none;
+  &--full-screen {
+    position: unset;
+    display: flex;
+    flex-direction: column;
+    width: 30px;
+  }
+
+  &-icons {
+    position: absolute;
+    top: 4px;
+    right: 70px;
+    display: flex;
+    max-height: 30px;
+    gap: 5px;
+
+    &--full-screen {
+      position: unset;
+      display: flex;
+      flex-direction: column;
+      width: 30px;
+    }
   }
 }
 

@@ -15,7 +15,7 @@ import { CONFIG } from '../config';
 import { useEffect, useState } from 'react';
 import { LogsPage } from './pages/logs.page';
 import { BasketsPage } from './pages/baskets.page';
-import { AppBar, Stack, Toolbar, Typography } from '@mui/material';
+import { Stack } from '@mui/material';
 
 export function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());

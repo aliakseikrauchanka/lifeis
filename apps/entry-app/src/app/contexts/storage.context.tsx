@@ -5,6 +5,8 @@ import { getPinnedAgents, savePinnedAgents } from '../api/agents/agents.api';
 const audioEnabledKey = 'audio';
 
 export interface StorageContextType {
+  focusedAgentIndex: number;
+  setFocusedAgentIndex: (index: number | ((prevValue: number) => number)) => void;
   isSearchOpened: boolean;
   setIsSearchOpened: (arg: boolean | ((prevValue: boolean) => boolean)) => void;
   languageCode: string;
@@ -44,6 +46,8 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
 
   const [isSearchOpened, setIsSearchOpened] = useState(false);
 
+  const [focusedAgentIndex, setFocusedAgentIndex] = useState(0);
+
   useEffect(() => {
     if (!loggedInUserId) {
       return;
@@ -79,6 +83,8 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const returnValue: StorageContextType = {
+    focusedAgentIndex,
+    setFocusedAgentIndex,
     isSearchOpened,
     setIsSearchOpened,
     languageCode,
