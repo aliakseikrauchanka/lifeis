@@ -235,18 +235,18 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
     const clientHistoryItems = initLoad ? (agentHistory ? [emptyHistoryItem, ...agentHistory] : []) : agentHistory;
 
     useEffect(() => {
-      if (textAreaRef.current && focused) {
+      if (formRef.current && focused) {
         formRef.current?.scrollIntoView({
           behavior: 'auto',
           block: 'center',
         });
-        textAreaRef?.current.focus();
+        formRef?.current.focus();
       }
     }, [focused, listenLanguageCode, languageCode, setLanguageCode]);
 
     useEffect(() => {
       if (message !== currentMessageRef.current && !message) {
-        textAreaRef?.current?.focus();
+        formRef?.current?.focus();
       }
       currentMessageRef.current = message;
     }, [message]);
@@ -528,7 +528,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
       };
     }, [isResizing]);
 
-    const onFormFocus = () => {
+    const handleFormFocus = () => {
       onAgentFocus?.();
     };
 
@@ -540,7 +540,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
         })}
         id={`agent-${id}`}
         ref={formRef}
-        onClick={onFormFocus}
+        onClick={handleFormFocus}
       >
         <header className={css.agentHeader}>
           <IconButton size="sm" color="primary">

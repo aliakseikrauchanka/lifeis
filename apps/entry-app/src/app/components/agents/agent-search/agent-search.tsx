@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import Fuse from 'fuse.js';
+import Fuse, { FuseResult } from 'fuse.js';
 import { Input } from '@mui/joy';
 import { IAgentResponse } from '../../../domains/agent.domain';
 import { createPortal } from 'react-dom';
@@ -20,7 +20,9 @@ export const AgentSearch = ({ agents, onSelect, onClose }: AgentSearchProps) => 
     threshold: 0.3,
   });
 
-  const searchResults = searchTerm ? fuse.search(searchTerm) : [];
+  const searchResults: FuseResult<IAgentResponse>[] = searchTerm
+    ? fuse.search<IAgentResponse>(searchTerm)
+    : agents.map((agent, i) => ({ item: agent, refIndex: i }));
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
