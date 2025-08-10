@@ -30,7 +30,8 @@
     gap: 5px;
 
     &--full-screen {
-      position: unset;
+      position: sticky;
+      top: 0;
       display: flex;
       flex-direction: column;
       width: 30px;

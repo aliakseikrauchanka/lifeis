@@ -1,10 +1,11 @@
 import { getGoogleUserId } from '@lifeis/common-ui';
-import { ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { ReactNode, createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { getPinnedAgents, savePinnedAgents } from '../api/agents/agents.api';
 
 const audioEnabledKey = 'audio';
 
 export interface StorageContextType {
+  prevFocusedAgentIndex: number | undefined;
   focusedAgentIndex: number;
   setFocusedAgentIndex: (index: number | ((prevValue: number) => number)) => void;
   isSearchOpened: boolean;
@@ -20,6 +21,21 @@ export interface StorageContextType {
   setAudioEnabled: (enabled: boolean) => void;
   isFullScreen: boolean;
   recalculateFullScreen: () => void;
+}
+
+function usePreviousDistinct<T>(value: T, isEqual: (a: T, b: T) => boolean = Object.is) {
+  const last = useRef<T>(value);
+  const prevDistinct = useRef<T | undefined>(undefined);
+
+  useEffect(() => {
+    if (!isEqual(value, last.current)) {
+      prevDistinct.current = last.current; // last different value
+      last.current = value;
+    }
+    // if equal, do nothing (we ignore repeats)
+  }, [value, isEqual]);
+
+  return prevDistinct.current; // undefined on first render or if never changed
 }
 
 const isFullScreenEnabled = Object.values(JSON.parse(localStorage.getItem('wideModeSettings') || '{}')).some(
@@ -47,6 +63,8 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
   const [isSearchOpened, setIsSearchOpened] = useState(false);
 
   const [focusedAgentIndex, setFocusedAgentIndex] = useState(0);
+
+  const prevFocusedAgentIndex = usePreviousDistinct(focusedAgentIndex);
 
   useEffect(() => {
     if (!loggedInUserId) {
@@ -83,6 +101,7 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const returnValue: StorageContextType = {
+    prevFocusedAgentIndex,
     focusedAgentIndex,
     setFocusedAgentIndex,
     isSearchOpened,

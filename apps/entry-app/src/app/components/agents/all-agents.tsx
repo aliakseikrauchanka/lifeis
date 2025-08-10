@@ -6,7 +6,7 @@ import css from './all-agents.module.scss';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { IAgentResponse } from '../../domains/agent.domain';
 import { useStorageContext } from '../../contexts/storage.context';
-import { Accordion, AccordionDetails, AccordionSummary } from '@mui/joy';
+import { Accordion, AccordionDetails, AccordionSummary, Select, Option } from '@mui/joy';
 import classNames from 'classnames';
 import { AgentSearch } from './agent-search/agent-search';
 import { LanguageSelector, OwnButton } from '@lifeis/common-ui';
@@ -24,13 +24,9 @@ export const AllAgents = () => {
   const { pinnedAgentsIds, languageCode, isSearchOpened, setIsSearchOpened, setFocusedAgentIndex, focusedAgentIndex } =
     useStorageContext();
 
-  const focusedAgentId = useMemo(() => {
-    return query.data?.[focusedAgentIndex]?._id || '';
-  }, [query.data, focusedAgentIndex]);
-
-  // const [focusedAgentId, setFocusedAgentId] = useState<string>('');
-
   const audioRef = useRef<HTMLAudioElement>(null);
+
+  const [selectedAgentIndex, setSelectedAgentIndex] = useState<number>(0);
 
   const agents: IAgentResponse[] = query.data?.filter((agent) => agent.type === 'agent' || !agent.type) ?? [];
   const nonArchivedAgents = agents.filter((agent) => !agent.isArchived);
@@ -46,6 +42,10 @@ export const AllAgents = () => {
 
   // Inside your component:
   // const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  const focusedAgentId = useMemo(() => {
+    return sortedAgents[focusedAgentIndex]?._id || '';
+  }, [sortedAgents, focusedAgentIndex]);
 
   const handleAgentSelect = (agentId: string) => {
     setFocusedAgentIndex(sortedAgents.findIndex((agent) => agent._id === agentId));
@@ -69,6 +69,10 @@ export const AllAgents = () => {
     },
     [focusedAgentId, sortedAgents, updateMutation],
   );
+
+  useEffect(() => {
+    setSelectedAgentIndex(focusedAgentIndex);
+  }, [focusedAgentIndex, setSelectedAgentIndex]);
 
   // Add keyboard shortcut to open search
   useEffect(() => {
@@ -165,12 +169,33 @@ export const AllAgents = () => {
     } else {
       setTimeout(() => {
         setSelectionRect(null);
-      }, 50);
-      setSelectionText('');
+        setSelectionText('');
+      }, 100);
       setCurAudioBase64('');
       audioRef.current?.pause();
     }
   };
+
+  const handleSelectedAgentChange = useCallback(
+    (event: any, newValue: string | null) => {
+      if (!newValue) {
+        return;
+      }
+      const selectedAgentIndex = Number(newValue) || 0;
+      const selectedAgent = sortedAgents[selectedAgentIndex];
+      if (!selectedAgent) {
+        return;
+      }
+
+      setFocusedAgentIndex(selectedAgentIndex);
+
+      const agentRef = agentsRef.current[selectedAgent._id];
+      if (!agentRef) return;
+
+      agentRef.setNewMessage(selectionText);
+    },
+    [sortedAgents, selectionText, setFocusedAgentIndex],
+  );
 
   const handleSetNewMessage = useCallback(() => {
     const agentRef = agentsRef.current[focusedAgentId];
@@ -256,6 +281,15 @@ export const AllAgents = () => {
               </div>
               <div className={css.agentsMenuItem}>
                 <OwnButton onClick={handleSetNewMessage}>Submit</OwnButton>
+                <Select
+                  value={String(selectedAgentIndex)}
+                  onChange={handleSelectedAgentChange}
+                  sx={{ minWidth: 120, minHeight: '1.75rem' }}
+                >
+                  {sortedAgents.map((agent, i) => {
+                    return <Option value={String(i)}>{agent.name}</Option>;
+                  })}
+                </Select>
               </div>
 
               {/* <button

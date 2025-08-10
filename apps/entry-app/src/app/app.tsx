@@ -26,7 +26,7 @@ import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
 import classNames from 'classnames';
-import { ArrowDownwardRounded, ArrowUpward, Mic, MicOff, PlayArrow, SearchRounded } from '@mui/icons-material';
+import { ArrowDownwardRounded, ArrowUpward, Mic, MicOff, Reply, SearchRounded } from '@mui/icons-material';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
@@ -41,9 +41,11 @@ export default function App() {
     setLanguageCode,
     isFullScreen,
     setIsSearchOpened,
+    prevFocusedAgentIndex,
     focusedAgentIndex,
     setFocusedAgentIndex,
   } = useStorageContext();
+  console.log('debug', 'focusedAgentIndex', focusedAgentIndex, prevFocusedAgentIndex);
   const [isInitialized, setIsInitialized] = useState(false);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
 
@@ -198,6 +200,13 @@ export default function App() {
                 }}
               >
                 <ArrowDownwardRounded />
+              </OwnButton>
+              <OwnButton
+                onClick={() => {
+                  typeof prevFocusedAgentIndex !== 'undefined' && setFocusedAgentIndex(prevFocusedAgentIndex);
+                }}
+              >
+                <Reply />
               </OwnButton>
               {/* {audioEnabled && (
                 <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">

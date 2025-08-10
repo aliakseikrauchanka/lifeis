@@ -354,12 +354,13 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
       return res.status(404).send({ message: 'agent not found' });
     }
 
-    const agentHistoryDbItems = await client
+    const agentHistory = await client
       .db('lifeis')
       .collection<IAgentDocument>('agent_history')
-      .find({ agentId: new ObjectId(agentId) });
-
-    const agentHistory = (await agentHistoryDbItems.toArray()).reverse().slice(0, 100);
+      .find({ agentId: new ObjectId(agentId) })
+      .sort({ _id: -1 }) // or { createdAt: -1 } if you have it
+      .limit(100)
+      .toArray();
 
     return res.send({ history: agentHistory });
   });
