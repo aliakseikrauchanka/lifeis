@@ -152,6 +152,7 @@ export default function App() {
             })}
           >
             <UserSession
+              isFullScreen={isFullScreen}
               isOfflineMode={isOfflineModeOn}
               isLoggedIn={isLoggedIn}
               onLoginSuccess={(googleUserId) => {

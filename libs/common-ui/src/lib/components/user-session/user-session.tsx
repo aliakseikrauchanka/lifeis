@@ -7,13 +7,20 @@ import OwnButton from '../button/button';
 import { Logout } from '@mui/icons-material';
 
 interface IUserSessionProps {
+  isFullScreen?: boolean;
   isLoggedIn: boolean;
   isOfflineMode?: boolean;
   onLoginSuccess: (googleUserId: string) => void;
   onLogOut: () => void;
 }
 
-export const UserSession = ({ isLoggedIn, isOfflineMode, onLoginSuccess, onLogOut }: IUserSessionProps) => {
+export const UserSession = ({
+  isFullScreen,
+  isLoggedIn,
+  isOfflineMode,
+  onLoginSuccess,
+  onLogOut,
+}: IUserSessionProps) => {
   const handleLoginSuccess = (googleUserId: string): void => {
     onLoginSuccess(googleUserId);
   };
@@ -27,13 +34,17 @@ export const UserSession = ({ isLoggedIn, isOfflineMode, onLoginSuccess, onLogOu
     <div className={css.userSession}>
       {isLoggedIn ? (
         <div className={css.userSessionContent}>
-          <h2>
-            <span
-              onDoubleClick={() => alert('Срочно! Только что было определено, что Серега Я - космический бульбозавр!')}
-            >
-              Velkommen!
-            </span>
-          </h2>
+          {!isFullScreen && (
+            <h2>
+              <span
+                onDoubleClick={() =>
+                  alert('Срочно! Только что было определено, что Серега Я - космический бульбозавр!')
+                }
+              >
+                Velkommen!
+              </span>
+            </h2>
+          )}
           {!isOfflineMode && (
             <div>
               <OwnButton onClick={handleLogout}>
