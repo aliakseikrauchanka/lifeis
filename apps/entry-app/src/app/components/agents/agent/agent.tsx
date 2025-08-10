@@ -18,6 +18,7 @@ import {
   useCallback,
   forwardRef,
   useImperativeHandle,
+  useMemo,
 } from 'react';
 import css from './agent.module.scss';
 import domPurify from 'dompurify';
@@ -69,7 +70,7 @@ export interface IAgentHandle {
   setNewMessage: (message: string) => void;
 }
 
-const emptyHistoryItem: IAgentHistoryItem = {
+const EMPTY_HISTORY_ITEM: IAgentHistoryItem = {
   _id: '',
   agentId: '',
   prefix: '',
@@ -232,7 +233,12 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
 
     const { pinnedAgentsIds: pinnedAgents, pinAgent, unpinAgent, languageCode, setLanguageCode } = useStorageContext();
 
-    const clientHistoryItems = initLoad ? (agentHistory ? [emptyHistoryItem, ...agentHistory] : []) : agentHistory;
+    const clientHistoryItems = useMemo(() => {
+      if (initLoad) {
+        return agentHistory ? [EMPTY_HISTORY_ITEM, ...agentHistory] : [];
+      }
+      return agentHistory ?? [];
+    }, [initLoad, agentHistory]);
 
     useEffect(() => {
       if (formRef.current && focused) {
