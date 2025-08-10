@@ -246,7 +246,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
           behavior: 'auto',
           block: 'center',
         });
-        formRef?.current.focus();
+        textAreaRef?.current?.focus();
       }
     }, [focused, listenLanguageCode, languageCode, setLanguageCode]);
 

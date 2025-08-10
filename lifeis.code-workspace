@@ -2,12 +2,10 @@
 	"folders": [
 		{
 			"path": "."
-		},
-		{
-			"path": "../hub"
 		}
 	],
 	"settings": {
-		"typescript.tsdk": "lifeis/node_modules/typescript/lib"
+		"typescript.tsdk": "node_modules/typescript/lib",
+		"nxConsole.generateAiAgentRules": true
 	}
 }
