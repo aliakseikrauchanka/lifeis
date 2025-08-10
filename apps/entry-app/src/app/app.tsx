@@ -151,22 +151,23 @@ export default function App() {
               [css.headerFullScreen]: isFullScreen,
             })}
           >
-            <UserSession
-              isFullScreen={isFullScreen}
-              isOfflineMode={isOfflineModeOn}
-              isLoggedIn={isLoggedIn}
-              onLoginSuccess={(googleUserId) => {
-                setIsLoggedIn(true);
-                setLoggedInUserId(googleUserId);
-              }}
-              onLogOut={() => setIsLoggedIn(false)}
-            />
-            <div
-              className={classNames(css.headerIcons, {
-                [css.headerIconsFullScreen]: isFullScreen,
-              })}
-            >
-              {/* {audioEnabled && (
+            <div className={css.headerContent}>
+              <UserSession
+                isFullScreen={isFullScreen}
+                isOfflineMode={isOfflineModeOn}
+                isLoggedIn={isLoggedIn}
+                onLoginSuccess={(googleUserId) => {
+                  setIsLoggedIn(true);
+                  setLoggedInUserId(googleUserId);
+                }}
+                onLogOut={() => setIsLoggedIn(false)}
+              />
+              <div
+                className={classNames(css.headerIcons, {
+                  [css.headerIconsFullScreen]: isFullScreen,
+                })}
+              >
+                {/* {audioEnabled && (
                 <LanguageSelector
                   languageCode={languageCode}
                   selectRef={selectRef}
@@ -175,54 +176,55 @@ export default function App() {
                   sx={{ minWidth: '50px' }}
                 />
               )} */}
-              <OwnButton
-                onClick={() => {
-                  setIsSearchOpened((prev) => !prev);
-                }}
-              >
-                <SearchRounded />
-              </OwnButton>
-              <OwnButton
-                onClick={() => {
-                  setFocusedAgentIndex((prev) => {
-                    const newValue = prev - 1;
-                    if (newValue < 0) {
-                      return 0;
-                    }
-                    return newValue;
-                  });
-                }}
-              >
-                <ArrowUpward />
-              </OwnButton>
-              <OwnButton
-                onClick={() => {
-                  setFocusedAgentIndex((prev) => prev + 1);
-                }}
-              >
-                <ArrowDownwardRounded />
-              </OwnButton>
-              <OwnButton
-                onClick={() => {
-                  typeof prevFocusedAgentIndex !== 'undefined' && setFocusedAgentIndex(prevFocusedAgentIndex);
-                }}
-              >
-                <Reply />
-              </OwnButton>
-              {/* {audioEnabled && (
+                <OwnButton
+                  onClick={() => {
+                    setIsSearchOpened((prev) => !prev);
+                  }}
+                >
+                  <SearchRounded />
+                </OwnButton>
+                <OwnButton
+                  onClick={() => {
+                    setFocusedAgentIndex((prev) => {
+                      const newValue = prev - 1;
+                      if (newValue < 0) {
+                        return 0;
+                      }
+                      return newValue;
+                    });
+                  }}
+                >
+                  <ArrowUpward />
+                </OwnButton>
+                <OwnButton
+                  onClick={() => {
+                    setFocusedAgentIndex((prev) => prev + 1);
+                  }}
+                >
+                  <ArrowDownwardRounded />
+                </OwnButton>
+                <OwnButton
+                  onClick={() => {
+                    typeof prevFocusedAgentIndex !== 'undefined' && setFocusedAgentIndex(prevFocusedAgentIndex);
+                  }}
+                >
+                  <Reply />
+                </OwnButton>
+                {/* {audioEnabled && (
                 <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
                   <PlayArrow />
                 </OwnButton>
               )} */}
-              <OwnButton
-                type="button"
-                color="success"
-                onClick={() => {
-                  setAudioEnabled(!audioEnabled);
-                }}
-              >
-                {audioEnabled ? <MicOff /> : <Mic />}
-              </OwnButton>
+                <OwnButton
+                  type="button"
+                  color="success"
+                  onClick={() => {
+                    setAudioEnabled(!audioEnabled);
+                  }}
+                >
+                  {audioEnabled ? <MicOff /> : <Mic />}
+                </OwnButton>
+              </div>
             </div>
           </header>
 
