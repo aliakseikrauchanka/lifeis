@@ -293,11 +293,15 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
       }
     };
 
-    const handleAgentFocus = useCallback(() => {
-      if (!!listenLanguageCode && listenLanguageCode !== languageCode) {
-        setLanguageCode(listenLanguageCode);
-      }
-    }, [listenLanguageCode, languageCode, setLanguageCode]);
+    const handleAgentFocus = useCallback(
+      (e: React.FocusEvent<HTMLTextAreaElement>) => {
+        e.preventDefault();
+        if (!!listenLanguageCode && listenLanguageCode !== languageCode) {
+          setLanguageCode(listenLanguageCode);
+        }
+      },
+      [listenLanguageCode, languageCode, setLanguageCode],
+    );
 
     const handleOpenAgentHistory = async () => {
       setIsHistoryOpen(true);
