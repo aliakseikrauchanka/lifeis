@@ -243,7 +243,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
     useEffect(() => {
       if (formRef.current && focused) {
         formRef.current?.scrollIntoView({
-          behavior: 'auto',
+          behavior: 'smooth',
           block: 'center',
         });
         textAreaRef?.current?.focus();
@@ -296,6 +296,8 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
     const handleAgentFocus = useCallback(
       (e: React.FocusEvent<HTMLTextAreaElement>) => {
         e.preventDefault();
+        e.stopPropagation();
+
         if (!!listenLanguageCode && listenLanguageCode !== languageCode) {
           setLanguageCode(listenLanguageCode);
         }
