@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { IDiaryLog, IDiaryResponseLog } from '../domain';
-import { MongoClient, ObjectId } from 'mongodb';
+import { MongoClient } from 'mongodb';
 import { GenerativeModel } from '@google/generative-ai';
 import { endOfToday } from 'date-fns';
 
@@ -80,11 +80,13 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
         }));
 
         const responseLogs: IDiaryResponseLog[] = logs.map((log) => {
+          const foundBasket = baskets.find((basket) => basket._id.toString() === log.basket_id.toString());
+
           return {
             id: log.id,
             message: log.message,
             timestamp: log.timestamp,
-            basket_name: baskets.find((basket) => basket._id.toString() === log.basket_id.toString()).name,
+            basket_name: foundBasket?.name || 'removed',
             owner_id: log.owner_id,
           };
         });

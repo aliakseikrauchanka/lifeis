@@ -24,7 +24,7 @@ export const BasketsPage = () => {
   return (
     <div>
       <BasketForm onSubmit={() => fetchBaskets()} />
-      <Baskets baskets={baskets} />
+      <Baskets baskets={baskets} onDelete={fetchBaskets} />
     </div>
   );
 };

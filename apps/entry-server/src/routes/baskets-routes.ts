@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 
 export const getBasketRoutes = (client: MongoClient) => {
@@ -32,6 +32,18 @@ export const getBasketRoutes = (client: MongoClient) => {
       res.status(201).json(savedBasket);
     } catch (error) {
       res.status(500).json({ message: 'Error creating basket', error });
+    }
+  });
+
+  // DELETE basket by id
+  router.delete('/:id', verifyAccessToken, async (req, res) => {
+    const basketId = req.params.id;
+    const basketsCollection = await client.db('lifeis').collection('baskets');
+    const result = await basketsCollection.deleteOne({ _id: new ObjectId(basketId) });
+    if (result.deletedCount === 1) {
+      res.status(200).send({ message: 'Basket deleted' });
+    } else {
+      res.status(404).send({ message: 'Basket not found or not authorized' });
     }
   });
 
