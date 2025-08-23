@@ -1,7 +1,7 @@
 .main {
   display: grid;
   grid-template-rows: auto 1fr;
-  min-height: 100vh;
+  min-height: 100dvh;
 
   &--full-screen {
     display: flex;
@@ -20,6 +20,7 @@
     flex-direction: column;
     width: 30px;
     max-width: 30px;
+    min-height: 100dvh;
   }
 
   &-content {
