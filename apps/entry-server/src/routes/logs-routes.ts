@@ -43,6 +43,18 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
     res.status(200).send({ message: 'log submitted' });
   });
 
+  // DELETE log by id
+  router.delete('/:id', verifyAccessToken, async (req, res) => {
+    const logId = req.params.id;
+    const logsCollection = await client.db('lifeis').collection('logs');
+    const result = await logsCollection.deleteOne({ _id: new ObjectId(logId) });
+    if (result.deletedCount === 1) {
+      res.status(200).send({ message: 'Log deleted' });
+    } else {
+      res.status(404).send({ message: 'Log not found' });
+    }
+  });
+
   router.get('/', verifyAccessToken, async (req, res) => {
     // from in query params in ISO format
     const userId = res.locals.userId;
