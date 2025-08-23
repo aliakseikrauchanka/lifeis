@@ -51,31 +51,5 @@ services:
       - VITE_BE=${NGINX_DOMAIN}
       - VITE_CLIENT_ID=${LOGS_CLIENT_ID}
 
-  # insights-app:
-  #   extends:
-  #     file: docker-compose.base.yml
-  #     service: nx-app-base
-  #   command: npx nx run insights-app:serve --host=0.0.0.0
-  #   ports:
-  #     - ${INSIGHTS_PORT}:4200
-  #   environment:
-  #     - NEXT_PUBLIC_BE=${NGINX_DOMAIN}
-  #     - NEXT_NOTION_API_KEY=${NOTION_API_KEY}
-  #     - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-  #     - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
-
-  # sample-app:
-  #   extends:
-  #     file: docker-compose.base.yml
-  #     service: nx-app-base
-  #   command: npx nx run next-sample:serve --host=0.0.0.0
-  #   ports:
-  #     - ${INSIGHTS_PORT}:4200
-  #   environment:
-  #     - NEXT_PUBLIC_BE=${NGINX_DOMAIN}
-  #     - NEXT_NOTION_API_KEY=${NOTION_API_KEY}
-  #     - NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
-  #     - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
-
 volumes:
   mono-node-modules: null
