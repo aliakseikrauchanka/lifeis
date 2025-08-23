@@ -1,4 +1,4 @@
-import React, { useState, KeyboardEvent, KeyboardEventHandler, useEffect } from 'react';
+import React, { useState, KeyboardEvent, KeyboardEventHandler, useEffect, useCallback } from 'react';
 import { OwnButton, SpeechToText } from '@lifeis/common-ui';
 import { createLog } from '../../api/logs/logs.api';
 import css from './log-form.module.scss';
@@ -16,38 +16,44 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
     setMessage(event.target.value);
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement>) => {
-    event.preventDefault();
+  const handleSubmit = useCallback(
+    async (event: React.FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement>) => {
+      event.preventDefault();
 
-    try {
-      setIsCaptionsNeedClear(true);
-      setMessage('');
-      await createLog(message);
-      onSubmit();
-    } catch (e) {
-      console.log('error happened during fetch');
-    }
-  };
+      try {
+        setIsCaptionsNeedClear(true);
+        setMessage('');
+        await createLog(message);
+        onSubmit();
+      } catch (e) {
+        console.log('error happened during fetch');
+      }
+    },
+    [message, onSubmit],
+  );
 
   const handleClearText = () => {
     setMessage('');
     setIsCaptionsNeedClear(true);
   };
 
-  const handleKeyDown = (e: any) => {
-    // handle escape key
-    if (e.key === 'Escape') {
-      setIsListeningFired(false);
-    }
+  const handleKeyDown = useCallback(
+    (e: any) => {
+      // handle escape key
+      if (e.key === 'Escape') {
+        setIsListeningFired(false);
+      }
 
-    if (e.key === 'Enter' && e.ctrlKey) {
-      handleSubmit(e);
-      return;
-    }
-    if (e.code === 'KeyS' && e.ctrlKey) {
-      setIsListeningFired(true);
-    }
-  };
+      if (e.key === 'Enter' && e.ctrlKey) {
+        handleSubmit(e);
+        return;
+      }
+      if (e.code === 'KeyS' && e.ctrlKey) {
+        setIsListeningFired(true);
+      }
+    },
+    [handleSubmit],
+  );
 
   // Add document-level event listener
   useEffect(() => {
@@ -68,7 +74,7 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
     return () => {
       document.removeEventListener('keydown', handleDocumentKeyDown);
     };
-  }, [message, onSubmit]); // Include dependencies that handleKeyDown uses
+  }, [message, onSubmit, handleKeyDown]); // Include dependencies that handleKeyDown uses
 
   return (
     <form onSubmit={handleSubmit}>

@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { IDiaryLog, IDiaryResponseLog } from '../domain';
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectId } from 'mongodb';
 import { GenerativeModel } from '@google/generative-ai';
 import { endOfToday } from 'date-fns';
 
@@ -95,5 +95,20 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
       });
   });
 
+  // PATCH log basket_id by log id
+  router.patch('/:id/basket', verifyAccessToken, async (req, res) => {
+    const logId = req.params.id;
+    const { basket_id } = req.body;
+    if (!basket_id) {
+      return res.status(400).send({ message: 'basket_id is required' });
+    }
+    const logsCollection = await client.db('lifeis').collection('logs');
+    const result = await logsCollection.updateOne({ _id: new ObjectId(logId) }, { $set: { basket_id } });
+    if (result.modifiedCount === 1) {
+      res.status(200).send({ message: 'Log basket_id updated' });
+    } else {
+      res.status(404).send({ message: 'Log not found or not authorized' });
+    }
+  });
   return router;
 };

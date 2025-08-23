@@ -51,33 +51,32 @@ export const LogsPage = () => {
           All
         </ToggleButton>
       </ToggleButtonGroup>
-      {/* <Logs logs={logs} /> */}
-      <Box display="flex" flexWrap="wrap" gap={2} justifyContent="flex-start">
-        {Object.entries(logsByBasket).map(([basket, basketLogs]) => (
-          <Paper
-            key={basket}
-            elevation={3}
-            sx={{
-              flex: '1 1 300px', // flexible base width
-              maxWidth: '100%',
-              minWidth: '280px',
-              padding: 2,
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              {basket}
-            </Typography>
-            <Stack spacing={1}>
-              {basketLogs.map((log) => (
-                <Typography key={log.id} variant="body2">
-                  {log.message}
-                  <br />
-                  <small>{new Date(log.timestamp).toLocaleString()}</small>
-                </Typography>
-              ))}
-            </Stack>
-          </Paper>
-        ))}
+      <Box mt={2}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: '8px' }}>Basket Name</th>
+              <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: '8px' }}>Logs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {Object.entries(logsByBasket).map(([basket, basketLogs]) => (
+              <tr key={basket}>
+                <td style={{ verticalAlign: 'top', padding: '8px', fontWeight: 'bold' }}>{basket}</td>
+                <td style={{ padding: '8px' }}>
+                  <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                    {basketLogs.map((log) => (
+                      <li key={log.id} style={{ marginBottom: '12px' }}>
+                        <div>{log.message}</div>
+                        <small>{new Date(log.timestamp).toLocaleString()}</small>
+                      </li>
+                    ))}
+                  </ul>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </Box>
     </main>
   );
