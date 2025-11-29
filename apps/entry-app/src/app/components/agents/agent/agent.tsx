@@ -750,7 +750,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
                 >
                   <Option value="gemini-2.0-flash-lite">Gemini Flash 2 Lite</Option>
                   <Option value="gemini-2.0-flash">Gemini Flash 2</Option>
-                  <Option value="gemini-2.5-pro-preview-06-05">Gemini Pro 2.5</Option>
+                  <Option value="gemini-3-pro-preview">Gemini Pro 3.0</Option>
                   <Option value="openai">OpenAI</Option>
                   <Option value="deepseek-r1">Deepseek R1</Option>
                 </Select>
