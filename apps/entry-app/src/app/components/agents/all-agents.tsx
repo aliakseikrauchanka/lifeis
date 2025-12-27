@@ -240,7 +240,7 @@ export const AllAgents = () => {
               key={agent._id}
               number={AVAILABLE_KEYS.includes(String(i + 1)) ? i + 1 : undefined}
               focused={i === focusedAgentIndex}
-              onAgentFocus={() => setTimeout(() => setFocusedAgentIndex(i), 0)}
+              onAgentFocus={() => setFocusedAgentIndex(i)}
               isArchived={!!agent.isArchived}
               listenLanguageCode={agent.listenLanguageCode}
               readLanguageCode={agent.readLanguageCode}
