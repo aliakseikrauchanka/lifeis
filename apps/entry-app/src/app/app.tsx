@@ -38,14 +38,11 @@ export default function App() {
     loggedInUserId,
     setLoggedInUserId,
     languageCode,
-    setLanguageCode,
     isFullScreen,
     setIsSearchOpened,
     prevFocusedAgentIndex,
-    focusedAgentIndex,
     setFocusedAgentIndex,
   } = useStorageContext();
-  console.log('debug', 'focusedAgentIndex', focusedAgentIndex, prevFocusedAgentIndex);
   const [isInitialized, setIsInitialized] = useState(false);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
 
