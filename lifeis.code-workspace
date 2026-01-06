@@ -1,14 +1,81 @@
 {
-	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"path": "../lifeis-insights"
-		}
-	],
-	"settings": {
-		"typescript.tsdk": "node_modules/typescript/lib",
-		"nxConsole.generateAiAgentRules": true
-	}
+  "folders": [
+    {
+      "path": "."
+    },
+    {
+      "path": "../lifeis-insights"
+    }
+  ],
+  "settings": {
+    "typescript.tsdk": "node_modules/typescript/lib",
+    "nxConsole.generateAiAgentRules": true,
+    "typescript.preferences.includePackageJsonAutoImports": "off",
+    "typescript.suggest.autoImports": true,
+    "typescript.updateImportsOnFileMove.enabled": "always",
+    "typescript.tsserver.maxTsServerMemory": 4096,
+    "typescript.tsserver.watchOptions": {
+      "excludeDirectories": ["**/node_modules", "**/dist", "**/tmp", "**/.nx"],
+      "excludeFiles": ["**/package-lock.json", "**/package.json"]
+    },
+    "typescript.disableAutomaticTypeAcquisition": false,
+    "files.watcherExclude": {
+      "**/node_modules/**": true,
+      "**/dist/**": true,
+      "**/tmp/**": true,
+      "**/.nx/**": true,
+      "**/coverage/**": true,
+      "**/package-lock.json": true
+    },
+    "files.exclude": {
+      "**/.git": true,
+      "**/.DS_Store": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/tmp": true,
+      "**/.nx": true,
+      "**/coverage": true
+    },
+    "eslint.options": {
+      "cache": true,
+      "cacheLocation": "${workspaceFolder}/.eslintcache",
+      "cacheStrategy": "content"
+    },
+    "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
+    "eslint.experimental.useFlatConfig": false,
+    "eslint.ignorePatterns": ["**/package.json", "**/package-lock.json"],
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "files.associations": {
+      "package.json": "jsonc"
+    },
+    "json.schemas": [],
+    "json.validate.enable": true,
+    "json.trace.server": "off",
+    "json.enableSchemaDownload": false,
+    "json.maxItemsComputed": 5000,
+    "editor.codeActionsOnSaveTimeout": 2000,
+    "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.quickSuggestions": {
+        "strings": false
+      },
+      "editor.codeActionsOnSave": {},
+      "editor.formatOnSave": true
+    },
+    "[jsonc]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.quickSuggestions": {
+        "strings": false
+      },
+      "editor.codeActionsOnSave": {},
+      "editor.formatOnSave": true
+    },
+    "prettier.enable": true,
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
 }
