@@ -9,6 +9,7 @@ import sharp from 'sharp';
 
 import OpenAI from 'openai';
 import multer from 'multer';
+import { getGlosbeTranslation } from '../utils/glosbe-scraper';
 const fileManager = new GoogleAIFileManager(process.env.GOOGLE_API_KEY);
 
 const deepSeek = new OpenAI({
@@ -275,7 +276,29 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
     let responseText: string;
 
     try {
-      if (aiProvider === 'openai') {
+      if (aiProvider === 'glosbe' && (language === 'pl' || language === 'ru-RU')) {
+        // Extract the word/phrase to translate from the message
+        const wordToTranslate = req.body.message.trim();
+
+        console.log(`Fetching translation from Glosbe for: ${wordToTranslate}`);
+
+        const result = await getGlosbeTranslation(req.body.message, {
+          fromLang: language === 'pl' ? 'pl' : 'ru',
+          toLang: language === 'pl' ? 'ru' : 'pl',
+          maxRetries: 3,
+          requestDelay: 1500, // 1.5 seconds between requests
+          timeout: 30000, // 30 seconds timeout
+          maxTranslations: 5,
+        });
+
+        if (result.success && result.translations.length > 0) {
+          responseText = result.translations.join(', ');
+          console.log(`Glosbe translation found: ${responseText}`);
+        } else {
+          responseText = result.error || `Translation not found for "${wordToTranslate}"`;
+          console.warn(`Glosbe translation failed: ${responseText}`);
+        }
+      } else if (aiProvider === 'openai') {
         const response = await openAiModel.chat.completions.create(
           {
             model: defaultOpenAiModelName,
@@ -310,7 +333,13 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
         const geminiRequestBody: GenerateContentRequest | string | Array<string | Part> = [prompt];
 
         const model = allowedGeminiModelsNames.includes(aiProvider) ? aiProvider : defaultGeminiModelName;
-        const geminiModel = genAi.getGenerativeModel({ model });
+        const geminiModel = genAi.getGenerativeModel({
+          model,
+          generationConfig: {
+            maxOutputTokens: 2000, // Limit response length for faster responses
+          },
+        });
+
         const response = await geminiModel.generateContent(geminiRequestBody);
 
         responseText = response.response.text();

@@ -748,6 +748,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
                   <Option value="gemini-2.0-flash">Gemini Flash 2</Option>
                   <Option value="gemini-3-pro-preview">Gemini Pro 3.0</Option>
                   <Option value="openai">OpenAI</Option>
+                  {isExplicitLanguage && <Option value="glosbe">Glosbe</Option>}
                   <Option value="deepseek-r1">Deepseek R1</Option>
                 </Select>
                 <label htmlFor={`photo-${number}`} className={css.agentButtonsPhoto}>
