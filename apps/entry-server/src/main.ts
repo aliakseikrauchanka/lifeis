@@ -25,7 +25,10 @@ const client = getMongoDbClient();
 // create gemini model
 const genAi = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
 const defaultGeminiModel = genAi.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
-const openAiModel = new OpenAI();
+const openAiModel = new OpenAI({
+  timeout: 60000, // 60 seconds timeout
+  maxRetries: 2,
+});
 
 const host = process.env.HOST ?? '0.0.0.0';
 const port = process.env.PORT ? Number(process.env.PORT) : 3000;

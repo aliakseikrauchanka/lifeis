@@ -276,33 +276,29 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
 
     try {
       if (aiProvider === 'openai') {
-        const response = await openAiModel.chat.completions.create({
-          model: defaultOpenAiModelName,
-          messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: prompt,
-                },
-              ],
-            },
-          ],
-        });
+        const response = await openAiModel.chat.completions.create(
+          {
+            model: defaultOpenAiModelName,
+            messages: [
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+          },
+          {
+            timeout: 60000, // 60 seconds timeout per request
+          },
+        );
 
+        console.log('debug response', response);
         responseText = response.choices[0].message.content;
       } else if (aiProvider === 'deepseek-r1') {
         const response = await deepSeek.chat.completions.create({
           messages: [
             {
               role: 'user',
-              content: [
-                {
-                  type: 'text',
-                  text: prompt,
-                },
-              ],
+              content: prompt,
             },
           ],
           model: 'deepseek-chat',
