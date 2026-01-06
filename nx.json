@@ -23,10 +23,6 @@
         }
       }
     },
-    "@nx/vite:test": {
-      "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
-      "cache": true
-    },
     "@nx/eslint:lint": {
       "inputs": ["default", "{workspaceRoot}/.eslintrc.json", "{workspaceRoot}/.eslintignore"],
       "cache": true
@@ -45,6 +41,10 @@
       "cache": true,
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"]
+    },
+    "@nx/vitest:test": {
+      "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
+      "cache": true
     }
   },
   "namedInputs": {
@@ -82,6 +82,5 @@
       }
     }
   },
-  "nxCloudAccessToken": "ODhjZDc4NzEtYWM2My00OGEzLThjNTYtMjVhZGMzMmI0MDEzfHJlYWQtb25seQ==",
-  "useLegacyCache": true
+  "nxCloudAccessToken": "ODhjZDc4NzEtYWM2My00OGEzLThjNTYtMjVhZGMzMmI0MDEzfHJlYWQtb25seQ=="
 }
