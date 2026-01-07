@@ -10,6 +10,12 @@
   "engines": {
     "node": ">=v20.5.1"
   },
+  "overrides": {
+    "@typescript-eslint/utils": "^8.52.0",
+    "@typescript-eslint/parser": "^8.52.0",
+    "@typescript-eslint/eslint-plugin": "^8.52.0",
+    "@typescript-eslint/type-utils": "^8.52.0"
+  },
   "dependencies": {
     "@clerk/nextjs": "^6.36.5",
     "@deepgram/sdk": "3.9.0",
