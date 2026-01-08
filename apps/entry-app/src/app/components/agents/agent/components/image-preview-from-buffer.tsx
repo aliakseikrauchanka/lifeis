@@ -14,7 +14,10 @@ export const ImagePreviewFromBuffer = ({ buffer, onClose, isLoading }: ImagePrev
 
   useEffect(() => {
     if (buffer) {
-      const blob = new Blob([buffer], { type: 'image/jpeg' }); // Or the correct MIME type (e.g., 'image/png')
+      // Convert to ArrayBuffer to ensure compatibility with Blob
+      // Create a new ArrayBuffer to avoid SharedArrayBuffer issues
+      const arrayBuffer = buffer instanceof ArrayBuffer ? buffer : new Uint8Array(buffer).buffer;
+      const blob = new Blob([arrayBuffer], { type: 'image/jpeg' }); // Or the correct MIME type (e.g., 'image/png')
       const url = URL.createObjectURL(blob);
       setPreviewUrl(url);
 
