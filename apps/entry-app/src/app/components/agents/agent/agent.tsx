@@ -299,11 +299,8 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
         e.stopPropagation();
 
         onAgentFocus?.();
-        if (!!listenLanguageCode && listenLanguageCode !== languageCode) {
-          setLanguageCode(listenLanguageCode);
-        }
       },
-      [listenLanguageCode, languageCode, setLanguageCode, onAgentFocus],
+      [onAgentFocus],
     );
 
     const handleOpenAgentHistory = async () => {

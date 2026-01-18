@@ -21,8 +21,15 @@ export const AllAgents = () => {
 
   const queryClient = useQueryClient();
 
-  const { pinnedAgentsIds, languageCode, isSearchOpened, setIsSearchOpened, setFocusedAgentIndex, focusedAgentIndex } =
-    useStorageContext();
+  const {
+    pinnedAgentsIds,
+    languageCode,
+    setLanguageCode,
+    isSearchOpened,
+    setIsSearchOpened,
+    setFocusedAgentIndex,
+    focusedAgentIndex,
+  } = useStorageContext();
 
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -50,11 +57,14 @@ export const AllAgents = () => {
   const focusAgent = useCallback(
     (index: number) => {
       setFocusedAgentIndex(-1);
+      if (!!sortedAgents[index]?.listenLanguageCode && sortedAgents[index]?.listenLanguageCode !== languageCode) {
+        setLanguageCode(sortedAgents[index]?.listenLanguageCode);
+      }
       setTimeout(() => {
         setFocusedAgentIndex(index);
       }, 100);
     },
-    [setFocusedAgentIndex],
+    [setFocusedAgentIndex, setLanguageCode, languageCode, sortedAgents],
   );
 
   const handleAgentSelect = (agentId: string) => {
@@ -81,7 +91,9 @@ export const AllAgents = () => {
   );
 
   useEffect(() => {
-    setSelectedAgentIndex(focusedAgentIndex);
+    if (focusedAgentIndex >= 0) {
+      setSelectedAgentIndex(focusedAgentIndex);
+    }
   }, [focusedAgentIndex, setSelectedAgentIndex]);
 
   // Add keyboard shortcut to open search
