@@ -91,6 +91,18 @@ export const AllAgents = () => {
   );
 
   useEffect(() => {
+    const handleFocus = () => {
+      focusAgent(focusedAgentIndex);
+    };
+
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [focusedAgentIndex, focusAgent]);
+
+  useEffect(() => {
     if (focusedAgentIndex >= 0) {
       setSelectedAgentIndex(focusedAgentIndex);
     }
