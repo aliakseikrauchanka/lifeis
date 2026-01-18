@@ -294,7 +294,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
     };
 
     const handleAgentFocus = useCallback(
-      (e: React.FocusEvent<HTMLTextAreaElement>) => {
+      (e: React.MouseEvent<HTMLElement>) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -619,7 +619,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
                 <textarea
                   onDrop={handleDrop}
                   ref={textAreaRef}
-                  onFocus={handleAgentFocus}
+                  onClick={handleAgentFocus}
                   onBlur={onBlur}
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
@@ -796,6 +796,8 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
               </div>
             </div>
             <div
+              tabIndex={0}
+              onClick={handleAgentFocus}
               className={classNames(css.agentResponse, {
                 [css.agentResponseWide]: isWideMode,
               })}

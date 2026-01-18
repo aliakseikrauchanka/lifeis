@@ -12,7 +12,7 @@ import { AgentSearch } from './agent-search/agent-search';
 import { LanguageSelector, OwnButton } from '@lifeis/common-ui';
 import { speak } from './all-agents.helpers';
 
-const AVAILABLE_KEYS = ['1', '2', '3', '4', '5'];
+const AVAILABLE_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
 export const AllAgents = () => {
   const query = useQuery({ queryKey: ['agents'], queryFn: getAllAgents, select: (data) => data.agents });
@@ -70,6 +70,16 @@ export const AllAgents = () => {
     [focusedAgentId, sortedAgents, updateMutation],
   );
 
+  const focusAgent = useCallback(
+    (index: number) => {
+      setFocusedAgentIndex(-1);
+      setTimeout(() => {
+        setFocusedAgentIndex(index);
+      }, 100);
+    },
+    [setFocusedAgentIndex],
+  );
+
   useEffect(() => {
     setSelectedAgentIndex(focusedAgentIndex);
   }, [focusedAgentIndex, setSelectedAgentIndex]);
@@ -95,7 +105,7 @@ export const AllAgents = () => {
       if (event.ctrlKey && event.metaKey && AVAILABLE_KEYS.includes(event.key)) {
         const index = parseInt(event.key) - 1;
         if (index < query.data?.length) {
-          setFocusedAgentIndex(index);
+          focusAgent(index);
         }
       }
     };
@@ -105,7 +115,7 @@ export const AllAgents = () => {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [query.data?.length]);
+  }, [query.data?.length, focusAgent]);
 
   // array of agents where pinnedAgents are first and then the rest but that need to save the order of the pinned agents
   // order of pinned agents should be saved
@@ -204,6 +214,13 @@ export const AllAgents = () => {
     agentRef.setNewMessage(selectionText);
   }, [agentsRef, focusedAgentId, selectionText]);
 
+  const handleFocusAgent = useCallback(
+    (index: number) => {
+      return () => focusAgent(index);
+    },
+    [focusAgent],
+  );
+
   const handleSpeak = useCallback(async () => {
     const language = sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode;
     speak(selectionText, language, (audioUrl) => {
@@ -240,7 +257,7 @@ export const AllAgents = () => {
               key={agent._id}
               number={AVAILABLE_KEYS.includes(String(i + 1)) ? i + 1 : undefined}
               focused={i === focusedAgentIndex}
-              onAgentFocus={() => setFocusedAgentIndex(i)}
+              onAgentFocus={handleFocusAgent(i)}
               isArchived={!!agent.isArchived}
               listenLanguageCode={agent.listenLanguageCode}
               readLanguageCode={agent.readLanguageCode}
