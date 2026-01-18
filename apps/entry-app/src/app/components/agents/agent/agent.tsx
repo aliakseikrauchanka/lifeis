@@ -796,8 +796,6 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
               </div>
             </div>
             <div
-              tabIndex={0}
-              onClick={handleAgentFocus}
               className={classNames(css.agentResponse, {
                 [css.agentResponseWide]: isWideMode,
               })}
