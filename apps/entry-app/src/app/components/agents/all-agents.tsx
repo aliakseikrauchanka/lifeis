@@ -47,8 +47,18 @@ export const AllAgents = () => {
     return sortedAgents[focusedAgentIndex]?._id || '';
   }, [sortedAgents, focusedAgentIndex]);
 
+  const focusAgent = useCallback(
+    (index: number) => {
+      setFocusedAgentIndex(-1);
+      setTimeout(() => {
+        setFocusedAgentIndex(index);
+      }, 100);
+    },
+    [setFocusedAgentIndex],
+  );
+
   const handleAgentSelect = (agentId: string) => {
-    setFocusedAgentIndex(sortedAgents.findIndex((agent) => agent._id === agentId));
+    focusAgent(sortedAgents.findIndex((agent) => agent._id === agentId));
   };
 
   const updateMutation = useMutation({
@@ -68,16 +78,6 @@ export const AllAgents = () => {
       updateMutation.mutate({ id, name, prefix, readLanguageCode: newValue || '' });
     },
     [focusedAgentId, sortedAgents, updateMutation],
-  );
-
-  const focusAgent = useCallback(
-    (index: number) => {
-      setFocusedAgentIndex(-1);
-      setTimeout(() => {
-        setFocusedAgentIndex(index);
-      }, 100);
-    },
-    [setFocusedAgentIndex],
   );
 
   useEffect(() => {
