@@ -80,7 +80,7 @@ const EMPTY_HISTORY_ITEM: IAgentHistoryItem = {
   timestamp: new Date(),
 } as const;
 
-const defaultAiModelName = 'gemini-2.0-flash';
+const defaultAiModelName = 'gemini-2.5-flash';
 
 const CLIPBOARD_ITEMS_LENGTH = 50;
 
@@ -741,8 +741,8 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
                   onChange={(_, newValue) => setSelectedAiProvider(newValue as string)}
                   sx={{ minHeight: 30, minWidth: 95 }}
                 >
-                  <Option value="gemini-2.0-flash-lite">Gemini Flash 2 Lite</Option>
-                  <Option value="gemini-2.0-flash">Gemini Flash 2</Option>
+                  <Option value="gemini-2.5-flash-lite">Gemini Flash 2.5 Lite</Option>
+                  <Option value="gemini-2.5-flash">Gemini Flash 2.5</Option>
                   <Option value="gemini-3-pro-preview">Gemini Pro 3.0</Option>
                   <Option value="openai">OpenAI</Option>
                   {isExplicitLanguage && <Option value="glosbe">Glosbe</Option>}

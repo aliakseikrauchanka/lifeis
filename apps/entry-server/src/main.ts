@@ -24,7 +24,7 @@ const client = getMongoDbClient();
 
 // create gemini model
 const genAi = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
-const defaultGeminiModel = genAi.getGenerativeModel({ model: 'gemini-2.0-flash-lite' });
+const defaultGeminiModel = genAi.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 const openAiModel = new OpenAI({
   timeout: 60000, // 60 seconds timeout
   maxRetries: 2,
