@@ -80,7 +80,7 @@ const EMPTY_HISTORY_ITEM: IAgentHistoryItem = {
   timestamp: new Date(),
 } as const;
 
-const defaultAiModelName = 'gemini-2.5-flash';
+const defaultAiModelName = 'openai';
 
 const CLIPBOARD_ITEMS_LENGTH = 50;
 
