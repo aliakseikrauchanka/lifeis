@@ -5,7 +5,7 @@ import { useQueue } from '@uidotdev/usehooks';
 import { LiveClient, LiveTranscriptionEvent, LiveTranscriptionEvents } from '@deepgram/sdk';
 import { useMicVAD } from '../hooks/use-mic-vad';
 
-interface SpeechToTextContextType {
+export interface SpeechToTextContextType {
   connectionReady: boolean;
   caption: { [activeId: string]: string[] };
   startListening: (id: string) => void;
@@ -18,7 +18,7 @@ const utteranceText = (event: LiveTranscriptionEvent) => {
   return words.map((word: any) => word.punctuated_word ?? word.word).join(' ');
 };
 
-const SpeechToTextContext = createContext<SpeechToTextContextType | undefined>(undefined);
+export const SpeechToTextContext = createContext<SpeechToTextContextType | undefined>(undefined);
 
 interface SpeechToTextContextProviderProps {
   onBlob?: (blob: Blob) => void;

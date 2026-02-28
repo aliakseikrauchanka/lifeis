@@ -3,6 +3,9 @@ import { ReactNode, createContext, useCallback, useContext, useEffect, useRef, u
 import { getPinnedAgents, savePinnedAgents } from '../api/agents/agents.api';
 
 const audioEnabledKey = 'audio';
+const sttProviderKey = 'sttProvider';
+
+export type SttProviderType = 'elevenlabs' | 'deepgram';
 
 export interface StorageContextType {
   prevFocusedAgentIndex: number | undefined;
@@ -19,6 +22,8 @@ export interface StorageContextType {
   unpinAgent: (agentId: string) => void;
   audioEnabled: boolean;
   setAudioEnabled: (enabled: boolean) => void;
+  sttProvider: SttProviderType;
+  setSttProvider: (provider: SttProviderType) => void;
   isFullScreen: boolean;
   recalculateFullScreen: () => void;
 }
@@ -50,6 +55,11 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
   const [audioEnabled, setAudioEnabled] = useState<boolean>(() => {
     const storedValue = localStorage.getItem(audioEnabledKey);
     return storedValue ? JSON.parse(storedValue) : false;
+  });
+
+  const [sttProvider, setSttProvider] = useState<SttProviderType>(() => {
+    const storedValue = localStorage.getItem(sttProviderKey);
+    return (storedValue as SttProviderType) || 'elevenlabs';
   });
 
   const [loggedInUserId, setLoggedInUserId] = useState<string>(isOfflineModeOn ? 'local_user' : getGoogleUserId());
@@ -114,6 +124,11 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
     pinAgent,
     unpinAgent,
     audioEnabled,
+    sttProvider,
+    setSttProvider: (value: SttProviderType) => {
+      setSttProvider(value);
+      localStorage.setItem(sttProviderKey, value);
+    },
     isFullScreen,
     recalculateFullScreen: () => {
       const wideModeSettings = JSON.parse(localStorage.getItem('wideModeSettings') || '{}');

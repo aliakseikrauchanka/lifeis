@@ -8,6 +8,7 @@ import css from './app.module.scss';
 import {
   AudioProvider,
   DeepgramContextProvider,
+  ElevenLabsSTTProvider,
   isUserLoggedIn,
   MicrophoneContextProvider,
   OwnButton,
@@ -15,6 +16,7 @@ import {
   UserSession,
   LanguageSelector,
 } from '@lifeis/common-ui';
+import { SttProviderType } from './contexts/storage.context';
 import { CONFIG } from '../config';
 
 import { Route, Routes } from 'react-router-dom';
@@ -23,10 +25,13 @@ import { ExperimentsPage } from './pages/experiments.page';
 import { init } from '@lifeis/common-ui';
 import './styles/reset.css';
 import AudioSwitch from './components/audio-switch/audio-switch';
+import { MicIndicator } from './components/mic-indicator/mic-indicator';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
 import classNames from 'classnames';
 import { ArrowDownwardRounded, ArrowUpward, Mic, MicOff, Reply, SearchRounded } from '@mui/icons-material';
+import Select from '@mui/joy/Select';
+import Option from '@mui/joy/Option';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
@@ -42,6 +47,8 @@ export default function App() {
     setIsSearchOpened,
     prevFocusedAgentIndex,
     setFocusedAgentIndex,
+    sttProvider,
+    setSttProvider,
   } = useStorageContext();
   const [isInitialized, setIsInitialized] = useState(false);
   const prevFocusedElement = useRef<HTMLElement | null>(null);
@@ -134,6 +141,19 @@ export default function App() {
     return languageCode;
   }, [languageCode]);
 
+  const getElevenLabsLanguage = useCallback(() => {
+    const mapping: Record<string, string> = {
+      pl: 'pl',
+      ru: 'ru',
+      en: 'en',
+      es: 'es',
+      'cs-CZ': 'cs',
+      'de-DE': 'de',
+      'fr-FR': 'fr',
+    };
+    return mapping[languageCode] || languageCode.split('-')[0];
+  }, [languageCode]);
+
   return (
     isInitialized && (
       <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
@@ -221,6 +241,20 @@ export default function App() {
                 >
                   {audioEnabled ? <MicOff /> : <Mic />}
                 </OwnButton>
+                {audioEnabled && (
+                  <>
+                    <MicIndicator />
+                    <Select
+                      value={sttProvider}
+                      onChange={(_, val) => val && setSttProvider(val as SttProviderType)}
+                      size="sm"
+                      sx={{ minHeight: 'initial', padding: '0.2rem', fontSize: '12px', minWidth: '40px' }}
+                    >
+                      <Option value="elevenlabs">ElevenLabs</Option>
+                      <Option value="deepgram">Deepgram</Option>
+                    </Select>
+                  </>
+                )}
               </div>
             </div>
           </header>
@@ -233,15 +267,21 @@ export default function App() {
                   element={
                     <AudioSwitch
                       audioElement={
-                        <MicrophoneContextProvider>
-                          <DeepgramContextProvider language={getDeepgramLanguage()}>
-                            <AudioProvider>
-                              <SpeechToTextContextProvider onBlob={handleOnGetBlob}>
-                                <AgentsPage />
-                              </SpeechToTextContextProvider>
-                            </AudioProvider>
-                          </DeepgramContextProvider>
-                        </MicrophoneContextProvider>
+                        sttProvider === 'elevenlabs' ? (
+                          <ElevenLabsSTTProvider language={getElevenLabsLanguage()}>
+                            <AgentsPage />
+                          </ElevenLabsSTTProvider>
+                        ) : (
+                          <MicrophoneContextProvider>
+                            <DeepgramContextProvider language={getDeepgramLanguage()}>
+                              <AudioProvider>
+                                <SpeechToTextContextProvider onBlob={handleOnGetBlob}>
+                                  <AgentsPage />
+                                </SpeechToTextContextProvider>
+                              </AudioProvider>
+                            </DeepgramContextProvider>
+                          </MicrophoneContextProvider>
+                        )
                       }
                       nonAudioElement={<AgentsPage />}
                     />

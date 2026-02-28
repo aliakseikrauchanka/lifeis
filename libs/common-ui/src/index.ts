@@ -11,3 +11,4 @@ export * from './lib/contexts/microphone.context';
 export * from './lib/contexts/speech-to-text.context';
 export * from './lib/components/audio-provider/audio-provider';
 export * from './lib/components/language-selector/language-selector';
+export * from './lib/contexts/elevenlabs-stt.context';

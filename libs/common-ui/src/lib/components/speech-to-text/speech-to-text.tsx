@@ -73,17 +73,12 @@ export const SpeechToText = ({
         type="button"
         color="success"
         onClick={handleStartListening}
-        disabled={!connectionReady || (connectionReady && isRecording)}
+        disabled={!connectionReady || isRecording}
       >
         Record
       </OwnButton>
 
-      <OwnButton
-        type="button"
-        color="success"
-        onClick={handlePauseListening}
-        disabled={!isRecording || !connectionReady}
-      >
+      <OwnButton type="button" color="success" onClick={handlePauseListening} disabled={!isRecording}>
         Pause
       </OwnButton>
     </div>

@@ -15,6 +15,7 @@ import { getMongoDbClient } from './db';
 import insightsRoutes from './routes/insights-routes';
 import { createAgentsRoutes } from './routes/agents-routes';
 import deepgramRoutes from './routes/deepgram-routes';
+import elevenLabsRoutes from './routes/elevenlabs-routes';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getBasketRoutes } from './routes/baskets-routes';
 import OpenAI from 'openai';
@@ -66,6 +67,7 @@ app.use('/api/insights', insightsRoutes);
 app.use('/api/gemini', createGeminiRoutes(defaultGeminiModel));
 app.use('/api/openai', openaiRoutes);
 app.use('/api/deepgram', deepgramRoutes);
+app.use('/api/elevenlabs', elevenLabsRoutes);
 app.use('/api/baskets', getBasketRoutes(client));
 
 app.get('/api/ping', verifyAccessToken, (req, res) => {
