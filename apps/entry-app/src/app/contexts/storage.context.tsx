@@ -59,7 +59,7 @@ export const StorageProvider = ({ children }: { children: ReactNode }) => {
 
   const [sttProvider, setSttProvider] = useState<SttProviderType>(() => {
     const storedValue = localStorage.getItem(sttProviderKey);
-    return (storedValue as SttProviderType) || 'elevenlabs';
+    return (storedValue as SttProviderType) || 'deepgram';
   });
 
   const [loggedInUserId, setLoggedInUserId] = useState<string>(isOfflineModeOn ? 'local_user' : getGoogleUserId());
