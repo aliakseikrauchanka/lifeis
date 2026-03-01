@@ -1,18 +1,21 @@
 import { OwnButton, SpeechToText } from '@lifeis/common-ui';
-import { Select, Option } from '@mui/joy';
+import Autocomplete from '@mui/joy/Autocomplete';
 import { CameraAlt } from '@mui/icons-material';
+import { AI_PROVIDER_OPTIONS } from '../../agent.constants';
 import css from './agent-action-bar.module.scss';
 
+const getProviderOptions = (isExplicitLanguage: boolean) =>
+  isExplicitLanguage ? [...AI_PROVIDER_OPTIONS] : AI_PROVIDER_OPTIONS.filter((opt) => opt.value !== 'glosbe');
+
 interface IAgentActionBarProps {
-  selectedAiProvider: string;
-  onAiProviderChange: (value: string) => void;
+  selectedAiProviders: string[];
+  onAiProviderChange: (values: string[]) => void;
   isExplicitLanguage: boolean;
   number?: number;
   onCapture: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onClear: () => void;
   message: string;
-  answer: string;
-  isSubmitting: boolean;
+  hasContent: boolean;
   audioEnabled: boolean;
   id: string;
   savedCaptions: string[];
@@ -24,15 +27,14 @@ interface IAgentActionBarProps {
 }
 
 export const AgentActionBar = ({
-  selectedAiProvider,
+  selectedAiProviders,
   onAiProviderChange,
   isExplicitLanguage,
   number,
   onCapture,
   onClear,
   message,
-  answer,
-  isSubmitting,
+  hasContent,
   audioEnabled,
   id,
   onCaption,
@@ -41,20 +43,23 @@ export const AgentActionBar = ({
   isListeningFired,
   onListeningToggled,
 }: IAgentActionBarProps) => {
+  const providerOptions = getProviderOptions(isExplicitLanguage);
+
   return (
     <div className={css.buttons}>
-      <Select
-        value={selectedAiProvider}
-        onChange={(_, newValue) => onAiProviderChange(newValue as string)}
+      <Autocomplete
+        multiple
+        value={providerOptions.filter((opt) => selectedAiProviders.includes(opt.value))}
+        onChange={(_, newValue) => onAiProviderChange(newValue.map((opt) => opt.value))}
+        options={providerOptions}
+        getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
+        isOptionEqualToValue={(option, value) =>
+          (typeof option === 'string' ? option : option.value) === (typeof value === 'string' ? value : value.value)
+        }
+        disableCloseOnSelect
+        size="sm"
         sx={{ minHeight: 30, minWidth: 95 }}
-      >
-        <Option value="gemini-2.5-flash-lite">Gemini Flash 2.5 Lite</Option>
-        <Option value="gemini-2.5-flash">Gemini Flash 2.5</Option>
-        <Option value="gemini-3-pro-preview">Gemini Pro 3.0</Option>
-        <Option value="openai">OpenAI</Option>
-        {isExplicitLanguage && <Option value="glosbe">Glosbe</Option>}
-        <Option value="deepseek-r1">Deepseek R1</Option>
-      </Select>
+      />
       <label htmlFor={`photo-${number}`} className={css.buttonsPhoto}>
         <CameraAlt fontSize="large" color="inherit" />
       </label>
@@ -70,8 +75,8 @@ export const AgentActionBar = ({
         type="button"
         color="danger"
         onClick={onClear}
-        style={{ marginLeft: 'auto', height: '100%' }}
-        disabled={!message && !answer}
+        style={{ marginLeft: 'auto', height: '100%', display: 'none' }}
+        disabled={!hasContent}
       >
         Clear All
       </OwnButton>
@@ -86,7 +91,7 @@ export const AgentActionBar = ({
           onListeningToggled={onListeningToggled}
         />
       )}
-      <OwnButton type="submit" style={{ height: '100%' }} disabled={!message || isSubmitting}>
+      <OwnButton type="submit" style={{ height: '100%' }} disabled={!message || selectedAiProviders.length === 0}>
         Submit
       </OwnButton>
     </div>

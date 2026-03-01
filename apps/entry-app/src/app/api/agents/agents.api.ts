@@ -94,12 +94,14 @@ export const submitMessage = async ({
   imageBuffer,
   aiProvider,
   language,
+  signal,
 }: {
   id: string;
   message: string;
   imageBuffer?: string | ArrayBuffer | null;
   aiProvider: string;
   language?: string;
+  signal?: AbortSignal;
 }): Promise<{
   answer: string;
 }> => {
@@ -116,6 +118,7 @@ export const submitMessage = async ({
   const response = await utilFetch(`/agents/${id}`, {
     method: 'POST',
     body: formData,
+    signal,
   });
 
   if (!response.ok) {
