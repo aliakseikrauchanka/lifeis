@@ -7,6 +7,27 @@
     flex-grow: 1;
   }
 
+  &-tab-name {
+    display: flex;
+    flex-direction: row;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100px;
+
+    &-text {
+      flex: 1;
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &-loader {
+      flex: 0 0 auto;
+      min-width: 16px;
+    }
+  }
+
   &-content {
     display: block;
 
@@ -22,6 +43,6 @@
 
   &-title {
     display: flex;
-    align-items: center;
+    overflow: auto;
   }
 }

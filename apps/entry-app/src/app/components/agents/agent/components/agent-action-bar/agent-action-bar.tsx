@@ -49,6 +49,7 @@ export const AgentActionBar = ({
     <div className={css.buttons}>
       <Autocomplete
         multiple
+        disableClearable
         value={providerOptions.filter((opt) => selectedAiProviders.includes(opt.value))}
         onChange={(_, newValue) => onAiProviderChange(newValue.map((opt) => opt.value))}
         options={providerOptions}
@@ -75,7 +76,7 @@ export const AgentActionBar = ({
         type="button"
         color="danger"
         onClick={onClear}
-        style={{ marginLeft: 'auto', height: '100%', display: 'none' }}
+        style={{ marginLeft: 'auto', height: '100%' }}
         disabled={!hasContent}
       >
         Clear All

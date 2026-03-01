@@ -72,18 +72,6 @@ export const AgentResponse = ({ providerResponses, isWideMode, responseRef, onCo
           sx={{ overflow: 'auto' }}
         >
           <div className={css.responseTitle}>
-            <TabList sx={{ '--List-gap': '4px' }}>
-              {providerIds.map((providerId) => {
-                const resp = providerResponses[providerId];
-                const isLoading = resp?.status === 'loading';
-                return (
-                  <Tab key={providerId} value={providerId}>
-                    {getProviderLabel(providerId)}
-                    {isLoading && <CircularProgress size="sm" sx={{ ml: 0.5 }} />}
-                  </Tab>
-                );
-              })}
-            </TabList>
             {canCopy && (
               <IconButton
                 aria-label="Copy"
@@ -94,6 +82,18 @@ export const AgentResponse = ({ providerResponses, isWideMode, responseRef, onCo
                 <CopyAll />
               </IconButton>
             )}
+            <TabList sx={{ '--List-gap': '4px' }}>
+              {providerIds.map((providerId) => {
+                const resp = providerResponses[providerId];
+                const isLoading = resp?.status === 'loading';
+                return (
+                  <Tab key={providerId} value={providerId} className={css.responseTabName}>
+                    <span className={css.responseTabNameText}>{getProviderLabel(providerId)}</span>
+                    {isLoading && <CircularProgress size="sm" sx={{ ml: 0.5 }} className={css.responseTabNameLoader} />}
+                  </Tab>
+                );
+              })}
+            </TabList>
           </div>
           {providerIds.map((providerId) => {
             const resp = providerResponses[providerId];
