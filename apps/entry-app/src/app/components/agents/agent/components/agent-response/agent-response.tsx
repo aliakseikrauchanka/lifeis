@@ -7,7 +7,7 @@ import { AI_PROVIDER_OPTIONS, PROVIDER_ORDER } from '../../agent.constants';
 import css from './agent-response.module.scss';
 
 const getProviderLabel = (key: string) =>
-  AI_PROVIDER_OPTIONS.find((opt) => opt.value === key)?.label ?? (key === 'response' ? 'Response' : key);
+  AI_PROVIDER_OPTIONS.find((opt) => opt.value === key)?.label ?? (key === 'response' ? 'History' : key);
 
 type ProviderResponse = { answer: string; status: 'idle' | 'loading' | 'done' | 'error' };
 

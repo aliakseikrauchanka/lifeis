@@ -47,7 +47,7 @@ interface IAgentTextInputProps {
   isWideMode: boolean;
   textAreaRef: Ref<HTMLTextAreaElement>;
   hasSubmitted: boolean;
-  onHistoryItemSelect: (message: string, response: string) => void;
+  onHistoryItemSelect: (message: string, response: string, agentType?: string) => void;
   languageProps: ILanguageProps;
   dictationProps: IDictationProps;
 }
@@ -136,13 +136,13 @@ export const AgentTextInput = forwardRef<IAgentTextInputHandle, IAgentTextInputP
     const handleInternalKeyDown = useCallback(
       (e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.code === 'ArrowLeft' && e.ctrlKey && e.shiftKey) {
-          const { message: msg, response } = handleHistoryIndexChange(historyCurrentIndex + 1);
-          onHistoryItemSelect(msg, response);
+          const { message: msg, response, agentType } = handleHistoryIndexChange(historyCurrentIndex + 1);
+          onHistoryItemSelect(msg, response, agentType);
           return;
         }
         if (e.code === 'ArrowRight' && e.ctrlKey && e.shiftKey) {
-          const { message: msg, response } = handleHistoryIndexChange(historyCurrentIndex - 1);
-          onHistoryItemSelect(msg, response);
+          const { message: msg, response, agentType } = handleHistoryIndexChange(historyCurrentIndex - 1);
+          onHistoryItemSelect(msg, response, agentType);
           return;
         }
         if (e.code === 'KeyL' && e.ctrlKey && e.shiftKey) {
@@ -165,8 +165,8 @@ export const AgentTextInput = forwardRef<IAgentTextInputHandle, IAgentTextInputP
 
     const handleHistoryNavigationIndexChange = useCallback(
       (index: number) => {
-        const { message: msg, response } = handleHistoryIndexChange(index);
-        onHistoryItemSelect(msg, response);
+        const { message: msg, response, agentType } = handleHistoryIndexChange(index);
+        onHistoryItemSelect(msg, response, agentType);
       },
       [handleHistoryIndexChange, onHistoryItemSelect],
     );

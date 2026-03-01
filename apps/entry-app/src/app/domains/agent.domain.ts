@@ -38,4 +38,5 @@ export interface IAgentHistoryItem {
   prompt: string;
   response: string;
   timestamp: Date;
+  agentType?: string;
 }

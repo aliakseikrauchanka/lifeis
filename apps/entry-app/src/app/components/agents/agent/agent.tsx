@@ -109,9 +109,10 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
       () => undefined,
     );
 
-    const onHistoryItemSelect = useCallback((msg: string, resp: string) => {
+    const onHistoryItemSelect = useCallback((msg: string, resp: string, agentType?: string) => {
       setMessage(msg);
-      setProviderResponses({ response: { answer: resp, status: 'done' } });
+      const providerKey = agentType ?? 'response';
+      setProviderResponses({ [providerKey]: { answer: resp, status: 'done' } });
     }, []);
 
     useEffect(() => {

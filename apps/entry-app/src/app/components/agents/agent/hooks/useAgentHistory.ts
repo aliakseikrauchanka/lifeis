@@ -38,12 +38,13 @@ export const useAgentHistory = (id: string, hasSubmitted: boolean) => {
   }, [hasSubmitted, agentHistory]);
 
   const handleHistoryIndexChange = useCallback(
-    (index: number): { message: string; response: string } => {
+    (index: number): { message: string; response: string; agentType?: string } => {
       setHistoryCurrentIndex(index);
       const historyItem = clientHistoryItems?.[index];
       return {
         message: historyItem?.message || '',
         response: historyItem?.response || '',
+        agentType: historyItem?.agentType,
       };
     },
     [clientHistoryItems],
