@@ -87,6 +87,16 @@ const DeepgramContextProvider = ({ language = DEFAULT_LANGUAGE, children }: Deep
   }, [language, sttOptions, setSttOptions]);
 
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && !connectionReady) {
+        connect(sttOptions);
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [connectionReady, connect, sttOptions]);
+
+  useEffect(() => {
     // it must be the first open of the page, let's set up the defaults
 
     // Why this is needed?, the requestTtsAudio of Conversation is wrapped in useCallback
