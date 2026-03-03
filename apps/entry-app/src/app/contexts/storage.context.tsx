@@ -5,7 +5,7 @@ import { getPinnedAgents, savePinnedAgents } from '../api/agents/agents.api';
 const audioEnabledKey = 'audio';
 const sttProviderKey = 'sttProvider';
 
-export type SttProviderType = 'elevenlabs' | 'deepgram';
+export type SttProviderType = 'elevenlabs' | 'deepgram' | 'deepgram-file';
 
 export interface StorageContextType {
   prevFocusedAgentIndex: number | undefined;

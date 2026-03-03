@@ -8,13 +8,13 @@ import css from './app.module.scss';
 import {
   AudioProvider,
   DeepgramContextProvider,
+  DeepgramFileSTTProvider,
   ElevenLabsSTTProvider,
   isUserLoggedIn,
   MicrophoneContextProvider,
   OwnButton,
   SpeechToTextContextProvider,
   UserSession,
-  LanguageSelector,
 } from '@lifeis/common-ui';
 import { SttProviderType } from './contexts/storage.context';
 import { CONFIG } from '../config';
@@ -250,8 +250,9 @@ export default function App() {
                       size="sm"
                       sx={{ minHeight: 'initial', padding: '0.2rem', fontSize: '12px', minWidth: '40px' }}
                     >
-                      <Option value="elevenlabs">ElevenLabs</Option>
-                      <Option value="deepgram">Deepgram</Option>
+                      <Option value="elevenlabs">11Labs Realtime</Option>
+                      <Option value="deepgram">DG Realtime</Option>
+                      <Option value="deepgram-file">DG File</Option>
                     </Select>
                   </>
                 )}
@@ -271,6 +272,10 @@ export default function App() {
                           <ElevenLabsSTTProvider language={getElevenLabsLanguage()}>
                             <AgentsPage />
                           </ElevenLabsSTTProvider>
+                        ) : sttProvider === 'deepgram-file' ? (
+                          <DeepgramFileSTTProvider language={getDeepgramLanguage()}>
+                            <AgentsPage />
+                          </DeepgramFileSTTProvider>
                         ) : (
                           <MicrophoneContextProvider>
                             <DeepgramContextProvider language={getDeepgramLanguage()}>

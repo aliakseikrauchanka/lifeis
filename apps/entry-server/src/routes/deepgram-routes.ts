@@ -48,24 +48,22 @@ routes.get('/authenticate', async (req, res) => {
 });
 
 routes.post('/transcribe', verifyAccessToken, uploadMiddlewareFactory.single('audio'), async (req, res) => {
-  const transcribeFile = async (filePath: string) => {
-    // STEP 1: Create a Deepgram client using the API key
+  const languageParam = req.query.language as string | undefined;
+  const hasExplicitLanguage = !!languageParam?.trim();
 
-    // STEP 2: Call the transcribeFile method with the audio payload and options
-    const { result, error } = await deepgram.listen.prerecorded.transcribeFile(
-      // path to the audio file
-      fs.readFileSync(filePath),
-      // STEP 3: Configure Deepgram options for audio analysis
-      {
-        model: 'nova-2',
-        smart_format: true,
-        language: 'ru',
-        detect_language: true,
-      },
-    );
+  const transcribeFile = async (filePath: string) => {
+    const options: Parameters<typeof deepgram.listen.prerecorded.transcribeFile>[1] = {
+      model: 'nova-3',
+      smart_format: true,
+      detect_language: !hasExplicitLanguage,
+    };
+    if (hasExplicitLanguage) {
+      options.language = languageParam.trim();
+    }
+
+    const { result, error } = await deepgram.listen.prerecorded.transcribeFile(fs.readFileSync(filePath), options);
 
     if (error) throw error;
-    // STEP 4: Return the results
     if (!error) return result;
   };
 
