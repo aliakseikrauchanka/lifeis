@@ -20,7 +20,7 @@ export default defineConfig({
 
   css: {
     modules: {
-      // localsConvention: 'camelCaseOnly',
+      localsConvention: 'camelCaseOnly',
       // generateScopedName: (name, filename, css) => {
       //   const componentName = filename
       //     .replace(/\.\w+$/, '')

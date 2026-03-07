@@ -1,3 +1,26 @@
 .log-form {
   margin-bottom: 20px;
 }
+
+.text-area-field {
+  textarea {
+    resize: vertical !important;
+    min-height: 80px;
+  }
+}
+
+.photo-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  opacity: 0.7;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.photo-loading {
+  font-size: 0.875rem;
+}

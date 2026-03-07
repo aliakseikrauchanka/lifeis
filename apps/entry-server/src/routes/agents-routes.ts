@@ -66,6 +66,16 @@ interface IAgentTemplate extends IAgentBasic {
 
 type IAgentDocument = Document & IAgent & IAgentTemplate;
 
+enum ParseImageMode {
+  GetText = 'get-text',
+  DescribeFoodRu = 'describe-food-ru',
+}
+
+const PARSE_IMAGE_PROMPTS: Record<ParseImageMode, string> = {
+  [ParseImageMode.GetText]: 'Get only text from the image',
+  [ParseImageMode.DescribeFoodRu]: 'Опиши, из чего состоит эта еда. Перечисли ингредиенты и пищевую ценность.',
+};
+
 const defaultGeminiModelName = 'gemini-2.5-flash-lite';
 const defaultOpenAiModelName = 'gpt-4o-mini';
 const allowedGeminiModelsNames = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-3-pro-preview'];
@@ -210,10 +220,13 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
 
       let responseText: string;
 
+      const mode: ParseImageMode = Object.values(ParseImageMode).includes(req.query.mode as ParseImageMode)
+        ? (req.query.mode as ParseImageMode)
+        : ParseImageMode.GetText;
+      const prompt = PARSE_IMAGE_PROMPTS[mode];
+
       try {
-        const geminiRequestBody: GenerateContentRequest | string | Array<string | Part> = [
-          'Get only text from the image',
-        ];
+        const geminiRequestBody: GenerateContentRequest | string | Array<string | Part> = [prompt];
         if (uploadResult) {
           geminiRequestBody.push({
             fileData: {

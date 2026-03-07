@@ -1,6 +1,23 @@
 import { utilFetch } from '@lifeis/common-ui';
 import { IDiaryLog } from '../../domains/log.domain';
 
+export const describeFoodFromImage = async (imageBuffer: ArrayBuffer): Promise<{ answer: string }> => {
+  const formData = new FormData();
+  formData.append('image', new Blob([imageBuffer]), 'image.png');
+
+  const response = await utilFetch(`/agents/parse-image?mode=describe-food-ru`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody: { message?: string } = await response.json();
+    throw new Error(errorBody.message || 'Failed to describe food from image');
+  }
+
+  return response.json();
+};
+
 export const createLog = async (message: string): Promise<void> => {
   const response = await utilFetch(`/logs`, {
     method: 'POST',

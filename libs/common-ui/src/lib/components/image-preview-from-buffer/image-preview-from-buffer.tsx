@@ -1,30 +1,28 @@
 import { Close } from '@mui/icons-material';
-import React, { useEffect, useState } from 'react';
-import css from './image-preview-from-buffer.module.scss';
 import { IconButton } from '@mui/joy';
+import { useEffect, useState } from 'react';
+import css from './image-preview-from-buffer.module.scss';
 
-interface ImagePreviewFromBufferProps {
+export interface ImagePreviewFromBufferProps {
   buffer: ArrayBuffer | Uint8Array;
   onClose: () => void;
   isLoading: boolean;
+  className?: string;
 }
 
-export const ImagePreviewFromBuffer = ({ buffer, onClose, isLoading }: ImagePreviewFromBufferProps) => {
+export const ImagePreviewFromBuffer = ({ buffer, onClose, isLoading, className }: ImagePreviewFromBufferProps) => {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (buffer) {
-      // Convert to ArrayBuffer to ensure compatibility with Blob
-      // Create a new ArrayBuffer to avoid SharedArrayBuffer issues
       const arrayBuffer = buffer instanceof ArrayBuffer ? buffer : new Uint8Array(buffer).buffer;
-      const blob = new Blob([arrayBuffer], { type: 'image/jpeg' }); // Or the correct MIME type (e.g., 'image/png')
+      const blob = new Blob([arrayBuffer], { type: 'image/jpeg' });
       const url = URL.createObjectURL(blob);
       setPreviewUrl(url);
 
-      // Clean up the URL object when the component unmounts or the buffer changes
       return () => URL.revokeObjectURL(url);
     } else {
-      setPreviewUrl(null); // Clear the preview if the buffer is null or undefined
+      setPreviewUrl(null);
     }
   }, [buffer]);
 
@@ -35,7 +33,7 @@ export const ImagePreviewFromBuffer = ({ buffer, onClose, isLoading }: ImagePrev
   };
 
   return (
-    <div className={css.imagePreview}>
+    <div className={className ? `${css.imagePreview} ${className}` : css.imagePreview}>
       {isLoading && <span>Loading...</span>}
       {previewUrl && (
         <img src={previewUrl} alt="Preview" onClick={handleImageClick} className={css.imagePreviewImage} />
@@ -44,11 +42,11 @@ export const ImagePreviewFromBuffer = ({ buffer, onClose, isLoading }: ImagePrev
         aria-label="Close"
         variant="plain"
         color="neutral"
-        size="sm" // Adjust size as needed
+        size="sm"
         sx={{ position: 'absolute', right: 0, top: 0 }}
         onClick={onClose}
       >
-        <Close /> {/* Use the ModalClose icon */}
+        <Close />
       </IconButton>
     </div>
   );

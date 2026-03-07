@@ -1,6 +1,7 @@
-import React, { useState, KeyboardEvent, KeyboardEventHandler, useEffect, useCallback } from 'react';
-import { OwnButton, SpeechToText } from '@lifeis/common-ui';
-import { createLog } from '../../api/logs/logs.api';
+import React, { useState, KeyboardEvent, useEffect, useCallback } from 'react';
+import { ImagePreviewFromBuffer, OwnButton, SpeechToText } from '@lifeis/common-ui';
+import { CameraAlt } from '@mui/icons-material';
+import { createLog, describeFoodFromImage } from '../../api/logs/logs.api';
 import css from './log-form.module.scss';
 import { Box, Stack, TextField } from '@mui/material';
 
@@ -12,9 +13,33 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
   const [message, setMessage] = React.useState('');
   const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
   const [isListeningFired, setIsListeningFired] = useState(false);
+  const [isDescribingFood, setIsDescribingFood] = useState(false);
+  const [imageBuffer, setImageBuffer] = useState<ArrayBuffer | null>(null);
+
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(event.target.value);
   };
+
+  const handleCapture = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file?.type.startsWith('image/')) return;
+
+    const buffer = await file.arrayBuffer();
+    setImageBuffer(buffer);
+    try {
+      setIsDescribingFood(true);
+      const { answer } = await describeFoodFromImage(buffer);
+      setMessage((prev) => (prev ? `${prev}\n\n${answer}` : answer));
+    } catch (err) {
+      console.error('Failed to describe food from image', err);
+      setImageBuffer(null);
+    } finally {
+      setIsDescribingFood(false);
+      event.target.value = '';
+    }
+  }, []);
+
+  const clearImage = useCallback(() => setImageBuffer(null), []);
 
   const handleSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement>) => {
@@ -23,6 +48,7 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
       try {
         setIsCaptionsNeedClear(true);
         setMessage('');
+        setImageBuffer(null);
         await createLog(message);
         onSubmit();
       } catch (e) {
@@ -34,6 +60,7 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
 
   const handleClearText = () => {
     setMessage('');
+    setImageBuffer(null);
     setIsCaptionsNeedClear(true);
   };
 
@@ -87,20 +114,27 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
           borderRadius: 2,
           border: '1px solid #ccc',
           backgroundColor: '#fafafa',
+          position: 'relative',
         }}
       >
-        <TextField
-          multiline
-          minRows={3}
-          maxRows={6}
-          variant="outlined"
-          name="message"
-          placeholder="Enter your message here"
-          value={message}
-          onChange={handleChange}
-          // onKeyDown={handleKeyDown}
-          fullWidth
-        />
+        <Box sx={{ position: 'relative', width: '100%' }}>
+          <TextField
+            className={css.textAreaField}
+            multiline
+            rows={2}
+            variant="outlined"
+            name="message"
+            placeholder="Enter your message here"
+            value={message}
+            onChange={handleChange}
+            fullWidth
+          />
+          {imageBuffer && (
+            <Box sx={{ position: 'absolute', bottom: 8, right: 8, zIndex: 1 }}>
+              <ImagePreviewFromBuffer buffer={imageBuffer} onClose={clearImage} isLoading={isDescribingFood} />
+            </Box>
+          )}
+        </Box>
 
         <SpeechToText
           onCaption={(caption) => setMessage(caption?.join(' ') || '')}
@@ -111,7 +145,21 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
           onListeningToggled={() => setIsListeningFired((prev) => !prev)}
         />
 
-        <Stack direction="row" spacing={2} justifyContent="flex-end">
+        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+          <label htmlFor="log-form-photo" className={css.photoButton}>
+            <CameraAlt fontSize="large" color="inherit" />
+            {isDescribingFood && <span className={css.photoLoading}>...</span>}
+          </label>
+          <input
+            type="file"
+            id="log-form-photo"
+            capture="environment"
+            accept="image/*"
+            style={{ display: 'none' }}
+            onChange={handleCapture}
+            disabled={isDescribingFood}
+          />
+          <Box sx={{ flex: 1 }} />
           <OwnButton type="submit" disabled={!message}>
             Submit
           </OwnButton>

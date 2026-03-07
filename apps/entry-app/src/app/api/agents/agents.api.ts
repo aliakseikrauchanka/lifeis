@@ -152,7 +152,7 @@ export const submitImageOnParsing = async (
     formData.append('image', new Blob([imageBuffer]), 'image.png');
   }
 
-  const response = await utilFetch(`/agents/parse-image`, {
+  const response = await utilFetch(`/agents/parse-image?mode=get-text`, {
     method: 'POST',
     body: formData,
   });

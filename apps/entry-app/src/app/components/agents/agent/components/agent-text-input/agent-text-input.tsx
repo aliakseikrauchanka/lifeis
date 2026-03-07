@@ -1,4 +1,4 @@
-import { LanguageSelector } from '@lifeis/common-ui';
+import { ImagePreviewFromBuffer, LanguageSelector } from '@lifeis/common-ui';
 import { IconButton, Switch, useTheme } from '@mui/joy';
 import { CopyAll, PlayCircle, PlayForWork, WidthFull, WidthNormal } from '@mui/icons-material';
 import classNames from 'classnames';
@@ -7,7 +7,6 @@ import { useMediaQuery } from '@mui/material';
 import domPurify from 'dompurify';
 import { AgentHistoryNavigation } from '../agent-history-navigation/agent-history-navigation';
 import { AgentHistoryModal } from '../agent-history';
-import { ImagePreviewFromBuffer } from '../image-preview-from-buffer';
 import { submitImageOnParsing } from '../../../../../api/agents/agents.api';
 import { speak } from '../../../all-agents.helpers';
 import { useTextareaResize } from '../../hooks/useTextareaResize';
