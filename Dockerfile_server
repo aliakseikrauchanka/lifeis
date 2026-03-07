@@ -1,0 +1,24 @@
+# Backend (entry-server) with ffmpeg for audio transcription
+FROM node:22-alpine3.19
+
+WORKDIR /app
+
+# Install ffmpeg for fluent-ffmpeg (Deepgram/OpenAI audio conversion)
+RUN apk add --no-cache ffmpeg
+
+# Install dependencies
+COPY package.json package-lock.json ./
+COPY nx.json ./
+RUN npm ci
+
+# Copy source (apps, libs, configs)
+COPY apps/entry-server ./apps/entry-server
+COPY libs ./libs
+COPY tsconfig.base.json ./
+COPY jest.preset.js ./
+
+# Build entry-server
+RUN npx nx run entry-server:build --configuration=production --skip-nx-cache
+
+# Start the server
+CMD ["node", "./dist/apps/entry-server/src/main.js"]
