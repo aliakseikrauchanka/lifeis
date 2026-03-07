@@ -1,4 +1,5 @@
-$min-input-height-minimized: 190px;
+$min-input-height-mobile: 250px;
+$min-input-height: 200px;
 
 .input-part {
   z-index: 1;
@@ -13,7 +14,7 @@ $min-input-height-minimized: 190px;
   position: relative;
   display: flex;
   min-width: 300px;
-  min-height: 200px;
+  min-height: $min-input-height;
   margin: 5px;
 
   &--wide {
@@ -21,7 +22,7 @@ $min-input-height-minimized: 190px;
   }
 
   &-minimized {
-    min-height: $min-input-height-minimized;
+    min-height: $min-input-height-mobile;
   }
 }
 
@@ -29,10 +30,10 @@ $min-input-height-minimized: 190px;
   flex: 1;
   padding: 0 4px;
   font-size: 14px;
-  min-height: 200px;
+  min-height: $min-input-height;
 
   &-minimized {
-    min-height: $min-input-height-minimized;
+    min-height: $min-input-height-mobile;
   }
 
   &-resizer {
