@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useCallback, useContext, useState, ReactNode, useEffect, useRef } from 'react';
 import { useQueue } from '@uidotdev/usehooks';
 
 interface MicrophoneContextType {
@@ -48,6 +48,8 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
   const [microphoneState, setMicrophoneState] = useState<MicrophoneState>(MicrophoneState.NotSetup);
   const [microphone, setMicrophone] = useState<MediaRecorder | null>(null);
   const [stream, setStream] = useState<MediaStream>();
+  const microphoneStateRef = useRef(microphoneState);
+  microphoneStateRef.current = microphoneState;
 
   const {
     add: enqueueBlob, // addMicrophoneBlob,
@@ -111,7 +113,7 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
     if (!microphone) return;
 
     microphone.ondataavailable = (e) => {
-      if (microphoneState === MicrophoneState.Open) enqueueBlob(e.data);
+      if (microphoneStateRef.current === MicrophoneState.Open) enqueueBlob(e.data);
     };
 
     return () => {

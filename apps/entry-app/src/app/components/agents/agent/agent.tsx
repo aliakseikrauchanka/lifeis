@@ -92,6 +92,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
       unpinAgent,
       languageCode,
       setLanguageCode,
+      sttProvider,
     } = useStorageContext();
 
     const [hasSubmitted, setHasSubmitted] = useState(false);
@@ -450,6 +451,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
                 onCaptionsCleared={() => setIsCaptionsNeedClear(false)}
                 isListeningFired={isListeningFired}
                 onListeningToggled={() => setIsListeningFired((prev) => !prev)}
+                showPlayButton={sttProvider !== 'elevenlabs'}
               />
             </div>
             <AgentResponse

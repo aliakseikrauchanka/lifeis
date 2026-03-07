@@ -108,6 +108,7 @@ const ElevenLabsSTTProvider: React.FC<ElevenLabsSTTProviderProps> = ({ language 
       value={{
         connectionReady,
         caption,
+        recordedBlobs: {},
         startListening,
         stopListening,
         pauseListening,

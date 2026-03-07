@@ -31,6 +31,7 @@ async function transcribeBlob(blob: Blob, language?: string): Promise<string> {
 const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({ language, children }) => {
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [caption, setCaption] = useState<{ [activeId: string]: string[] }>({});
+  const [recordedBlobs, setRecordedBlobs] = useState<{ [id: string]: Blob[] }>({});
   const activeIdRef = useRef<string | undefined>(undefined);
   const cancelledRef = useRef(false);
 
@@ -82,6 +83,12 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({ langu
         const idForCaption = activeIdRef.current;
         if (!idForCaption || cancelledRef.current) return;
 
+        // Store blob for playback (even if transcription fails)
+        setRecordedBlobs((prev) => ({
+          ...prev,
+          [idForCaption]: [...(prev[idForCaption] || []), blob],
+        }));
+
         try {
           const transcript = await transcribeBlob(blob, language);
           if (transcript && !cancelledRef.current) {
@@ -105,6 +112,11 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({ langu
     (id: string) => {
       cancelledRef.current = true;
       setCaption((prev) => ({ ...prev, [id]: [] }));
+      setRecordedBlobs((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
       stopRecording();
     },
     [stopRecording],
@@ -119,6 +131,7 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({ langu
       value={{
         connectionReady: true,
         caption,
+        recordedBlobs,
         startListening,
         stopListening,
         pauseListening,

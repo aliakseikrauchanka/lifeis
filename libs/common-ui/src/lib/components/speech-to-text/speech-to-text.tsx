@@ -12,6 +12,7 @@ interface ISpeechToTextProps {
   onCaption: (caption: string[] | undefined) => void;
   onCleared?: () => void;
   onListeningToggled?: () => void;
+  showPlayButton?: boolean;
 }
 
 export const SpeechToText = ({
@@ -22,8 +23,9 @@ export const SpeechToText = ({
   onCaption,
   onCleared,
   onListeningToggled,
+  showPlayButton = true,
 }: ISpeechToTextProps) => {
-  const { startListening, pauseListening, stopListening, caption, connectionReady } = useSpeechToText();
+  const { startListening, pauseListening, stopListening, caption, recordedBlobs, connectionReady } = useSpeechToText();
   const [isRecording, setIsRecording] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -51,6 +53,18 @@ export const SpeechToText = ({
       clearTimeout(timeoutRef.current);
     }
   }, [pauseListening]);
+
+  const handlePlayRecording = useCallback(() => {
+    const blobs = recordedBlobs[id];
+    if (!blobs?.length) return;
+    const combined = new Blob(blobs, { type: blobs[0]?.type || 'audio/webm' });
+    const url = URL.createObjectURL(combined);
+    const audio = new Audio(url);
+    audio.onended = () => URL.revokeObjectURL(url);
+    audio.play().catch(() => URL.revokeObjectURL(url));
+  }, [recordedBlobs, id]);
+
+  const hasPlayback = !!(recordedBlobs[id]?.length || caption[id]?.length);
 
   useEffect(() => {
     if (isToggledListening) {
@@ -81,6 +95,12 @@ export const SpeechToText = ({
       <OwnButton type="button" color="success" onClick={handlePauseListening} disabled={!isRecording}>
         Pause
       </OwnButton>
+
+      {showPlayButton && (
+        <OwnButton type="button" color="success" onClick={handlePlayRecording} disabled={!hasPlayback}>
+          Play
+        </OwnButton>
+      )}
     </div>
   );
 };

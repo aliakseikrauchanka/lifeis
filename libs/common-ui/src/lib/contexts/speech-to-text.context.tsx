@@ -8,6 +8,7 @@ import { useMicVAD } from '../hooks/use-mic-vad';
 export interface SpeechToTextContextType {
   connectionReady: boolean;
   caption: { [activeId: string]: string[] };
+  recordedBlobs: { [id: string]: Blob[] };
   startListening: (id: string) => void;
   stopListening: (id: string) => void;
   pauseListening: () => void;
@@ -28,6 +29,8 @@ interface SpeechToTextContextProviderProps {
 const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = ({ onBlob, children }) => {
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [caption, setCaption] = useState<{ [activeId: string]: string[] }>({});
+  const [recordedBlobs, setRecordedBlobs] = useState<{ [id: string]: Blob[] }>({});
+  const recordingSessionIdRef = useRef<string | undefined>(undefined);
 
   const { connection, connectionReady, isNeedReset, onResetDone } = useDeepgram();
   const {
@@ -218,17 +221,24 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
       if (microphoneQueueSize > 0 && !isProcessing) {
         setProcessing(true);
 
-        if (connectionReady) {
-          const nextBlob = firstBlob;
+        const nextBlob = firstBlob;
 
-          if (nextBlob && nextBlob?.size > 0) {
-            // console.log('debug, sending blob', connection);
+        if (nextBlob && nextBlob?.size > 0) {
+          if (connectionReady) {
             connection?.send(nextBlob);
             onBlob?.(nextBlob);
           }
-
-          removeBlob();
+          // Store for playback regardless of connection - playback doesn't need Deepgram
+          const sessionId = recordingSessionIdRef.current;
+          if (sessionId) {
+            setRecordedBlobs((prev) => ({
+              ...prev,
+              [sessionId]: [...(prev[sessionId] || []), nextBlob],
+            }));
+          }
         }
+
+        removeBlob();
 
         const waiting = setTimeout(() => {
           clearTimeout(waiting);
@@ -261,6 +271,7 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
 
   const startListening = useCallback(
     (id: string) => {
+      recordingSessionIdRef.current = id;
       setActiveId(id);
       startMicrophone();
     },
@@ -269,12 +280,18 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
 
   const stopListening = useCallback(
     (id: string) => {
+      recordingSessionIdRef.current = undefined;
       setActiveId(undefined);
       setCaption((prevCaption) => {
         return {
           ...prevCaption,
           [id]: [],
         };
+      });
+      setRecordedBlobs((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
       });
       pauseMicrophone();
     },
@@ -290,6 +307,7 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
     <SpeechToTextContext.Provider
       value={{
         caption,
+        recordedBlobs,
         startListening,
         pauseListening,
         stopListening,

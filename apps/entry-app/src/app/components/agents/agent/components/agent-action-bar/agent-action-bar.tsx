@@ -24,6 +24,7 @@ interface IAgentActionBarProps {
   onCaptionsCleared: () => void;
   isListeningFired: boolean;
   onListeningToggled: () => void;
+  showPlayButton?: boolean;
 }
 
 export const AgentActionBar = ({
@@ -42,6 +43,7 @@ export const AgentActionBar = ({
   onCaptionsCleared,
   isListeningFired,
   onListeningToggled,
+  showPlayButton = true,
 }: IAgentActionBarProps) => {
   const providerOptions = getProviderOptions(isExplicitLanguage);
 
@@ -90,6 +92,7 @@ export const AgentActionBar = ({
           isNeedClear={isCaptionsNeedClear}
           isToggledListening={isListeningFired}
           onListeningToggled={onListeningToggled}
+          showPlayButton={showPlayButton}
         />
       )}
       <OwnButton type="submit" style={{ height: '100%' }} disabled={!message || selectedAiProviders.length === 0}>
