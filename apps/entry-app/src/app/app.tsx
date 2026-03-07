@@ -292,7 +292,7 @@ export default function App() {
                     />
                   }
                 />
-                {hasExperimentsFeature && <Route path="/experiments" element={<ExperimentsPage />} />}
+                <Route path="/experiments" element={<ExperimentsPage />} />
               </Routes>
             </div>
           )}
