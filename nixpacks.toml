@@ -1,0 +1,3 @@
+# Required for Deepgram/OpenAI audio transcription (fluent-ffmpeg)
+[phases.setup]
+nixPkgs = ["ffmpeg"]
