@@ -9,7 +9,7 @@ RUN apk add --no-cache ffmpeg
 # Install dependencies
 COPY package.json package-lock.json ./
 COPY nx.json ./
-RUN npm ci
+RUN npm install --legacy-peer-deps
 
 # Copy source (apps, libs, configs)
 COPY apps/entry-server ./apps/entry-server
