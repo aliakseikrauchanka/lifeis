@@ -111,7 +111,7 @@ export const LogsPage = () => {
       <div className={css.controlsRow}>
         <IconButton
           size="small"
-          onClick={() => setIsFormExpanded((v) => !v)}
+          onClick={() => setIsFormExpanded((v: boolean) => !v)}
           aria-label={isFormExpanded ? 'Shrink form' : 'Expand form'}
           title={isFormExpanded ? 'Shrink form to show more logs' : 'Expand form'}
         >
@@ -159,7 +159,8 @@ export const LogsPage = () => {
                   size="small"
                   variant="standard"
                   disableUnderline
-                  sx={{ fontSize: 'inherit', fontWeight: 600, minWidth: 120 }}
+                  sx={{ fontSize: 'inherit', fontWeight: 600 }}
+                  className={css.basketHeaderSelect}
                   renderValue={(v) => (v ? baskets.find((b) => b._id === v)?.name ?? v : 'Basket Name (all)')}
                 >
                   <MenuItem value="">All</MenuItem>
