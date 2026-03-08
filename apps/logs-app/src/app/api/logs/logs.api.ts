@@ -18,13 +18,46 @@ export const describeFoodFromImage = async (imageBuffer: ArrayBuffer): Promise<{
   return response.json();
 };
 
-export const createLog = async (message: string): Promise<void> => {
+export const deleteLog = async (logId: string): Promise<void> => {
+  const response = await utilFetch(`/logs/${logId}`, { method: 'DELETE' });
+  if (!response.ok) {
+    throw new Error('Failed to delete log');
+  }
+};
+
+export const updateLog = async (
+  logId: string,
+  message: string,
+  basketId?: string,
+): Promise<void> => {
+  const body: { message: string; basket_id?: string } = { message };
+  if (basketId) {
+    body.basket_id = basketId;
+  }
+  const response = await utilFetch(`/logs/${logId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to update log');
+  }
+};
+
+export const createLog = async (message: string, basketId?: string): Promise<void> => {
+  const body: { message: string; basket_id?: string } = { message };
+  if (basketId) {
+    body.basket_id = basketId;
+  }
   const response = await utilFetch(`/logs`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {

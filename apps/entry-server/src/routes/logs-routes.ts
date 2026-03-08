@@ -10,32 +10,38 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
 
   router.post('/', verifyAccessToken, async (req, res) => {
     const message = req.body.message;
+    const basketId = req.body.basket_id;
     const userId = res.locals.userId;
     const logsCollection = await client.db('lifeis').collection('logs');
 
     const baskets = await client.db('lifeis').collection('baskets').find().toArray();
-    const basketsNames = baskets.map((basket) => basket.name);
+    let basket_id: typeof baskets[0]['_id'];
 
-    const prompt = `What basket does message "${message}" belong out of the following baskets: ${basketsNames.join(
-      ', ',
-    )}. As a result please provide only name of matched basket without modifying case and without newlines at the end`;
+    if (basketId) {
+      basket_id = new ObjectId(basketId);
+    } else {
+      const basketsNames = baskets.map((basket) => basket.name);
+      const prompt = `What basket does message "${message}" belong out of the following baskets: ${basketsNames.join(
+        ', ',
+      )}. As a result please provide only name of matched basket without modifying case and without newlines at the end`;
 
-    console.log({ prompt });
+      console.log({ prompt });
 
-    const resultBasket = await geminiModel.generateContent(prompt);
-    // TODO: for some reason resultBasket name contains /n in the end.
-    // So I need to do trim to remove unnecessary stuff
-    const matchedBasketName = await resultBasket.response.text().trim();
+      const resultBasket = await geminiModel.generateContent(prompt);
+      const matchedBasketName = await resultBasket.response.text().trim();
 
-    let finalMatchedBasket = 'unspecified'; // default basket if no match found
-    if (basketsNames.includes(matchedBasketName)) {
-      finalMatchedBasket = matchedBasketName;
+      let finalMatchedBasket = 'unspecified';
+      if (basketsNames.includes(matchedBasketName)) {
+        finalMatchedBasket = matchedBasketName;
+      }
+
+      basket_id = baskets.find((basket) => basket.name === finalMatchedBasket)?._id ?? baskets[0]?._id;
     }
 
     const log: IDiaryLog = {
       message,
       timestamp: Date.now(),
-      basket_id: baskets.find((basket) => basket.name === finalMatchedBasket)._id,
+      basket_id,
       owner_id: userId,
     };
 
@@ -107,7 +113,27 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
       });
   });
 
-  // PATCH log basket_id by log id
+  // PATCH log message and optionally basket_id by log id
+  router.patch('/:id', verifyAccessToken, async (req, res) => {
+    const logId = req.params.id;
+    const { message, basket_id } = req.body;
+    if (message === undefined) {
+      return res.status(400).send({ message: 'message is required' });
+    }
+    const logsCollection = await client.db('lifeis').collection('logs');
+    const update: { message: string; basket_id?: ObjectId } = { message };
+    if (basket_id) {
+      update.basket_id = new ObjectId(basket_id);
+    }
+    const result = await logsCollection.updateOne({ _id: new ObjectId(logId) }, { $set: update });
+    if (result.matchedCount === 1) {
+      res.status(200).send({ message: 'Log updated' });
+    } else {
+      res.status(404).send({ message: 'Log not found' });
+    }
+  });
+
+  // PATCH log basket_id by log id (legacy/standalone basket update)
   router.patch('/:id/basket', verifyAccessToken, async (req, res) => {
     const logId = req.params.id;
     const { basket_id } = req.body;
@@ -115,7 +141,10 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
       return res.status(400).send({ message: 'basket_id is required' });
     }
     const logsCollection = await client.db('lifeis').collection('logs');
-    const result = await logsCollection.updateOne({ _id: new ObjectId(logId) }, { $set: { basket_id } });
+    const result = await logsCollection.updateOne(
+      { _id: new ObjectId(logId) },
+      { $set: { basket_id: new ObjectId(basket_id) } },
+    );
     if (result.modifiedCount === 1) {
       res.status(200).send({ message: 'Log basket_id updated' });
     } else {

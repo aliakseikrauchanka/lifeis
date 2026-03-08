@@ -1,20 +1,42 @@
 import React, { useState, KeyboardEvent, useEffect, useCallback } from 'react';
 import { ImagePreviewFromBuffer, OwnButton, SpeechToText } from '@lifeis/common-ui';
 import { CameraAlt } from '@mui/icons-material';
-import { createLog, describeFoodFromImage } from '../../api/logs/logs.api';
+import { createLog, deleteLog, describeFoodFromImage, updateLog } from '../../api/logs/logs.api';
 import css from './log-form.module.scss';
-import { Box, Stack, TextField } from '@mui/material';
+import { Box, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
+
+export interface IEditLog {
+  id: string;
+  message: string;
+  basket_name: string;
+}
 
 interface ILogFormProps {
   onSubmit: () => void;
+  editLog?: IEditLog;
+  onEditCancel?: () => void;
+  baskets: { _id: string; name: string }[];
 }
 
-export const LogForm = ({ onSubmit }: ILogFormProps) => {
-  const [message, setMessage] = React.useState('');
+export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormProps) => {
+  const [message, setMessage] = React.useState(editLog?.message ?? '');
+  const [selectedBasketId, setSelectedBasketId] = useState<string | null>(null);
   const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
   const [isListeningFired, setIsListeningFired] = useState(false);
   const [isDescribingFood, setIsDescribingFood] = useState(false);
   const [imageBuffer, setImageBuffer] = useState<ArrayBuffer | null>(null);
+
+  // Prefill when entering edit mode
+  useEffect(() => {
+    if (editLog) {
+      setMessage(editLog.message);
+      const basket = baskets.find((b) => b.name === editLog.basket_name);
+      setSelectedBasketId(basket?._id ?? null);
+    } else {
+      setMessage('');
+      setSelectedBasketId(null);
+    }
+  }, [editLog, baskets]);
 
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(event.target.value);
@@ -47,15 +69,22 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
 
       try {
         setIsCaptionsNeedClear(true);
-        setMessage('');
+        if (editLog) {
+          await updateLog(editLog.id, message, selectedBasketId ?? undefined);
+          setMessage('');
+          setSelectedBasketId(null);
+        } else {
+          setMessage('');
+          setSelectedBasketId(null);
+          await createLog(message, selectedBasketId ?? undefined);
+        }
         setImageBuffer(null);
-        await createLog(message);
         onSubmit();
-      } catch (e) {
+      } catch (_e) {
         console.log('error happened during fetch');
       }
     },
-    [message, onSubmit],
+    [message, editLog, selectedBasketId, onSubmit],
   );
 
   const handleClearText = () => {
@@ -64,8 +93,21 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
     setIsCaptionsNeedClear(true);
   };
 
+  const handleDelete = useCallback(async () => {
+    if (!editLog || !window.confirm('Are you sure you want to delete this log?')) return;
+    try {
+      await deleteLog(editLog.id);
+      setMessage('');
+      setSelectedBasketId(null);
+      onSubmit();
+      onEditCancel?.();
+    } catch (e) {
+      console.log('error happened during delete');
+    }
+  }, [editLog, onSubmit, onEditCancel]);
+
   const handleKeyDown = useCallback(
-    (e: any) => {
+    (e: { key: string; code: string; ctrlKey: boolean; preventDefault: () => void }) => {
       // handle escape key
       if (e.key === 'Escape') {
         setIsListeningFired(false);
@@ -128,6 +170,7 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
             value={message}
             onChange={handleChange}
             fullWidth
+            sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'white' } }}
           />
           {imageBuffer && (
             <Box sx={{ position: 'absolute', bottom: 8, right: 8, zIndex: 1 }}>
@@ -136,17 +179,35 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
           )}
         </Box>
 
-        <SpeechToText
-          onCaption={(caption) => setMessage(caption?.join(' ') || '')}
-          onCleared={() => setIsCaptionsNeedClear(false)}
-          isNeedClear={isCaptionsNeedClear}
-          id="logger"
-          isToggledListening={isListeningFired}
-          onListeningToggled={() => setIsListeningFired((prev) => !prev)}
-          showPlayButton={false}
-        />
+        <FormControl size="small" sx={{ minWidth: 180, '& .MuiOutlinedInput-root': { backgroundColor: 'white' } }}>
+          <InputLabel id="log-form-basket-label">Basket (optional)</InputLabel>
+          <Select
+            labelId="log-form-basket-label"
+            value={selectedBasketId ?? ''}
+            label="Basket (optional)"
+            onChange={(e) => setSelectedBasketId(e.target.value || null)}
+          >
+            <MenuItem value="">
+              <em>None</em>
+            </MenuItem>
+            {baskets.map((b) => (
+              <MenuItem key={b._id} value={b._id}>
+                {b.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
 
-        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
+          <SpeechToText
+            onCaption={(caption) => setMessage(caption?.join(' ') || '')}
+            onCleared={() => setIsCaptionsNeedClear(false)}
+            isNeedClear={isCaptionsNeedClear}
+            id="logger"
+            isToggledListening={isListeningFired}
+            onListeningToggled={() => setIsListeningFired((prev) => !prev)}
+            showPlayButton={false}
+          />
           <label htmlFor="log-form-photo" className={css.photoButton}>
             <CameraAlt fontSize="large" color="inherit" />
             {isDescribingFood && <span className={css.photoLoading}>...</span>}
@@ -160,13 +221,24 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
             onChange={handleCapture}
             disabled={isDescribingFood}
           />
-          <Box sx={{ flex: 1 }} />
+          {editLog && onEditCancel && (
+            <OwnButton type="button" onClick={onEditCancel}>
+              Cancel
+            </OwnButton>
+          )}
+          {editLog && (
+            <OwnButton type="button" color="danger" onClick={handleDelete}>
+              Delete
+            </OwnButton>
+          )}
           <OwnButton type="submit" disabled={!message}>
-            Submit
+            {editLog ? 'Update' : 'Submit'}
           </OwnButton>
-          <OwnButton type="button" color="danger" onClick={handleClearText} disabled={!message && !imageBuffer}>
-            Clear All
-          </OwnButton>
+          {!editLog && (
+            <OwnButton type="button" color="danger" onClick={handleClearText} disabled={!message && !imageBuffer}>
+              Clear All
+            </OwnButton>
+          )}
         </Stack>
       </Box>
     </form>
