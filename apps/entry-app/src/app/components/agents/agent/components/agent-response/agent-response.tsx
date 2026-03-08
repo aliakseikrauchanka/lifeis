@@ -60,7 +60,6 @@ export const AgentResponse = ({ providerResponses, isWideMode, responseRef, onCo
       className={classNames(css.response, {
         [css.responseWide]: isWideMode,
       })}
-      onClick={onClick}
     >
       <div
         className={classNames(css.responseContent, {
