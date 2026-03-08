@@ -56,6 +56,8 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({ langu
         mediaRecorder.onstop = () => {
           const blob = new Blob(chunksRef, { type: options?.mimeType });
           chunksRef.length = 0;
+          stream.getTracks().forEach((track) => track.stop());
+          mediaRecorderRef = null;
           onStop(blob);
         };
 
