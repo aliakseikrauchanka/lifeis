@@ -1,0 +1,42 @@
+.basketsTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    border-bottom: 1px solid #ccc;
+    padding: 8px;
+
+    &.basketNameCol {
+      text-align: left;
+      width: 180px;
+    }
+
+    &.actionsCol {
+      text-align: right;
+    }
+  }
+
+  td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+
+    &.basketNameCell {
+      width: 180px;
+      min-width: 180px;
+      max-width: 180px;
+      word-break: break-word;
+    }
+
+    &.actionsCell {
+      text-align: right;
+    }
+  }
+}
+
+.deleteButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #d32f2f;
+  font-weight: bold;
+}

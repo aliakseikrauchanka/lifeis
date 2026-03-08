@@ -1,0 +1,16 @@
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background-color: #fafafa;
+  position: relative;
+}
+
+.inputWhiteBg {
+  :global(.MuiOutlinedInput-root) {
+    background-color: white;
+  }
+}

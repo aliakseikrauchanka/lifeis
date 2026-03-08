@@ -22,9 +22,9 @@ export const BasketsPage = () => {
   }, []);
 
   return (
-    <div>
+    <main>
       <BasketForm onSubmit={() => fetchBaskets()} />
       <Baskets baskets={baskets} onDelete={fetchBaskets} />
-    </div>
+    </main>
   );
 };

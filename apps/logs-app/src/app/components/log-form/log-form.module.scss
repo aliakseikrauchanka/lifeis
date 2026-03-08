@@ -1,15 +1,54 @@
-.log-form {
-  margin-bottom: 20px;
+.formContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  background-color: #fafafa;
+  position: relative;
 }
 
-.text-area-field {
+.textFieldWrapper {
+  position: relative;
+  width: 100%;
+}
+
+.textAreaField {
   textarea {
     resize: vertical !important;
     min-height: 80px;
   }
+
+  :global(.MuiOutlinedInput-root) {
+    background-color: white;
+  }
 }
 
-.photo-button {
+.basketSelect {
+  min-width: 180px;
+
+  :global(.MuiOutlinedInput-root) {
+    background-color: white;
+  }
+}
+
+.imagePreviewBox {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 1;
+}
+
+.actionsSpacer {
+  flex: 1;
+}
+
+.fileInput {
+  display: none;
+}
+
+.photoButton {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -21,6 +60,6 @@
   }
 }
 
-.photo-loading {
+.photoLoading {
   font-size: 0.875rem;
 }

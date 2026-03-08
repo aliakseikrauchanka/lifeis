@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { OwnButton } from '@lifeis/common-ui';
 import { createBasket } from '../../api/baskets/baskets.api';
+import { Box, Stack, TextField } from '@mui/material';
+import css from './basket-form.module.scss';
 
 interface IBasketFormProps {
   onSubmit: () => void;
@@ -7,13 +10,11 @@ interface IBasketFormProps {
 
 const BasketForm = ({ onSubmit }: IBasketFormProps) => {
   const [name, setName] = useState('');
-  // const [response, setResponse] = useState<{ name: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await createBasket(name);
-      // setResponse(result.data);
       setName('');
       onSubmit();
     } catch (error) {
@@ -22,19 +23,25 @@ const BasketForm = ({ onSubmit }: IBasketFormProps) => {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
+    <form onSubmit={handleSubmit}>
+      <Box className={css.formContainer}>
+        <TextField
+          className={css.inputWhiteBg}
+          size="small"
+          variant="outlined"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Enter basket name"
           required
+          fullWidth
         />
-        <button type="submit">Create Basket</button>
-      </form>
-      {/* {response && <p>Created basket: {response.name}</p>} */}
-    </div>
+        <Stack direction="row" spacing={2} alignItems="center" justifyContent="flex-end">
+          <OwnButton type="submit" disabled={!name}>
+            Create Basket
+          </OwnButton>
+        </Stack>
+      </Box>
+    </form>
   );
 };
 

@@ -1,0 +1,57 @@
+.logsTable {
+  width: 100%;
+  border-collapse: collapse;
+
+  th {
+    text-align: left;
+    border-bottom: 1px solid #ccc;
+    padding: 8px;
+  }
+
+  td {
+    padding: 8px;
+  }
+}
+
+.basketNameCol {
+  width: 180px;
+}
+
+.basketNameCell {
+  vertical-align: top;
+  width: 180px;
+  min-width: 180px;
+  max-width: 180px;
+  word-break: break-word;
+}
+
+.logsList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.logItem {
+  margin-bottom: 12px;
+  position: relative;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.logContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.editButton {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #1976d2;
+  font-weight: bold;
+}

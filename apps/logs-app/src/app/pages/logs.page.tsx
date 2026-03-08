@@ -5,6 +5,7 @@ import { getAllLogs } from '../api/logs/logs.api';
 import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { startOfDay } from 'date-fns';
 import { getAllBaskets } from '../api/baskets/baskets.api';
+import css from './logs.page.module.scss';
 
 export const LogsPage = () => {
   const [baskets, setBaskets] = useState<{ _id: string; name: string }[]>([]);
@@ -81,60 +82,28 @@ export const LogsPage = () => {
         </ToggleButton>
       </ToggleButtonGroup>
       <Box mt={2}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className={css.logsTable}>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: '8px', width: '180px' }}>
-                Basket Name
-              </th>
-              <th style={{ textAlign: 'left', borderBottom: '1px solid #ccc', padding: '8px' }}>Logs</th>
+              <th className={css.basketNameCol}>Basket Name</th>
+              <th>Logs</th>
             </tr>
           </thead>
           <tbody>
             {Object.entries(logsByBasket).map(([basket, basketLogs]) => (
               <tr key={basket}>
-                <td
-                  style={{
-                    verticalAlign: 'top',
-                    padding: '8px',
-                    fontWeight: 'bold',
-                    width: '180px',
-                    minWidth: '180px',
-                    maxWidth: '180px',
-                    wordBreak: 'break-word',
-                  }}
-                >
-                  {basket}
-                </td>
-                <td style={{ padding: '8px' }}>
-                  <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                <td className={css.basketNameCell}>{basket}</td>
+                <td>
+                  <ul className={css.logsList}>
                     {basketLogs.map((log) => (
-                      <li
-                        key={log.id}
-                        style={{
-                          marginBottom: '12px',
-                          position: 'relative',
-                          borderBottom: '1px solid #eee',
-                          paddingBottom: 8,
-                        }}
-                      >
-                        <div>{log.message}</div>
-                        <small>{new Date(log.timestamp).toLocaleString()}</small>
-                        <div style={{ marginTop: 4 }}>
-                          <button
-                            style={{
-                              marginLeft: 8,
-                              background: 'none',
-                              border: 'none',
-                              cursor: 'pointer',
-                              color: '#1976d2',
-                              fontWeight: 'bold',
-                            }}
-                            onClick={() => setEditLogId(log.id)}
-                          >
-                            Edit
-                          </button>
+                      <li key={log.id} className={css.logItem}>
+                        <div className={css.logContent}>
+                          <div>{log.message}</div>
+                          <small>{new Date(log.timestamp).toLocaleString()}</small>
                         </div>
+                        <button className={css.editButton} onClick={() => setEditLogId(log.id)}>
+                          Edit
+                        </button>
                       </li>
                     ))}
                   </ul>

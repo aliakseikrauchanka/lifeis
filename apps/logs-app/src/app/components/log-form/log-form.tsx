@@ -147,19 +147,8 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
 
   return (
     <form onSubmit={handleSubmit}>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          padding: 2,
-          borderRadius: 2,
-          border: '1px solid #ccc',
-          backgroundColor: '#fafafa',
-          position: 'relative',
-        }}
-      >
-        <Box sx={{ position: 'relative', width: '100%' }}>
+      <Box className={css.formContainer}>
+        <Box className={css.textFieldWrapper}>
           <TextField
             className={css.textAreaField}
             multiline
@@ -170,16 +159,15 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
             value={message}
             onChange={handleChange}
             fullWidth
-            sx={{ '& .MuiOutlinedInput-root': { backgroundColor: 'white' } }}
           />
           {imageBuffer && (
-            <Box sx={{ position: 'absolute', bottom: 8, right: 8, zIndex: 1 }}>
+            <Box className={css.imagePreviewBox}>
               <ImagePreviewFromBuffer buffer={imageBuffer} onClose={clearImage} isLoading={isDescribingFood} />
             </Box>
           )}
         </Box>
 
-        <FormControl size="small" sx={{ minWidth: 180, '& .MuiOutlinedInput-root': { backgroundColor: 'white' } }}>
+        <FormControl size="small" className={css.basketSelect}>
           <InputLabel id="log-form-basket-label">Basket (optional)</InputLabel>
           <Select
             labelId="log-form-basket-label"
@@ -217,10 +205,11 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
             id="log-form-photo"
             capture="environment"
             accept="image/*"
-            style={{ display: 'none' }}
+            className={css.fileInput}
             onChange={handleCapture}
             disabled={isDescribingFood}
           />
+          <Box className={css.actionsSpacer} />
           {editLog && onEditCancel && (
             <OwnButton type="button" onClick={onEditCancel}>
               Cancel
