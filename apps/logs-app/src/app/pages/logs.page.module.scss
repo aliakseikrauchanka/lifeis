@@ -1,3 +1,31 @@
+.logsPage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.formSection {
+  flex-shrink: 0;
+}
+
+.controlsRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.logsContainer {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
 .logsTable {
   width: 100%;
   border-collapse: collapse;
@@ -6,6 +34,11 @@
     text-align: left;
     border-bottom: 1px solid #ccc;
     padding: 8px;
+    position: sticky;
+    top: 0;
+    background: #fafafa;
+    z-index: 1;
+    box-shadow: 0 1px 0 #ccc;
   }
 
   td {
@@ -14,14 +47,14 @@
 }
 
 .basketNameCol {
-  width: 180px;
+  width: 90px;
 }
 
 .basketNameCell {
   vertical-align: top;
-  width: 180px;
-  min-width: 180px;
-  max-width: 180px;
+  width: 90px;
+  min-width: 90px;
+  max-width: 90px;
   word-break: break-word;
 }
 

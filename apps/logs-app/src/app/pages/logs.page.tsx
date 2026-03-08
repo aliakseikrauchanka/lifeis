@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { IDiaryLog } from '../domains/log.domain';
 import { LogForm, IEditLog } from '../components/log-form/log-form';
 import { getAllLogs } from '../api/logs/logs.api';
-import { Box, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, IconButton, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { startOfDay } from 'date-fns';
 import { getAllBaskets } from '../api/baskets/baskets.api';
 import css from './logs.page.module.scss';
@@ -10,6 +11,7 @@ import css from './logs.page.module.scss';
 export const LogsPage = () => {
   const [baskets, setBaskets] = useState<{ _id: string; name: string }[]>([]);
   const [editLogId, setEditLogId] = useState<string | null>(null);
+  const [isFormExpanded, setIsFormExpanded] = useState(true);
 
   // Fetch baskets on mount
   useEffect(() => {
@@ -54,34 +56,45 @@ export const LogsPage = () => {
       return acc;
     }, {}) || [];
 
-  const editLog: IEditLog | undefined =
-    editLogId && logs
-      ? (() => {
-          const log = logs.find((l) => l.id === editLogId);
-          return log ? { id: log.id, message: log.message, basket_name: log.basket_name } : undefined;
-        })()
-      : undefined;
+  const editLog = useMemo((): IEditLog | undefined => {
+    if (!editLogId || !logs) return undefined;
+    const log = logs.find((l) => l.id === editLogId);
+    return log ? { id: log.id, message: log.message, basket_name: log.basket_name } : undefined;
+  }, [editLogId, logs]);
 
   return (
-    <main>
-      <LogForm
-        onSubmit={() => {
-          setEditLogId(null);
-          fetchLogs(period);
-        }}
-        editLog={editLog}
-        onEditCancel={() => setEditLogId(null)}
-        baskets={baskets}
-      />
-      <ToggleButtonGroup value={period} exclusive onChange={handleChange} aria-label="Period selection" size="small">
-        <ToggleButton value="today" aria-label="Today">
-          Today
-        </ToggleButton>
-        <ToggleButton value="all" aria-label="All time">
-          All
-        </ToggleButton>
-      </ToggleButtonGroup>
-      <Box mt={2}>
+    <main className={css.logsPage}>
+      <div className={css.formSection}>
+        <LogForm
+          onSubmit={() => {
+            setEditLogId(null);
+            fetchLogs(period);
+          }}
+          editLog={editLog}
+          onEditCancel={() => setEditLogId(null)}
+          baskets={baskets}
+          compact={!isFormExpanded}
+        />
+      </div>
+      <div className={css.controlsRow}>
+        <ToggleButtonGroup value={period} exclusive onChange={handleChange} aria-label="Period selection" size="small">
+          <ToggleButton value="today" aria-label="Today">
+            Today
+          </ToggleButton>
+          <ToggleButton value="all" aria-label="All time">
+            All
+          </ToggleButton>
+        </ToggleButtonGroup>
+        <IconButton
+          size="small"
+          onClick={() => setIsFormExpanded((v) => !v)}
+          aria-label={isFormExpanded ? 'Shrink form' : 'Expand form'}
+          title={isFormExpanded ? 'Shrink form to show more logs' : 'Expand form'}
+        >
+          {isFormExpanded ? <ExpandLess /> : <ExpandMore />}
+        </IconButton>
+      </div>
+      <Box className={css.logsContainer}>
         <table className={css.logsTable}>
           <thead>
             <tr>

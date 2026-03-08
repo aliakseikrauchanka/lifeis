@@ -7,6 +7,27 @@
   border: 1px solid #ccc;
   background-color: #fafafa;
   position: relative;
+
+  &.formCompact {
+    gap: 8px;
+    padding: 8px 12px;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+
+    .textFieldWrapper {
+      flex: 1;
+      min-width: 120px;
+    }
+
+    .textAreaField textarea {
+      min-height: 40px;
+    }
+
+    .basketSelect {
+      min-width: 100px;
+    }
+  }
 }
 
 .textFieldWrapper {
@@ -18,6 +39,7 @@
   textarea {
     resize: vertical !important;
     min-height: 80px;
+    font-size: 0.875rem;
   }
 
   :global(.MuiOutlinedInput-root) {
@@ -30,6 +52,11 @@
 
   :global(.MuiOutlinedInput-root) {
     background-color: white;
+  }
+
+  :global(.MuiSelect-select),
+  :global(.MuiInputBase-input) {
+    font-size: 0.875rem;
   }
 }
 

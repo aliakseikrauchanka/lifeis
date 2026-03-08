@@ -1,0 +1,83 @@
+.appLayout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.mainContent {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e5f5 100%); // very light purple
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+
+  :global(h2) {
+    margin: 0;
+    font-size: 1.25rem;
+  }
+
+  // Override UserSession orange background (blanchedalmond) to match
+  :global([class*='user-session']) {
+    background-color: transparent;
+  }
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+
+  a {
+    position: relative;
+    padding: 8px 16px;
+    color: #5e35b1;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 16px;
+      right: 16px;
+      height: 2px;
+      background: currentColor;
+      border-radius: 1px;
+      opacity: 0;
+      transform: scaleX(0);
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    &:hover {
+      color: #4527a0;
+      background: rgba(94, 53, 177, 0.08);
+    }
+
+    &:hover::after {
+      opacity: 0.4;
+      transform: scaleX(1);
+    }
+
+    &.active {
+      color: #4527a0;
+      background: rgba(94, 53, 177, 0.12);
+    }
+
+    &.active::after {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+  }
+}

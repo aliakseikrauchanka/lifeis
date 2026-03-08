@@ -13,4 +13,8 @@
   :global(.MuiOutlinedInput-root) {
     background-color: white;
   }
+
+  :global(.MuiInputBase-input) {
+    font-size: 0.875rem;
+  }
 }

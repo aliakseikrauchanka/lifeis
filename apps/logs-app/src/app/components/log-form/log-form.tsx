@@ -16,9 +16,10 @@ interface ILogFormProps {
   editLog?: IEditLog;
   onEditCancel?: () => void;
   baskets: { _id: string; name: string }[];
+  compact?: boolean;
 }
 
-export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormProps) => {
+export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = false }: ILogFormProps) => {
   const [message, setMessage] = React.useState(editLog?.message ?? '');
   const [selectedBasketId, setSelectedBasketId] = useState<string | null>(null);
   const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
@@ -26,7 +27,8 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
   const [isDescribingFood, setIsDescribingFood] = useState(false);
   const [imageBuffer, setImageBuffer] = useState<ArrayBuffer | null>(null);
 
-  // Prefill when entering edit mode
+  // Prefill only when entering/exiting edit mode or switching logs - NOT on expand/shrink
+  const editLogId = editLog?.id;
   useEffect(() => {
     if (editLog) {
       setMessage(editLog.message);
@@ -36,7 +38,8 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
       setMessage('');
       setSelectedBasketId(null);
     }
-  }, [editLog, baskets]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only sync when log id changes, not on expand/shrink
+  }, [editLogId, baskets]);
 
   const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(event.target.value);
@@ -147,12 +150,12 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
 
   return (
     <form onSubmit={handleSubmit}>
-      <Box className={css.formContainer}>
+      <Box className={`${css.formContainer} ${compact ? css.formCompact : ''}`}>
         <Box className={css.textFieldWrapper}>
           <TextField
             className={css.textAreaField}
             multiline
-            rows={2}
+            rows={compact ? 1 : 2}
             variant="outlined"
             name="message"
             placeholder="Enter your message here"
@@ -168,11 +171,11 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
         </Box>
 
         <FormControl size="small" className={css.basketSelect}>
-          <InputLabel id="log-form-basket-label">Basket (optional)</InputLabel>
+          <InputLabel id="log-form-basket-label">{compact ? 'Basket' : 'Basket (optional)'}</InputLabel>
           <Select
             labelId="log-form-basket-label"
             value={selectedBasketId ?? ''}
-            label="Basket (optional)"
+            label={compact ? 'Basket' : 'Basket (optional)'}
             onChange={(e) => setSelectedBasketId(e.target.value || null)}
           >
             <MenuItem value="">
@@ -185,30 +188,35 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
             ))}
           </Select>
         </FormControl>
-
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
-          <SpeechToText
-            onCaption={(caption) => setMessage(caption?.join(' ') || '')}
-            onCleared={() => setIsCaptionsNeedClear(false)}
-            isNeedClear={isCaptionsNeedClear}
-            id="logger"
-            isToggledListening={isListeningFired}
-            onListeningToggled={() => setIsListeningFired((prev) => !prev)}
-            showPlayButton={false}
-          />
-          <label htmlFor="log-form-photo" className={css.photoButton}>
-            <CameraAlt fontSize="large" color="inherit" />
-            {isDescribingFood && <span className={css.photoLoading}>...</span>}
-          </label>
-          <input
-            type="file"
-            id="log-form-photo"
-            capture="environment"
-            accept="image/*"
-            className={css.fileInput}
-            onChange={handleCapture}
-            disabled={isDescribingFood}
-          />
+          {!compact && (
+            <SpeechToText
+              onCaption={(caption) => setMessage(caption?.join(' ') || '')}
+              onCleared={() => setIsCaptionsNeedClear(false)}
+              isNeedClear={isCaptionsNeedClear}
+              id="logger"
+              isToggledListening={isListeningFired}
+              onListeningToggled={() => setIsListeningFired((prev) => !prev)}
+              showPlayButton={false}
+            />
+          )}
+          {!compact && (
+            <>
+              <label htmlFor="log-form-photo" className={css.photoButton}>
+                <CameraAlt fontSize="large" color="inherit" />
+                {isDescribingFood && <span className={css.photoLoading}>...</span>}
+              </label>
+              <input
+                type="file"
+                id="log-form-photo"
+                capture="environment"
+                accept="image/*"
+                className={css.fileInput}
+                onChange={handleCapture}
+                disabled={isDescribingFood}
+              />
+            </>
+          )}
           <Box className={css.actionsSpacer} />
           {editLog && onEditCancel && (
             <OwnButton type="button" onClick={onEditCancel}>
