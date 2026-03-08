@@ -5,6 +5,7 @@ import fs, { unlinkSync } from 'fs';
 import { convertFile } from '../utils/ffmpeg-converter';
 
 import { createClient, DeepgramError } from '@deepgram/sdk';
+import { safeUnlink } from '../helpers/fs';
 
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 const routes = Router();
@@ -73,7 +74,7 @@ routes.post('/transcribe', verifyAccessToken, uploadMiddlewareFactory.single('au
 
   if (req.headers.mime === 'audio/mp3;') {
     const translation = await transcribeFile(filePath);
-    unlinkSync(filePath);
+    safeUnlink(filePath);
     res.send(translation);
   }
 
@@ -81,8 +82,9 @@ routes.post('/transcribe', verifyAccessToken, uploadMiddlewareFactory.single('au
   convertFile(filePath, filePathMp3, () => {
     async function main() {
       const translation = await transcribeFile(filePathMp3);
-      unlinkSync(filePath);
       res.send(translation);
+      safeUnlink(filePath);
+      safeUnlink(filePathMp3);
     }
 
     main();
