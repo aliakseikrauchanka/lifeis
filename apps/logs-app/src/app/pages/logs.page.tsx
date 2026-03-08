@@ -14,7 +14,19 @@ export type PeriodType = 'all' | 'today' | 'range';
 export const LogsPage = () => {
   const [baskets, setBaskets] = useState<{ _id: string; name: string }[]>([]);
   const [editLogId, setEditLogId] = useState<string | null>(null);
-  const [isFormExpanded, setIsFormExpanded] = useState(true);
+  const [isFormExpanded, setIsFormExpanded] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const stored = localStorage.getItem('logs-form-expanded');
+      return stored !== null ? JSON.parse(stored) : false;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('logs-form-expanded', JSON.stringify(isFormExpanded));
+  }, [isFormExpanded]);
 
   // Fetch baskets on mount
   useEffect(() => {

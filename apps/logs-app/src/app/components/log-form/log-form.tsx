@@ -149,14 +149,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
   }, [message, onSubmit, handleKeyDown]); // Include dependencies that handleKeyDown uses
 
   const actionButtons = (
-    <Stack
-      direction="row"
-      spacing={2}
-      alignItems="center"
-      flexWrap="wrap"
-      useFlexGap
-      className={css.actionButtons}
-    >
+    <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap className={css.actionButtons}>
       <SpeechToText
         onCaption={(caption) => setMessage(caption?.join(' ') || '')}
         onCleared={() => setIsCaptionsNeedClear(false)}
