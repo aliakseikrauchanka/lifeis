@@ -1,0 +1,2 @@
+- When response click focus agent we loose context menu. Do not suggest this.
+-

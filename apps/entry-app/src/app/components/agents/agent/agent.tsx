@@ -462,7 +462,6 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
               isWideMode={isWideMode}
               responseRef={responseRef}
               onCopyResponse={handleCopyResponse}
-              onClick={onAgentFocus}
             />
             <Snackbar
               anchorOrigin={{ horizontal: 'center', vertical: 'bottom' }}
