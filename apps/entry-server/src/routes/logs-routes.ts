@@ -62,24 +62,30 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
   });
 
   router.get('/', verifyAccessToken, async (req, res) => {
-    // from in query params in ISO format
+    // from, to in query params in ISO format; basket_id for filtering by basket
     const userId = res.locals.userId;
     const from = req.query.from as string;
-    let filter: any = {
+    const to = req.query.to as string;
+    const basketId = req.query.basket_id as string;
+    let filter: Record<string, unknown> = {
       owner_id: userId,
     };
-    if (from) {
-      const fromDate = new Date(from); // "2025-07-05T00:00:00.000Z"
-      const fromDateUnix = fromDate.getTime();
-
-      const toDate = endOfToday().getTime();
-      filter = {
-        ...filter,
-        timestamp: {
-          $gte: fromDateUnix,
-          $lt: toDate,
-        },
-      };
+    if (basketId) {
+      filter.basket_id = new ObjectId(basketId);
+    }
+    if (from || to) {
+      const timestampFilter: { $gte?: number; $lt?: number } = {};
+      if (from) {
+        timestampFilter.$gte = new Date(from).getTime();
+      }
+      if (to) {
+        const toDate = new Date(to);
+        const toEndOfDay = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999);
+        timestampFilter.$lt = toEndOfDay.getTime();
+      } else if (from) {
+        timestampFilter.$lt = endOfToday().getTime();
+      }
+      filter = { ...filter, timestamp: timestampFilter };
     }
     const baskets = await client.db('lifeis').collection('baskets').find().toArray();
     client

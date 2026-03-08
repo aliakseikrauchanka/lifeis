@@ -15,6 +15,17 @@
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.dateRangePickers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .MuiTextField-root {
+    min-width: 140px;
+  }
 }
 
 .logsContainer {
@@ -47,14 +58,18 @@
 }
 
 .basketNameCol {
-  width: 90px;
+  width: 140px;
+
+  .MuiSelect-select {
+    padding: 4px 8px;
+  }
 }
 
 .basketNameCell {
   vertical-align: top;
-  width: 90px;
-  min-width: 90px;
-  max-width: 90px;
+  width: 140px;
+  min-width: 140px;
+  max-width: 140px;
   word-break: break-word;
 }
 

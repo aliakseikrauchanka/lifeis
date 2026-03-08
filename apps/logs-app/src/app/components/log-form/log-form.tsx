@@ -67,7 +67,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
   const clearImage = useCallback(() => setImageBuffer(null), []);
 
   const handleSubmit = useCallback(
-    async (event: React.FormEvent<HTMLFormElement> | KeyboardEvent<HTMLTextAreaElement>) => {
+    async (event: React.FormEvent<HTMLFormElement> | React.KeyboardEvent | { preventDefault: () => void }) => {
       event.preventDefault();
 
       try {
@@ -148,6 +148,59 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
     };
   }, [message, onSubmit, handleKeyDown]); // Include dependencies that handleKeyDown uses
 
+  const actionButtons = (
+    <Stack
+      direction="row"
+      spacing={2}
+      alignItems="center"
+      flexWrap="wrap"
+      useFlexGap
+      className={css.actionButtons}
+    >
+      <SpeechToText
+        onCaption={(caption) => setMessage(caption?.join(' ') || '')}
+        onCleared={() => setIsCaptionsNeedClear(false)}
+        isNeedClear={isCaptionsNeedClear}
+        id="logger"
+        isToggledListening={isListeningFired}
+        onListeningToggled={() => setIsListeningFired((prev) => !prev)}
+        showPlayButton={false}
+      />
+      <label htmlFor="log-form-photo" className={css.photoButton}>
+        <CameraAlt fontSize="large" color="inherit" />
+        {isDescribingFood && <span className={css.photoLoading}>...</span>}
+      </label>
+      <input
+        type="file"
+        id="log-form-photo"
+        capture="environment"
+        accept="image/*"
+        className={css.fileInput}
+        onChange={handleCapture}
+        disabled={isDescribingFood}
+      />
+      <Box className={css.actionsSpacer} />
+      {editLog && onEditCancel && (
+        <OwnButton type="button" onClick={onEditCancel}>
+          Cancel
+        </OwnButton>
+      )}
+      {editLog && (
+        <OwnButton type="button" color="danger" onClick={handleDelete}>
+          Delete
+        </OwnButton>
+      )}
+      <OwnButton type="submit" disabled={!message}>
+        {editLog ? 'Update' : 'Submit'}
+      </OwnButton>
+      {!editLog && (
+        <OwnButton type="button" color="danger" onClick={handleClearText} disabled={!message && !imageBuffer}>
+          Clear All
+        </OwnButton>
+      )}
+    </Stack>
+  );
+
   return (
     <form onSubmit={handleSubmit}>
       <Box className={`${css.formContainer} ${compact ? css.formCompact : ''}`}>
@@ -188,55 +241,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
             ))}
           </Select>
         </FormControl>
-        <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap>
-          {!compact && (
-            <SpeechToText
-              onCaption={(caption) => setMessage(caption?.join(' ') || '')}
-              onCleared={() => setIsCaptionsNeedClear(false)}
-              isNeedClear={isCaptionsNeedClear}
-              id="logger"
-              isToggledListening={isListeningFired}
-              onListeningToggled={() => setIsListeningFired((prev) => !prev)}
-              showPlayButton={false}
-            />
-          )}
-          {!compact && (
-            <>
-              <label htmlFor="log-form-photo" className={css.photoButton}>
-                <CameraAlt fontSize="large" color="inherit" />
-                {isDescribingFood && <span className={css.photoLoading}>...</span>}
-              </label>
-              <input
-                type="file"
-                id="log-form-photo"
-                capture="environment"
-                accept="image/*"
-                className={css.fileInput}
-                onChange={handleCapture}
-                disabled={isDescribingFood}
-              />
-            </>
-          )}
-          <Box className={css.actionsSpacer} />
-          {editLog && onEditCancel && (
-            <OwnButton type="button" onClick={onEditCancel}>
-              Cancel
-            </OwnButton>
-          )}
-          {editLog && (
-            <OwnButton type="button" color="danger" onClick={handleDelete}>
-              Delete
-            </OwnButton>
-          )}
-          <OwnButton type="submit" disabled={!message}>
-            {editLog ? 'Update' : 'Submit'}
-          </OwnButton>
-          {!editLog && (
-            <OwnButton type="button" color="danger" onClick={handleClearText} disabled={!message && !imageBuffer}>
-              Clear All
-            </OwnButton>
-          )}
-        </Stack>
+        {compact ? <Box className={css.compactButtonsRow}>{actionButtons}</Box> : actionButtons}
       </Box>
     </form>
   );

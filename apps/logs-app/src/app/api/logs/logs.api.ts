@@ -25,11 +25,7 @@ export const deleteLog = async (logId: string): Promise<void> => {
   }
 };
 
-export const updateLog = async (
-  logId: string,
-  message: string,
-  basketId?: string,
-): Promise<void> => {
+export const updateLog = async (logId: string, message: string, basketId?: string): Promise<void> => {
   const body: { message: string; basket_id?: string } = { message };
   if (basketId) {
     body.basket_id = basketId;
@@ -67,10 +63,16 @@ export const createLog = async (message: string, basketId?: string): Promise<voi
   return await response.json();
 };
 
-export const getAllLogs = async (from?: Date): Promise<IDiaryLog[]> => {
+export const getAllLogs = async (from?: Date, to?: Date, basketId?: string): Promise<{ logs?: IDiaryLog[] }> => {
   const urlQueryParameters = new URLSearchParams();
   if (from) {
     urlQueryParameters.append('from', from.toISOString());
+  }
+  if (to) {
+    urlQueryParameters.append('to', to.toISOString());
+  }
+  if (basketId) {
+    urlQueryParameters.append('basket_id', basketId);
   }
 
   const url = `/logs?${urlQueryParameters.toString()}`;

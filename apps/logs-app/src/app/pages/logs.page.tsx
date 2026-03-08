@@ -1,12 +1,15 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { IDiaryLog } from '../domains/log.domain';
 import { LogForm, IEditLog } from '../components/log-form/log-form';
 import { getAllLogs } from '../api/logs/logs.api';
-import { Box, IconButton, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { Box, IconButton, MenuItem, Select, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { startOfDay } from 'date-fns';
 import { getAllBaskets } from '../api/baskets/baskets.api';
 import css from './logs.page.module.scss';
+
+export type PeriodType = 'all' | 'today' | 'range';
 
 export const LogsPage = () => {
   const [baskets, setBaskets] = useState<{ _id: string; name: string }[]>([]);
@@ -23,30 +26,43 @@ export const LogsPage = () => {
     };
     fetchBaskets();
   }, []);
-  const [period, setPeriod] = useState<'all' | 'today'>('today');
+  const [period, setPeriod] = useState<PeriodType>('today');
+  const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
+  const [selectedBasketId, setSelectedBasketId] = useState<string | ''>('');
   const [logs, setLogs] = useState<IDiaryLog[]>();
 
-  const fetchLogs = async (period: 'all' | 'today') => {
-    const now = new Date();
-    let start: Date | undefined;
-    if (period === 'today') {
-      start = startOfDay(now);
-    }
-    const response = await getAllLogs(start);
+  const fetchLogs = useCallback(
+    async (periodValue: PeriodType, range?: { from: Date | null; to: Date | null }, basketId?: string) => {
+      let from: Date | undefined;
+      let to: Date | undefined;
+      if (periodValue === 'today') {
+        from = startOfDay(new Date());
+      } else if (periodValue === 'range' && range?.from && range?.to) {
+        from = startOfDay(range.from);
+        to = new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate(), 23, 59, 59, 999);
+      }
+      const response = await getAllLogs(from, to, basketId || undefined);
+      const logsData = response.logs;
+      setLogs(logsData);
+    },
+    [],
+  );
 
-    const logs = (response as any).logs;
-    setLogs(logs);
-  };
-
-  const handleChange = (event: React.MouseEvent<HTMLElement>, newPeriod: 'all' | 'today' | null) => {
+  const handleChange = (event: React.MouseEvent<HTMLElement>, newPeriod: PeriodType | null) => {
     if (newPeriod !== null) {
       setPeriod(newPeriod);
     }
   };
 
   useEffect(() => {
-    fetchLogs(period);
-  }, [period]);
+    if (period === 'range' && dateRange.from && dateRange.to) {
+      fetchLogs(period, dateRange, selectedBasketId || undefined);
+    } else if (period !== 'range') {
+      fetchLogs(period, undefined, selectedBasketId || undefined);
+    } else if (period === 'range') {
+      setLogs([]);
+    }
+  }, [period, dateRange, selectedBasketId, fetchLogs]);
 
   const logsByBasket =
     logs?.reduce<Record<string, IDiaryLog[]>>((acc, log) => {
@@ -68,7 +84,11 @@ export const LogsPage = () => {
         <LogForm
           onSubmit={() => {
             setEditLogId(null);
-            fetchLogs(period);
+            if (period === 'range') {
+              fetchLogs(period, dateRange, selectedBasketId || undefined);
+            } else {
+              fetchLogs(period, undefined, selectedBasketId || undefined);
+            }
           }}
           editLog={editLog}
           onEditCancel={() => setEditLogId(null)}
@@ -77,14 +97,6 @@ export const LogsPage = () => {
         />
       </div>
       <div className={css.controlsRow}>
-        <ToggleButtonGroup value={period} exclusive onChange={handleChange} aria-label="Period selection" size="small">
-          <ToggleButton value="today" aria-label="Today">
-            Today
-          </ToggleButton>
-          <ToggleButton value="all" aria-label="All time">
-            All
-          </ToggleButton>
-        </ToggleButtonGroup>
         <IconButton
           size="small"
           onClick={() => setIsFormExpanded((v) => !v)}
@@ -93,12 +105,59 @@ export const LogsPage = () => {
         >
           {isFormExpanded ? <ExpandLess /> : <ExpandMore />}
         </IconButton>
+        <ToggleButtonGroup value={period} exclusive onChange={handleChange} aria-label="Period selection" size="small">
+          <ToggleButton value="today" aria-label="Today">
+            Today
+          </ToggleButton>
+          <ToggleButton value="all" aria-label="All time">
+            All
+          </ToggleButton>
+          <ToggleButton value="range" aria-label="Date range">
+            Range
+          </ToggleButton>
+        </ToggleButtonGroup>
+        {period === 'range' && (
+          <Box className={css.dateRangePickers}>
+            <DatePicker
+              label="From"
+              value={dateRange.from}
+              onChange={(date) => setDateRange((prev) => ({ ...prev, from: date ?? null }))}
+              slotProps={{ textField: { size: 'small' } }}
+              maxDate={dateRange.to ?? undefined}
+            />
+            <DatePicker
+              label="To"
+              value={dateRange.to}
+              onChange={(date) => setDateRange((prev) => ({ ...prev, to: date ?? null }))}
+              slotProps={{ textField: { size: 'small' } }}
+              minDate={dateRange.from ?? undefined}
+            />
+          </Box>
+        )}
       </div>
       <Box className={css.logsContainer}>
         <table className={css.logsTable}>
           <thead>
             <tr>
-              <th className={css.basketNameCol}>Basket Name</th>
+              <th className={css.basketNameCol}>
+                <Select
+                  value={selectedBasketId}
+                  onChange={(e) => setSelectedBasketId(e.target.value)}
+                  displayEmpty
+                  size="small"
+                  variant="standard"
+                  disableUnderline
+                  sx={{ fontSize: 'inherit', fontWeight: 600, minWidth: 120 }}
+                  renderValue={(v) => (v ? baskets.find((b) => b._id === v)?.name ?? v : 'Basket Name (all)')}
+                >
+                  <MenuItem value="">All</MenuItem>
+                  {baskets.map((b) => (
+                    <MenuItem key={b._id} value={b._id}>
+                      {b.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </th>
               <th>Logs</th>
             </tr>
           </thead>

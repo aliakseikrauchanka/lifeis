@@ -27,6 +27,11 @@
     .basketSelect {
       min-width: 100px;
     }
+
+    .compactButtonsRow {
+      flex-basis: 100%;
+      order: 10; // force to next row
+    }
   }
 }
 
@@ -69,6 +74,15 @@
 
 .actionsSpacer {
   flex: 1;
+}
+
+.actionButtons {
+  width: 100%;
+}
+
+.compactButtonsRow {
+  display: flex;
+  width: 100%;
 }
 
 .fileInput {

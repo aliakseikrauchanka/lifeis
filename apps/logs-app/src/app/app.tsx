@@ -26,11 +26,6 @@ export function App() {
       <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
         <div className={css.appLayout}>
           <header className={css.header}>
-            <UserSession
-              isLoggedIn={isLoggedIn}
-              onLoginSuccess={() => setIsLoggedIn(true)}
-              onLogOut={() => setIsLoggedIn(false)}
-            />
             {isLoggedIn && (
               <nav className={css.nav}>
                 <NavLink to="/" end className={({ isActive }) => (isActive ? css.active : undefined)}>
@@ -41,6 +36,11 @@ export function App() {
                 </NavLink>
               </nav>
             )}
+            <UserSession
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={() => setIsLoggedIn(true)}
+              onLogOut={() => setIsLoggedIn(false)}
+            />
           </header>
           {isLoggedIn && (
             <div className={css.mainContent}>
