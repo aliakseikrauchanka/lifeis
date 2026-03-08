@@ -2,6 +2,7 @@ import { IconButton, Tabs, TabList, Tab, TabPanel, CircularProgress } from '@mui
 import { CopyAll } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import classNames from 'classnames';
+import DOMPurify from 'dompurify';
 import { Ref, useState, useEffect, useMemo } from 'react';
 import { AI_PROVIDER_OPTIONS, PROVIDER_ORDER } from '../../agent.constants';
 import css from './agent-response.module.scss';
@@ -112,7 +113,9 @@ export const AgentResponse = ({
                 <div className="response-body" ref={isActive ? responseRef : undefined}>
                   {resp?.status === 'loading' && 'Generating ...'}
                   {resp?.status === 'error' && 'Error generating response.'}
-                  {resp?.status === 'done' && resp.answer && <ReactMarkdown>{resp.answer}</ReactMarkdown>}
+                  {resp?.status === 'done' && resp.answer && (
+                    <ReactMarkdown>{DOMPurify.sanitize(resp.answer, { ALLOWED_TAGS: [] })}</ReactMarkdown>
+                  )}
                 </div>
               </TabPanel>
             );

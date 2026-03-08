@@ -1,6 +1,7 @@
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
 import React, { useEffect, useState } from 'react';
+import DOMPurify from 'dompurify';
 import {
   Box,
   Input,
@@ -29,11 +30,15 @@ interface IAgentHistoryModalProps {
   agentId: string;
 }
 
+const sanitizeForMarkdown = (text: string): string => DOMPurify.sanitize(text, { ALLOWED_TAGS: [] });
+
 const highlightText = (text: string, searchTerm: string): string => {
   if (!searchTerm) return text;
 
-  const regex = new RegExp(`(${searchTerm})`, 'gi');
-  return text.replace(regex, '<mark style="background-color: yellow">$1</mark>');
+  const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${escaped})`, 'gi');
+  const highlighted = text.replace(regex, '<mark style="background-color: yellow">$1</mark>');
+  return DOMPurify.sanitize(highlighted, { ALLOWED_TAGS: ['mark'], ALLOWED_ATTR: ['style'] });
 };
 
 export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onClose, agentId }) => {
@@ -164,7 +169,9 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
                         Message:
                       </Typography>{' '}
                       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                        {searchTerm.length >= 2 ? highlightText(item.message ?? '', searchTerm) : item.message}
+                        {searchTerm.length >= 2
+                          ? highlightText(sanitizeForMarkdown(item.message ?? ''), searchTerm)
+                          : sanitizeForMarkdown(item.message ?? '')}
                       </ReactMarkdown>
                     </Typography>
                     <Typography>
@@ -172,7 +179,9 @@ export const AgentHistoryModal: React.FC<IAgentHistoryModalProps> = ({ open, onC
                         Response:
                       </Typography>
                       <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
-                        {searchTerm.length >= 2 ? highlightText(item.response, searchTerm) : item.response}
+                        {searchTerm.length >= 2
+                          ? highlightText(sanitizeForMarkdown(item.response), searchTerm)
+                          : sanitizeForMarkdown(item.response)}
                       </ReactMarkdown>
                     </Typography>
                   </Box>{' '}
