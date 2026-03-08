@@ -60,10 +60,18 @@ export const SpeechToText = ({
   const handlePlayRecording = useCallback(() => {
     const blobs = recordedBlobs[id];
     if (!blobs?.length) return;
-    const combined = new Blob([blobs[blobs.length - 1]], { type: blobs[0]?.type || 'audio/webm' });
-    const url = URL.createObjectURL(combined);
-    const audio = new Audio(url);
+    const blob = blobs[blobs.length - 1];
+    let mimeType = blobs[0]?.type || 'audio/webm';
+    if (mimeType === 'video/mp4') mimeType = 'audio/mp4';
+
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio();
     audio.onended = () => URL.revokeObjectURL(url);
+    const source = document.createElement('source');
+    source.src = url;
+    source.type = mimeType;
+    audio.appendChild(source);
+    audio.load();
     audio.play().catch(() => URL.revokeObjectURL(url));
   }, [recordedBlobs, id]);
 
