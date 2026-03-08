@@ -16,9 +16,16 @@ interface IAgentResponseProps {
   isWideMode: boolean;
   responseRef: Ref<HTMLDivElement>;
   onCopyResponse: (content: string) => void;
+  onClick?: () => void;
 }
 
-export const AgentResponse = ({ providerResponses, isWideMode, responseRef, onCopyResponse }: IAgentResponseProps) => {
+export const AgentResponse = ({
+  providerResponses,
+  isWideMode,
+  responseRef,
+  onCopyResponse,
+  onClick,
+}: IAgentResponseProps) => {
   const providerIds = useMemo(
     () => [
       ...PROVIDER_ORDER.filter((id) => id in providerResponses),
@@ -40,6 +47,7 @@ export const AgentResponse = ({ providerResponses, isWideMode, responseRef, onCo
         className={classNames(css.response, {
           [css.responseWide]: isWideMode,
         })}
+        onClick={onClick}
       >
         <div
           className={classNames(css.responseContent, {
@@ -59,6 +67,7 @@ export const AgentResponse = ({ providerResponses, isWideMode, responseRef, onCo
       className={classNames(css.response, {
         [css.responseWide]: isWideMode,
       })}
+      onClick={onClick}
     >
       <div
         className={classNames(css.responseContent, {

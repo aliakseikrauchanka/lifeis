@@ -21,6 +21,7 @@ interface IAgentActionBarProps {
   savedCaptions: string[];
   onCaption: (caption: string[] | undefined) => void;
   onHasRecording?: (hasRecording: boolean) => void;
+  onAgentFocus?: () => void;
   isCaptionsNeedClear: boolean;
   onCaptionsCleared: () => void;
   isListeningFired: boolean;
@@ -41,6 +42,7 @@ export const AgentActionBar = ({
   id,
   onCaption,
   onHasRecording,
+  onAgentFocus,
   isCaptionsNeedClear,
   onCaptionsCleared,
   isListeningFired,
@@ -79,7 +81,10 @@ export const AgentActionBar = ({
       <OwnButton
         type="button"
         color="danger"
-        onClick={onClear}
+        onClick={() => {
+          onAgentFocus?.();
+          onClear();
+        }}
         style={{ marginLeft: 'auto', height: '100%' }}
         disabled={!hasContent}
       >
