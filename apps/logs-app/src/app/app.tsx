@@ -1,14 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { GoogleOAuthProvider } from '@react-oauth/google';
-import {
-  AudioProvider,
-  DeepgramContextProvider,
-  MicrophoneContextProvider,
-  SpeechToTextContextProvider,
-  UserSession,
-  init,
-  isUserLoggedIn,
-} from '@lifeis/common-ui';
+import { DeepgramFileSTTProvider, UserSession, init, isUserLoggedIn } from '@lifeis/common-ui';
 
 import { Route, Routes, Link } from 'react-router-dom';
 import { CONFIG } from '../config';
@@ -50,15 +42,9 @@ export function App() {
               <Route
                 path="/"
                 element={
-                  <MicrophoneContextProvider>
-                    <DeepgramContextProvider>
-                      <AudioProvider>
-                        <SpeechToTextContextProvider>
-                          <LogsPage />
-                        </SpeechToTextContextProvider>
-                      </AudioProvider>
-                    </DeepgramContextProvider>
-                  </MicrophoneContextProvider>
+                  <DeepgramFileSTTProvider>
+                    <LogsPage />
+                  </DeepgramFileSTTProvider>
                 }
               />
               <Route

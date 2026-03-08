@@ -143,6 +143,7 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
           id="logger"
           isToggledListening={isListeningFired}
           onListeningToggled={() => setIsListeningFired((prev) => !prev)}
+          showPlayButton={false}
         />
 
         <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
