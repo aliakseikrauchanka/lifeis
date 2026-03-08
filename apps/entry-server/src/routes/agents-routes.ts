@@ -73,7 +73,8 @@ enum ParseImageMode {
 
 const PARSE_IMAGE_PROMPTS: Record<ParseImageMode, string> = {
   [ParseImageMode.GetText]: 'Get only text from the image',
-  [ParseImageMode.DescribeFoodRu]: 'Опиши, из чего состоит эта еда. Перечисли ингредиенты и пищевую ценность.',
+  [ParseImageMode.DescribeFoodRu]:
+    'Опиши, из чего состоит эта еда. Перечисли ингредиенты и пищевую ценность, но сделаю это кратко в несколько предложений. Название: ...(одна новая строка)Пример: Ингридиенты: ... (одна новая строка) Пищевая ценность: ... (одна новая строка)',
 };
 
 const defaultGeminiModelName = 'gemini-2.5-flash-lite';

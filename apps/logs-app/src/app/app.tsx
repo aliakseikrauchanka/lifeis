@@ -42,7 +42,7 @@ export function App() {
               <Route
                 path="/"
                 element={
-                  <DeepgramFileSTTProvider>
+                  <DeepgramFileSTTProvider language="ru">
                     <LogsPage />
                   </DeepgramFileSTTProvider>
                 }

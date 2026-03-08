@@ -164,7 +164,7 @@ export const LogForm = ({ onSubmit }: ILogFormProps) => {
           <OwnButton type="submit" disabled={!message}>
             Submit
           </OwnButton>
-          <OwnButton type="button" color="danger" onClick={handleClearText} disabled={!message}>
+          <OwnButton type="button" color="danger" onClick={handleClearText} disabled={!message && !imageBuffer}>
             Clear All
           </OwnButton>
         </Stack>
