@@ -3,6 +3,8 @@
 import { useSpeechToText } from '../../contexts/speech-to-text.context';
 import { OwnButton } from '../button/button';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTheme } from '@mui/joy';
+import { useMediaQuery } from '@mui/material';
 
 interface ISpeechToTextProps {
   id: string;
@@ -27,6 +29,8 @@ export const SpeechToText = ({
   onHasRecording,
   showPlayButton = true,
 }: ISpeechToTextProps) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const { startListening, pauseListening, stopListening, caption, recordedBlobs, connectionReady } = useSpeechToText();
   const [isRecording, setIsRecording] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -112,7 +116,7 @@ export const SpeechToText = ({
         Pause
       </OwnButton>
 
-      {showPlayButton && (
+      {showPlayButton && !isMobile && (
         <OwnButton type="button" color="success" onClick={handlePlayRecording} disabled={!hasPlayback}>
           Play
         </OwnButton>
