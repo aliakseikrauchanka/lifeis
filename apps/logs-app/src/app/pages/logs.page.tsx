@@ -5,11 +5,11 @@ import { getAllLogs } from '../api/logs/logs.api';
 import { Box, IconButton, MenuItem, Select, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { startOfDay } from 'date-fns';
+import { startOfDay, startOfWeek, endOfWeek } from 'date-fns';
 import { getAllBaskets } from '../api/baskets/baskets.api';
 import css from './logs.page.module.scss';
 
-export type PeriodType = 'all' | 'today' | 'range';
+export type PeriodType = 'all' | 'today' | 'week' | 'range';
 
 export const LogsPage = () => {
   const [baskets, setBaskets] = useState<{ _id: string; name: string }[]>([]);
@@ -49,6 +49,10 @@ export const LogsPage = () => {
       let to: Date | undefined;
       if (periodValue === 'today') {
         from = startOfDay(new Date());
+      } else if (periodValue === 'week') {
+        const now = new Date();
+        from = startOfWeek(now, { weekStartsOn: 1 });
+        to = endOfWeek(now, { weekStartsOn: 1 });
       } else if (periodValue === 'range' && range?.from && range?.to) {
         from = startOfDay(range.from);
         to = new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate(), 23, 59, 59, 999);
@@ -120,6 +124,9 @@ export const LogsPage = () => {
         <ToggleButtonGroup value={period} exclusive onChange={handleChange} aria-label="Period selection" size="small">
           <ToggleButton value="today" aria-label="Today">
             Today
+          </ToggleButton>
+          <ToggleButton value="week" aria-label="This week">
+            Week
           </ToggleButton>
           <ToggleButton value="all" aria-label="All time">
             All
