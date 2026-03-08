@@ -104,6 +104,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
     const [isWideMode, setIsWideMode] = useState(wideModeSettings[id] || false);
     const [isExplicitLanguage, setIsExplicitLanguage] = useState(false);
     const [isAutoDictation, setIsAutoDictation] = useState(false);
+    const [hasRecording, setHasRecording] = useState(false);
 
     const { removeMutation, createTemplateMutation, createCloneOfTemplateMutation, updateMutation } = useAgentMutations(
       id,
@@ -366,7 +367,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
       [isAutoDictation],
     );
 
-    const hasContent = !!(message || Object.values(providerResponses).some((r) => r.answer));
+    const hasContent = !!(message || hasRecording || Object.values(providerResponses).some((r) => r.answer));
 
     return (
       <form
@@ -435,6 +436,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
                 dictationProps={dictationProps}
               />
               <AgentActionBar
+                id={id}
                 selectedAiProviders={selectedAiProviders}
                 onAiProviderChange={setSelectedAiProviders}
                 isExplicitLanguage={isExplicitLanguage}
@@ -444,9 +446,9 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
                 message={message}
                 hasContent={hasContent}
                 audioEnabled={audioEnabled}
-                id={id}
                 savedCaptions={savedCaptions}
                 onCaption={handleCaption}
+                onHasRecording={setHasRecording}
                 isCaptionsNeedClear={isCaptionsNeedClear}
                 onCaptionsCleared={() => setIsCaptionsNeedClear(false)}
                 isListeningFired={isListeningFired}

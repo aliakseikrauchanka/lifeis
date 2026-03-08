@@ -20,6 +20,7 @@ interface IAgentActionBarProps {
   id: string;
   savedCaptions: string[];
   onCaption: (caption: string[] | undefined) => void;
+  onHasRecording?: (hasRecording: boolean) => void;
   isCaptionsNeedClear: boolean;
   onCaptionsCleared: () => void;
   isListeningFired: boolean;
@@ -39,6 +40,7 @@ export const AgentActionBar = ({
   audioEnabled,
   id,
   onCaption,
+  onHasRecording,
   isCaptionsNeedClear,
   onCaptionsCleared,
   isListeningFired,
@@ -89,6 +91,7 @@ export const AgentActionBar = ({
           onCaption={onCaption}
           id={id}
           onCleared={onCaptionsCleared}
+          onHasRecording={onHasRecording}
           isNeedClear={isCaptionsNeedClear}
           isToggledListening={isListeningFired}
           onListeningToggled={onListeningToggled}

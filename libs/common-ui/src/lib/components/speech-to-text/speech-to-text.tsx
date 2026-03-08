@@ -12,6 +12,7 @@ interface ISpeechToTextProps {
   onCaption: (caption: string[] | undefined) => void;
   onCleared?: () => void;
   onListeningToggled?: () => void;
+  onHasRecording?: (hasRecording: boolean) => void;
   showPlayButton?: boolean;
 }
 
@@ -23,6 +24,7 @@ export const SpeechToText = ({
   onCaption,
   onCleared,
   onListeningToggled,
+  onHasRecording,
   showPlayButton = true,
 }: ISpeechToTextProps) => {
   const { startListening, pauseListening, stopListening, caption, recordedBlobs, connectionReady } = useSpeechToText();
@@ -32,10 +34,11 @@ export const SpeechToText = ({
   useEffect(() => {
     if (isNeedClear) {
       onCleared?.();
+      onHasRecording?.(false);
       setIsRecording(false);
       stopListening(id);
     }
-  }, [isNeedClear, onCleared, stopListening, id]);
+  }, [isNeedClear, onCleared, onHasRecording, stopListening, id]);
 
   const handleStartListening = useCallback(() => {
     startListening(id);
@@ -57,7 +60,7 @@ export const SpeechToText = ({
   const handlePlayRecording = useCallback(() => {
     const blobs = recordedBlobs[id];
     if (!blobs?.length) return;
-    const combined = new Blob(blobs, { type: blobs[0]?.type || 'audio/webm' });
+    const combined = new Blob([blobs[blobs.length - 1]], { type: blobs[0]?.type || 'audio/webm' });
     const url = URL.createObjectURL(combined);
     const audio = new Audio(url);
     audio.onended = () => URL.revokeObjectURL(url);
@@ -80,6 +83,11 @@ export const SpeechToText = ({
   useEffect(() => {
     onCaption(caption[id]);
   }, [caption[id]]);
+
+  const hasRecordingBlobs = !!recordedBlobs[id]?.length;
+  useEffect(() => {
+    onHasRecording?.(hasRecordingBlobs);
+  }, [hasRecordingBlobs, onHasRecording]);
 
   return (
     <div className={className}>
