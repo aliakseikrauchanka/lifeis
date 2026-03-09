@@ -1,4 +1,4 @@
-.formContainer {
+.form-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -9,7 +9,7 @@
   position: relative;
 }
 
-.inputWhiteBg {
+.input-white-bg {
   :global(.MuiOutlinedInput-root) {
     background-color: white;
   }

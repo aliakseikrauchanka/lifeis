@@ -1,4 +1,4 @@
-.logsPage {
+.logs-page {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -6,11 +6,11 @@
   overflow: hidden;
 }
 
-.formSection {
+.form-section {
   flex-shrink: 0;
 }
 
-.controlsRow {
+.controls-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -18,7 +18,7 @@
   flex-wrap: wrap;
 }
 
-.dateRangePickers {
+.date-range-pickers {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -28,7 +28,7 @@
   }
 }
 
-.logsContainer {
+.logs-container {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -37,7 +37,7 @@
   border-radius: 4px;
 }
 
-.logsTable {
+.logs-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
@@ -58,7 +58,7 @@
   }
 }
 
-.basketNameCol {
+.basket-name-col {
   width: 95px;
   max-width: 95px;
   overflow: hidden;
@@ -70,13 +70,13 @@
   }
 }
 
-.basketHeaderSelect {
+.basket-header-select {
   min-width: 0 !important;
   width: 100%;
   max-width: 100%;
 }
 
-.basketNameCell {
+.basket-name-cell {
   vertical-align: top;
   width: 95px;
   min-width: 95px;
@@ -84,13 +84,13 @@
   word-break: break-word;
 }
 
-.logsList {
+.logs-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.logItem {
+.log-item {
   margin-bottom: 12px;
   position: relative;
   border-bottom: 1px solid #eee;
@@ -101,16 +101,29 @@
   gap: 8px;
 }
 
-.logContent {
+.log-content {
   flex: 1;
   min-width: 0;
 }
 
-.editButton {
+.log-actions {
+  display: flex;
+  gap: 8px;
   flex-shrink: 0;
+}
+
+.edit-button {
   background: none;
   border: none;
   cursor: pointer;
   color: #1976d2;
+  font-weight: bold;
+}
+
+.delete-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #d32f2f;
   font-weight: bold;
 }

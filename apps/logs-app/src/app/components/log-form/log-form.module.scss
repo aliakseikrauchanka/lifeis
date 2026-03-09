@@ -1,4 +1,4 @@
-.formContainer {
+.form-container {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -8,39 +8,39 @@
   background-color: #fafafa;
   position: relative;
 
-  &.formCompact {
+  &.form-compact {
     gap: 8px;
     padding: 8px 12px;
     flex-direction: row;
     flex-wrap: wrap;
     align-items: center;
 
-    .textFieldWrapper {
+    .text-field-wrapper {
       flex: 1;
       min-width: 120px;
     }
 
-    .textAreaField textarea {
+    .text-area-field textarea {
       min-height: 40px;
     }
 
-    .basketSelect {
+    .basket-select {
       min-width: 100px;
     }
 
-    .compactButtonsRow {
+    .compact-buttons-row {
       flex-basis: 100%;
       order: 10; // force to next row
     }
   }
 }
 
-.textFieldWrapper {
+.text-field-wrapper {
   position: relative;
   width: 100%;
 }
 
-.textAreaField {
+.text-area-field {
   textarea {
     resize: vertical !important;
     min-height: 80px;
@@ -52,7 +52,7 @@
   }
 }
 
-.basketSelect {
+.basket-select {
   min-width: 180px;
 
   :global(.MuiOutlinedInput-root) {
@@ -65,31 +65,31 @@
   }
 }
 
-.imagePreviewBox {
+.image-preview-box {
   position: absolute;
   bottom: 8px;
   right: 8px;
   z-index: 1;
 }
 
-.actionsSpacer {
+.actions-spacer {
   flex: 1;
 }
 
-.actionButtons {
+.action-buttons {
   width: 100%;
 }
 
-.compactButtonsRow {
+.compact-buttons-row {
   display: flex;
   width: 100%;
 }
 
-.fileInput {
+.file-input {
   display: none;
 }
 
-.photoButton {
+.photo-button {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -101,6 +101,6 @@
   }
 }
 
-.photoLoading {
+.photo-loading {
   font-size: 0.875rem;
 }

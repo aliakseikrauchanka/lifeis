@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { IDiaryLog } from '../domains/log.domain';
 import { LogForm, IEditLog } from '../components/log-form/log-form';
-import { getAllLogs } from '../api/logs/logs.api';
+import { deleteLog, getAllLogs } from '../api/logs/logs.api';
 import { Box, IconButton, MenuItem, Select, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -93,6 +93,24 @@ export const LogsPage = () => {
     const log = logs.find((l) => l.id === editLogId);
     return log ? { id: log.id, message: log.message, basket_name: log.basket_name } : undefined;
   }, [editLogId, logs]);
+
+  const handleDeleteLog = useCallback(
+    async (logId: string) => {
+      if (!window.confirm('Are you sure you want to delete this log?')) return;
+      try {
+        await deleteLog(logId);
+        setEditLogId((id) => (id === logId ? null : id));
+        if (period === 'range') {
+          fetchLogs(period, dateRange, selectedBasketId || undefined);
+        } else {
+          fetchLogs(period, undefined, selectedBasketId || undefined);
+        }
+      } catch {
+        console.error('Failed to delete log');
+      }
+    },
+    [period, dateRange, selectedBasketId, fetchLogs],
+  );
 
   return (
     <main className={css.logsPage}>
@@ -193,9 +211,14 @@ export const LogsPage = () => {
                           <div>{log.message}</div>
                           <small>{new Date(log.timestamp).toLocaleString()}</small>
                         </div>
-                        <button className={css.editButton} onClick={() => setEditLogId(log.id)}>
-                          Edit
-                        </button>
+                        <span className={css.logActions}>
+                          <button className={css.editButton} onClick={() => setEditLogId(log.id)}>
+                            Edit
+                          </button>
+                          <button className={css.deleteButton} onClick={() => handleDeleteLog(log.id)}>
+                            Delete
+                          </button>
+                        </span>
                       </li>
                     ))}
                   </ul>

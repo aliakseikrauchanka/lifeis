@@ -1,7 +1,7 @@
 import React, { useState, KeyboardEvent, useEffect, useCallback } from 'react';
 import { ImagePreviewFromBuffer, OwnButton, SpeechToText } from '@lifeis/common-ui';
 import { CameraAlt } from '@mui/icons-material';
-import { createLog, deleteLog, describeFoodFromImage, updateLog } from '../../api/logs/logs.api';
+import { createLog, describeFoodFromImage, updateLog } from '../../api/logs/logs.api';
 import css from './log-form.module.scss';
 import { Box, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
 
@@ -96,19 +96,6 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
     setIsCaptionsNeedClear(true);
   };
 
-  const handleDelete = useCallback(async () => {
-    if (!editLog || !window.confirm('Are you sure you want to delete this log?')) return;
-    try {
-      await deleteLog(editLog.id);
-      setMessage('');
-      setSelectedBasketId(null);
-      onSubmit();
-      onEditCancel?.();
-    } catch (e) {
-      console.log('error happened during delete');
-    }
-  }, [editLog, onSubmit, onEditCancel]);
-
   const handleKeyDown = useCallback(
     (e: { key: string; code: string; ctrlKey: boolean; preventDefault: () => void }) => {
       // handle escape key
@@ -176,11 +163,6 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
       {editLog && onEditCancel && (
         <OwnButton type="button" onClick={onEditCancel}>
           Cancel
-        </OwnButton>
-      )}
-      {editLog && (
-        <OwnButton type="button" color="danger" onClick={handleDelete}>
-          Delete
         </OwnButton>
       )}
       <OwnButton type="submit" disabled={!message}>
