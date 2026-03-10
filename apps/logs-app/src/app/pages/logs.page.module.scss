@@ -108,8 +108,13 @@
 
 .log-actions {
   display: flex;
+  flex-direction: row;
   gap: 8px;
   flex-shrink: 0;
+
+  @media (max-width: 480px) {
+    flex-direction: column;
+  }
 }
 
 .edit-button {
