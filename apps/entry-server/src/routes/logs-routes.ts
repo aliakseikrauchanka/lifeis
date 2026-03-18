@@ -3,7 +3,7 @@ import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { IDiaryLog, IDiaryResponseLog } from '../domain';
 import { MongoClient, ObjectId } from 'mongodb';
 import { GenerativeModel } from '@google/generative-ai';
-import { endOfToday } from 'date-fns';
+import { addYears, endOfToday } from 'date-fns';
 
 export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeModel) => {
   const router = Router();
@@ -15,7 +15,7 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
     const logsCollection = await client.db('lifeis').collection('logs');
 
     const baskets = await client.db('lifeis').collection('baskets').find().toArray();
-    let basket_id: typeof baskets[0]['_id'];
+    let basket_id: (typeof baskets)[0]['_id'];
 
     if (basketId) {
       basket_id = new ObjectId(basketId);
@@ -75,15 +75,18 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
     }
     if (from || to) {
       const timestampFilter: { $gte?: number; $lt?: number } = {};
+      // From not selected → treat as earliest possible; To not selected → treat as +50 years
       if (from) {
         timestampFilter.$gte = new Date(from).getTime();
+      } else {
+        timestampFilter.$gte = 0; // Unix epoch (earliest)
       }
       if (to) {
         const toDate = new Date(to);
         const toEndOfDay = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999);
         timestampFilter.$lt = toEndOfDay.getTime();
-      } else if (from) {
-        timestampFilter.$lt = endOfToday().getTime();
+      } else {
+        timestampFilter.$lt = addYears(endOfToday(), 50).getTime();
       }
       filter = { ...filter, timestamp: timestampFilter };
     }

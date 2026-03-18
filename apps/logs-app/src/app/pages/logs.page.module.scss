@@ -12,19 +12,44 @@
 
 .controls-row {
   display: flex;
+  justify-content: center;
   align-items: center;
-  gap: 8px;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  min-height: 0;
+}
+
+.expand-button {
+  padding: 2px !important;
+
+  svg {
+    font-size: 1.25rem;
+  }
 }
 
 .date-range-pickers {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: nowrap;
+  min-width: 0;
 
   .MuiTextField-root {
     min-width: 70px;
+  }
+
+  @media (max-width: 480px) {
+    flex: 1 1 100%;
+    min-width: 0;
+    gap: 4px;
+
+    > * {
+      min-width: 0;
+      flex: 1 1 0;
+    }
+
+    .MuiTextField-root {
+      min-width: 0;
+    }
   }
 }
 
@@ -32,9 +57,21 @@
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  margin-top: 16px;
   border: 1px solid #e0e0e0;
   border-radius: 4px;
+}
+
+.basket-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 8px 0;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.basket-filter-select {
+  min-width: 160px;
 }
 
 .logs-table {
@@ -104,6 +141,14 @@
 .log-content {
   flex: 1;
   min-width: 0;
+}
+
+.log-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
 }
 
 .log-actions {

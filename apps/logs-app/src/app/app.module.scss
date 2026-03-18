@@ -11,6 +11,11 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+
+  @media (min-width: 481px) {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
 }
 
 .header {
