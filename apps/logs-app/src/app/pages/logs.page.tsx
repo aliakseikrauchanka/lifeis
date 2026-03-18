@@ -5,11 +5,17 @@ import { deleteLog, getAllLogs } from '../api/logs/logs.api';
 import { Box, Chip, IconButton, MenuItem, Select, ToggleButton, ToggleButtonGroup } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { startOfDay, startOfWeek, endOfWeek } from 'date-fns';
+import { startOfDay, startOfWeek, endOfWeek, isToday, isYesterday, format } from 'date-fns';
 import { getAllBaskets } from '../api/baskets/baskets.api';
 import css from './logs.page.module.scss';
 
 export type PeriodType = 'all' | 'today' | 'week' | 'range';
+
+const getDateLabel = (date: Date) => {
+  if (isToday(date)) return 'Today';
+  if (isYesterday(date)) return 'Yesterday';
+  return format(date, 'EEEE, MMM d, yyyy');
+};
 
 export const LogsPage = () => {
   const [baskets, setBaskets] = useState<{ _id: string; name: string }[]>([]);
@@ -84,6 +90,26 @@ export const LogsPage = () => {
     () => [...(logs ?? [])].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
     [logs],
   );
+
+  const logsWithDateHeaders = useMemo(() => {
+    const items: Array<{ type: 'date-header'; label: string; dateKey: string } | { type: 'log'; log: IDiaryLog }> = [];
+    let lastDateKey = '';
+
+    for (const log of sortedLogs) {
+      const logDate = new Date(log.timestamp);
+      const dateKey = format(logDate, 'yyyy-MM-dd');
+
+      if (dateKey !== lastDateKey) {
+        lastDateKey = dateKey;
+        if (!isToday(logDate)) {
+          items.push({ type: 'date-header', label: getDateLabel(logDate), dateKey });
+        }
+      }
+      items.push({ type: 'log', log });
+    }
+
+    return items;
+  }, [sortedLogs]);
 
   const editLog = useMemo((): IEditLog | undefined => {
     if (!editLogId || !logs) return undefined;
@@ -205,25 +231,31 @@ export const LogsPage = () => {
             <tr>
               <td>
                 <ul className={css.logsList}>
-                  {sortedLogs.map((log) => (
-                    <li key={log.id} className={css.logItem}>
-                      <div className={css.logContent}>
-                        <div>{log.message}</div>
-                        <div className={css.logFooter}>
-                          <Chip label={log.basket_name} size="small" variant="outlined" />
-                          <small>{new Date(log.timestamp).toLocaleString()}</small>
+                  {logsWithDateHeaders.map((item) =>
+                    item.type === 'date-header' ? (
+                      <li key={item.dateKey} className={css.logDateHeader}>
+                        {item.label}
+                      </li>
+                    ) : (
+                      <li key={item.log.id} className={css.logItem}>
+                        <div className={css.logContent}>
+                          <div>{item.log.message}</div>
+                          <div className={css.logFooter}>
+                            <Chip label={item.log.basket_name} size="small" variant="outlined" />
+                            <small>{new Date(item.log.timestamp).toLocaleString()}</small>
+                          </div>
                         </div>
-                      </div>
-                      <span className={css.logActions}>
-                        <button className={css.editButton} onClick={() => setEditLogId(log.id)}>
-                          Edit
-                        </button>
-                        <button className={css.deleteButton} onClick={() => handleDeleteLog(log.id)}>
-                          Delete
-                        </button>
-                      </span>
-                    </li>
-                  ))}
+                        <span className={css.logActions}>
+                          <button className={css.editButton} onClick={() => setEditLogId(item.log.id)}>
+                            Edit
+                          </button>
+                          <button className={css.deleteButton} onClick={() => handleDeleteLog(item.log.id)}>
+                            Delete
+                          </button>
+                        </span>
+                      </li>
+                    ),
+                  )}
                 </ul>
               </td>
             </tr>

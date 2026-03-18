@@ -127,6 +127,21 @@
   list-style: none;
 }
 
+.log-date-header {
+  position: sticky;
+  top: 33px; /* Table header height (th padding + content) */
+  z-index: 1;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #666;
+  border: none;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+}
+
 .log-item {
   margin-bottom: 12px;
   position: relative;
