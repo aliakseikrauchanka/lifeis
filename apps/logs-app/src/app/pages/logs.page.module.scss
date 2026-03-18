@@ -72,6 +72,10 @@
 
 .basket-filter-select {
   min-width: 160px;
+
+  @media (max-width: 480px) {
+    min-width: 100px;
+  }
 }
 
 .logs-table {
