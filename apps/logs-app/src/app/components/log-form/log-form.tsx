@@ -1,7 +1,7 @@
 import React, { useState, KeyboardEvent, useEffect, useCallback } from 'react';
 import { ImagePreviewFromBuffer, OwnButton, SpeechToText } from '@lifeis/common-ui';
 import { CameraAlt } from '@mui/icons-material';
-import { createLog, describeFoodFromImage, updateLog } from '../../api/logs/logs.api';
+import { createLog, describeFromImage, type DescribeFromImageMode, updateLog } from '../../api/logs/logs.api';
 import css from './log-form.module.scss';
 import { Box, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
 
@@ -26,6 +26,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
   const [isListeningFired, setIsListeningFired] = useState(false);
   const [isDescribingFood, setIsDescribingFood] = useState(false);
   const [imageBuffer, setImageBuffer] = useState<ArrayBuffer | null>(null);
+  const [imageMode, setImageMode] = useState<DescribeFromImageMode>('describe-food-ru');
 
   // Prefill only when entering/exiting edit mode or switching logs - NOT on expand/shrink
   const editLogId = editLog?.id;
@@ -45,24 +46,27 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
     setMessage(event.target.value);
   };
 
-  const handleCapture = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file?.type.startsWith('image/')) return;
+  const handleCapture = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file?.type.startsWith('image/')) return;
 
-    const buffer = await file.arrayBuffer();
-    setImageBuffer(buffer);
-    try {
-      setIsDescribingFood(true);
-      const { answer } = await describeFoodFromImage(buffer);
-      setMessage((prev) => (prev ? `${prev}\n\n${answer}` : answer));
-    } catch (err) {
-      console.error('Failed to describe food from image', err);
-      setImageBuffer(null);
-    } finally {
-      setIsDescribingFood(false);
-      event.target.value = '';
-    }
-  }, []);
+      const buffer = await file.arrayBuffer();
+      setImageBuffer(buffer);
+      try {
+        setIsDescribingFood(true);
+        const { answer } = await describeFromImage(buffer, imageMode);
+        setMessage((prev) => (prev ? `${prev}\n\n${answer}` : answer));
+      } catch (err) {
+        console.error('Failed to describe food from image', err);
+        setImageBuffer(null);
+      } finally {
+        setIsDescribingFood(false);
+        event.target.value = '';
+      }
+    },
+    [imageMode],
+  );
 
   const clearImage = useCallback(() => setImageBuffer(null), []);
 
@@ -83,7 +87,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
         }
         setImageBuffer(null);
         onSubmit();
-      } catch (_e) {
+      } catch {
         console.log('error happened during fetch');
       }
     },
@@ -146,10 +150,25 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
         onListeningToggled={() => setIsListeningFired((prev) => !prev)}
         showPlayButton={false}
       />
-      <label htmlFor="log-form-photo" className={css.photoButton}>
-        <CameraAlt fontSize="large" color="inherit" />
-        {isDescribingFood && <span className={css.photoLoading}>...</span>}
-      </label>
+      <Box display="flex" alignItems="center" gap={0.5}>
+        <label htmlFor="log-form-photo" className={css.photoButton}>
+          <CameraAlt fontSize="large" color="inherit" />
+          {isDescribingFood && <span className={css.photoLoading}>...</span>}
+        </label>
+        <FormControl size="small" className={css.basketSelect} disabled={isDescribingFood}>
+          <InputLabel id="log-form-image-mode-label">Mode</InputLabel>
+          <Select
+            labelId="log-form-image-mode-label"
+            value={imageMode}
+            label="Mode"
+            onChange={(e) => setImageMode(e.target.value as DescribeFromImageMode)}
+            sx={{ minWidth: 160, fontSize: '0.75rem', height: 40 }}
+          >
+            <MenuItem value="describe-food-ru">Describe food (RU)</MenuItem>
+            <MenuItem value="get-text">Get text</MenuItem>
+          </Select>
+        </FormControl>
+      </Box>
       <input
         type="file"
         id="log-form-photo"

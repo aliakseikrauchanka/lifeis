@@ -1,11 +1,16 @@
 import { utilFetch } from '@lifeis/common-ui';
 import { IDiaryLog } from '../../domains/log.domain';
 
-export const describeFoodFromImage = async (imageBuffer: ArrayBuffer): Promise<{ answer: string }> => {
+export type DescribeFromImageMode = 'get-text' | 'describe-food-ru';
+
+export const describeFromImage = async (
+  imageBuffer: ArrayBuffer,
+  mode: DescribeFromImageMode = 'describe-food-ru',
+): Promise<{ answer: string }> => {
   const formData = new FormData();
   formData.append('image', new Blob([imageBuffer]), 'image.png');
 
-  const response = await utilFetch(`/agents/parse-image?mode=describe-food-ru`, {
+  const response = await utilFetch(`/agents/parse-image?mode=${mode}`, {
     method: 'POST',
     body: formData,
   });
