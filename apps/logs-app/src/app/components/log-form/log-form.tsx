@@ -179,19 +179,19 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
         disabled={isDescribingFood}
       />
       <Box className={css.actionsSpacer} />
+      {!editLog && (
+        <OwnButton type="button" color="danger" onClick={handleClearText} disabled={!message && !imageBuffer}>
+          Clear All
+        </OwnButton>
+      )}
       {editLog && onEditCancel && (
-        <OwnButton type="button" onClick={onEditCancel}>
+        <OwnButton type="button" color="danger" onClick={onEditCancel}>
           Cancel
         </OwnButton>
       )}
       <OwnButton type="submit" disabled={!message}>
         {editLog ? 'Update' : 'Submit'}
       </OwnButton>
-      {!editLog && (
-        <OwnButton type="button" color="danger" onClick={handleClearText} disabled={!message && !imageBuffer}>
-          Clear All
-        </OwnButton>
-      )}
     </Stack>
   );
 
