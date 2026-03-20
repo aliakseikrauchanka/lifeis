@@ -1,4 +1,4 @@
-import React, { useState, KeyboardEvent, useEffect, useCallback } from 'react';
+import React, { useState, KeyboardEvent, useEffect, useCallback, useRef } from 'react';
 import { ImagePreviewFromBuffer, OwnButton, SpeechToText } from '@lifeis/common-ui';
 import { CameraAlt } from '@mui/icons-material';
 import { createLog, describeFromImage, type DescribeFromImageMode, updateLog } from '../../api/logs/logs.api';
@@ -27,6 +27,11 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
   const [isDescribingFood, setIsDescribingFood] = useState(false);
   const [imageBuffer, setImageBuffer] = useState<ArrayBuffer | null>(null);
   const [imageMode, setImageMode] = useState<DescribeFromImageMode>('describe-food-ru');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
 
   // Prefill only when entering/exiting edit mode or switching logs - NOT on expand/shrink
   const editLogId = editLog?.id;
@@ -200,6 +205,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
       <Box className={`${css.formContainer} ${compact ? css.formCompact : ''}`}>
         <Box className={css.textFieldWrapper}>
           <TextField
+            inputRef={textareaRef}
             className={css.textAreaField}
             multiline
             rows={compact ? 1 : 2}
