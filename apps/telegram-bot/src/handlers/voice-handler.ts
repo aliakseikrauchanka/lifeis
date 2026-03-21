@@ -17,7 +17,7 @@ function getVoiceOrAudioFileId(msg: Record<string, unknown>): string | null {
 }
 
 export async function handleVoice(ctx: Context) {
-  const msg = ctx.message;
+  const msg = ctx.message ?? ctx.channelPost;
   const fileId = msg ? getVoiceOrAudioFileId(msg as unknown as Record<string, unknown>) : null;
   if (!fileId) {
     return;

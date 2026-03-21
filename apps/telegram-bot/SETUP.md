@@ -36,8 +36,11 @@ Use the output as `TELEGRAM_BOT_API_KEY`. **Use the same value** in both the bot
 To get your Telegram chat ID:
 - **Private chat**: Forward any message from your chat to [@userinfobot](https://t.me/userinfobot) — it will show your user ID
 - **Group**: Add @userinfobot to the group, send a message, then remove — it will show the group ID (negative number)
+- **Channel**: Add @userinfobot to the channel as admin, post something, then remove — it will show the channel ID (starts with `-100`)
 
 Add the IDs to `TELEGRAM_ALLOWED_CHAT_IDS` as comma-separated values. If you leave this empty, **all chats** can use the bot.
+
+**Channels**: Add the bot as an **administrator** to the channel (with at least "Post messages" or "Edit messages") so it can receive and reply to voice/audio posts.
 
 ---
 
