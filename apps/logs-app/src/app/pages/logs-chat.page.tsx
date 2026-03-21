@@ -8,6 +8,7 @@ import { BasketSelect } from '../components/basket-select';
 import { LogsPeriodControls } from '../components/logs-period-controls';
 import { useBaskets } from '../hooks/use-baskets';
 import { getLogsPeriodDates, getLogsPeriodParamsForApi } from '../utils/logs-period.utils';
+import { CHAT_PROMPTS } from '../prompts/logs-chat-prompts';
 import { TextField } from '@mui/material';
 import { OwnButton } from '@lifeis/common-ui';
 import type { IDiaryLog } from '../domains/log.domain';
@@ -84,6 +85,11 @@ export const LogsChatPage = () => {
   useEffect(() => {
     messagesAreaRef.current?.scrollTo({ top: messagesAreaRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, isLoading, logs]);
+
+  const handlePromptClick = useCallback((prompt: string) => {
+    setQuestion(prompt);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  }, []);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -177,6 +183,19 @@ export const LogsChatPage = () => {
           )}
         </div>
 
+        <div className={css.promptBubbles}>
+          {CHAT_PROMPTS.map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              className={css.promptBubble}
+              onClick={() => handlePromptClick(item.prompt)}
+              disabled={isLoading}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
         <form ref={formRef} onSubmit={handleSubmit} className={css.chatForm}>
           <TextField
             inputRef={inputRef}
