@@ -6,6 +6,7 @@ import { NavLink, Route, Routes } from 'react-router-dom';
 import { CONFIG } from '../config';
 import { useEffect, useState } from 'react';
 import { LogsPage } from './pages/logs.page';
+import { LogsChatPage } from './pages/logs-chat.page';
 import { BasketsPage } from './pages/baskets.page';
 import css from './app.module.scss';
 
@@ -31,6 +32,9 @@ export function App() {
                 <NavLink to="/" end className={({ isActive }) => (isActive ? css.active : undefined)}>
                   Home
                 </NavLink>
+                <NavLink to="/chat" className={({ isActive }) => (isActive ? css.active : undefined)}>
+                  Chat
+                </NavLink>
                 <NavLink to="/baskets" className={({ isActive }) => (isActive ? css.active : undefined)}>
                   Baskets
                 </NavLink>
@@ -53,6 +57,7 @@ export function App() {
                     </DeepgramFileSTTProvider>
                   }
                 />
+                <Route path="/chat" element={<LogsChatPage />} />
                 <Route
                   path="/baskets"
                   element={

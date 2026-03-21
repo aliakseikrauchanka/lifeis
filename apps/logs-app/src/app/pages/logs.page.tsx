@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { IDiaryLog } from '../domains/log.domain';
 import { LogForm, IEditLog } from '../components/log-form/log-form';
+import { BasketSelect } from '../components/basket-select';
+import { LogsPeriodControls, type PeriodType } from '../components/logs-period-controls';
 import { deleteLog, getAllLogs } from '../api/logs/logs.api';
-import { Box, Chip, IconButton, MenuItem, Select, ToggleButton, ToggleButtonGroup } from '@mui/material';
+import { useBaskets } from '../hooks/use-baskets';
+import { getLogsPeriodDates } from '../utils/logs-period.utils';
+import { Box, Chip, IconButton } from '@mui/material';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { startOfDay, startOfWeek, endOfWeek, isToday, isYesterday, format } from 'date-fns';
-import { getAllBaskets } from '../api/baskets/baskets.api';
+import { isToday, isYesterday, format } from 'date-fns';
 import css from './logs.page.module.scss';
-
-export type PeriodType = 'all' | 'today' | 'week' | 'range';
 
 const getDateLabel = (date: Date) => {
   if (isToday(date)) return 'Today';
@@ -18,7 +18,7 @@ const getDateLabel = (date: Date) => {
 };
 
 export const LogsPage = () => {
-  const [baskets, setBaskets] = useState<{ _id: string; name: string }[]>([]);
+  const { baskets } = useBaskets();
   const [editLogId, setEditLogId] = useState<string | null>(null);
   const [isFormExpanded, setIsFormExpanded] = useState(() => {
     if (typeof window === 'undefined') return false;
@@ -34,16 +34,6 @@ export const LogsPage = () => {
     localStorage.setItem('logs-form-expanded', JSON.stringify(isFormExpanded));
   }, [isFormExpanded]);
 
-  // Fetch baskets on mount
-  useEffect(() => {
-    const fetchBaskets = async () => {
-      try {
-        const res = await getAllBaskets();
-        setBaskets((res as any).baskets || []);
-      } catch (e) {}
-    };
-    fetchBaskets();
-  }, []);
   const [period, setPeriod] = useState<PeriodType>('today');
   const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
   const [selectedBasketId, setSelectedBasketId] = useState<string | ''>('');
@@ -51,32 +41,13 @@ export const LogsPage = () => {
 
   const fetchLogs = useCallback(
     async (periodValue: PeriodType, range?: { from: Date | null; to: Date | null }, basketId?: string) => {
-      let from: Date | undefined;
-      let to: Date | undefined;
-      if (periodValue === 'today') {
-        from = startOfDay(new Date());
-      } else if (periodValue === 'week') {
-        const now = new Date();
-        from = startOfWeek(now, { weekStartsOn: 1 });
-        to = endOfWeek(now, { weekStartsOn: 1 });
-      } else if (periodValue === 'range') {
-        from = range?.from ? startOfDay(range.from) : undefined;
-        to = range?.to
-          ? new Date(range.to.getFullYear(), range.to.getMonth(), range.to.getDate(), 23, 59, 59, 999)
-          : undefined;
-      }
+      const { from, to } = getLogsPeriodDates(periodValue, range ?? { from: null, to: null });
       const response = await getAllLogs(from, to, basketId || undefined);
       const logsData = response.logs;
       setLogs(logsData);
     },
     [],
   );
-
-  const handleChange = (event: React.MouseEvent<HTMLElement>, newPeriod: PeriodType | null) => {
-    if (newPeriod !== null) {
-      setPeriod(newPeriod);
-    }
-  };
 
   useEffect(() => {
     if (period === 'range') {
@@ -166,60 +137,13 @@ export const LogsPage = () => {
       </div>
       <Box className={css.logsContainer}>
         <div className={css.basketFilterRow}>
-          <Select
-            value={selectedBasketId}
-            onChange={(e) => setSelectedBasketId(e.target.value)}
-            displayEmpty
-            size="small"
-            variant="outlined"
-            className={css.basketFilterSelect}
-            renderValue={(v) => (v ? baskets.find((b) => b._id === v)?.name ?? v : 'Basket (all)')}
-          >
-            <MenuItem value="">All</MenuItem>
-            {baskets.map((b) => (
-              <MenuItem key={b._id} value={b._id}>
-                {b.name}
-              </MenuItem>
-            ))}
-          </Select>
-          <ToggleButtonGroup
-            value={period}
-            exclusive
-            onChange={handleChange}
-            aria-label="Period selection"
-            size="small"
-          >
-            <ToggleButton value="today" aria-label="Today">
-              Today
-            </ToggleButton>
-            <ToggleButton value="week" aria-label="This week">
-              Week
-            </ToggleButton>
-            <ToggleButton value="all" aria-label="All time">
-              All
-            </ToggleButton>
-            <ToggleButton value="range" aria-label="Date range">
-              Range
-            </ToggleButton>
-          </ToggleButtonGroup>
-          {period === 'range' && (
-            <Box className={css.dateRangePickers}>
-              <DatePicker
-                label="From"
-                value={dateRange.from}
-                onChange={(date) => setDateRange((prev) => ({ ...prev, from: date ?? null }))}
-                slotProps={{ textField: { size: 'small' } }}
-                maxDate={dateRange.to ?? undefined}
-              />
-              <DatePicker
-                label="To"
-                value={dateRange.to}
-                onChange={(date) => setDateRange((prev) => ({ ...prev, to: date ?? null }))}
-                slotProps={{ textField: { size: 'small' } }}
-                minDate={dateRange.from ?? undefined}
-              />
-            </Box>
-          )}
+          <BasketSelect baskets={baskets} value={selectedBasketId} onChange={setSelectedBasketId} />
+          <LogsPeriodControls
+            period={period}
+            onPeriodChange={setPeriod}
+            dateRange={dateRange}
+            onDateRangeChange={setDateRange}
+          />
         </div>
         <table className={css.logsTable}>
           <thead>

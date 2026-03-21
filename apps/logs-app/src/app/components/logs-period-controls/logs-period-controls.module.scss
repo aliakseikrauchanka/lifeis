@@ -1,0 +1,33 @@
+.controls-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.date-range-pickers {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+  min-width: 0;
+
+  .MuiTextField-root {
+    min-width: 70px;
+  }
+
+  @media (max-width: 480px) {
+    flex: 1 1 100%;
+    min-width: 0;
+    gap: 4px;
+
+    > * {
+      min-width: 0;
+      flex: 1 1 0;
+    }
+
+    .MuiTextField-root {
+      min-width: 0;
+    }
+  }
+}

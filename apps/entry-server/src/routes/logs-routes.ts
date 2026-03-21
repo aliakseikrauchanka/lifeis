@@ -4,6 +4,7 @@ import { IDiaryLog, IDiaryResponseLog } from '../domain';
 import { MongoClient, ObjectId } from 'mongodb';
 import { GenerativeModel } from '@google/generative-ai';
 import { addYears, endOfToday } from 'date-fns';
+import { buildLogsChatPrompt } from '../prompts/logs-prompts';
 
 export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeModel) => {
   const router = Router();
@@ -139,6 +140,74 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
       res.status(200).send({ message: 'Log updated' });
     } else {
       res.status(404).send({ message: 'Log not found' });
+    }
+  });
+
+  // POST /chat - ask bot questions about logs in a selected period
+  router.post('/chat', verifyAccessToken, async (req, res) => {
+    try {
+      const userId = res.locals.userId;
+      const { question, from, to, basket_id } = req.body;
+      if (!question || typeof question !== 'string') {
+        return res.status(400).send({ message: 'question is required' });
+      }
+
+      let filter: Record<string, unknown> = { owner_id: userId };
+      if (basket_id) {
+        filter.basket_id = new ObjectId(basket_id);
+      }
+      if (from || to) {
+        const timestampFilter: { $gte?: number; $lt?: number } = {};
+        if (from) {
+          timestampFilter.$gte = new Date(from).getTime();
+        } else {
+          timestampFilter.$gte = 0;
+        }
+        if (to) {
+          const toDate = new Date(to);
+          const toEndOfDay = new Date(toDate.getFullYear(), toDate.getMonth(), toDate.getDate(), 23, 59, 59, 999);
+          timestampFilter.$lt = toEndOfDay.getTime();
+        } else {
+          timestampFilter.$lt = addYears(endOfToday(), 50).getTime();
+        }
+        filter = { ...filter, timestamp: timestampFilter };
+      }
+
+      const baskets = await client.db('lifeis').collection('baskets').find().toArray();
+      const dbLogs = await client.db('lifeis').collection('logs').find(filter).sort({ timestamp: -1 }).toArray();
+
+      const logs: IDiaryResponseLog[] = dbLogs.map((dbLog) => {
+        const foundBasket = baskets.find((b) => b._id.toString() === dbLog.basket_id.toString());
+        return {
+          id: dbLog._id.toString(),
+          message: dbLog.message,
+          timestamp: dbLog.timestamp,
+          basket_name: foundBasket?.name || 'removed',
+          owner_id: dbLog.owner_id.toString(),
+        };
+      });
+
+      const logsContext = logs
+        .map(
+          (l) =>
+            `[${new Date(l.timestamp).toLocaleDateString(undefined, { timeZone: 'UTC' })}] (${l.basket_name}): ${
+              l.message
+            }`,
+        )
+        .join('\n');
+
+      const todayUtc = new Date().toISOString().slice(0, 10);
+      const prompt = buildLogsChatPrompt(logsContext, question, todayUtc);
+
+      console.log('debug prompt', prompt);
+
+      const result = await geminiModel.generateContent(prompt);
+      const answer = result.response.text();
+
+      res.status(200).send({ answer });
+    } catch (e) {
+      console.error('Logs chat error:', e);
+      res.status(500).send({ message: (e as Error)?.message || 'Failed to get answer' });
     }
   });
 
