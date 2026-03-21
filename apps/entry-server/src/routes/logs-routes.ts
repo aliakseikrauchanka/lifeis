@@ -139,10 +139,15 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
   router.post('/chat', verifyAccessToken, async (req, res) => {
     try {
       const userId = res.locals.userId;
-      const { question, from, to, basket_id } = req.body;
+      const { question, from, to, basket_id, messages } = req.body;
       if (!question || typeof question !== 'string') {
         return res.status(400).send({ message: 'question is required' });
       }
+      const previousMessages = Array.isArray(messages)
+        ? (messages as { role: string; content: string }[])
+            .filter((m) => m?.role && m?.content && ['user', 'assistant'].includes(m.role))
+            .map((m) => ({ role: m.role as 'user' | 'assistant', content: m.content }))
+        : [];
 
       let filter: Record<string, unknown> = { owner_id: userId };
       if (basket_id) {
@@ -189,7 +194,7 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
         .join('\n');
 
       const todayUtc = new Date().toISOString().slice(0, 10);
-      const prompt = buildLogsChatPrompt(logsContext, question, todayUtc);
+      const prompt = buildLogsChatPrompt(logsContext, question, todayUtc, previousMessages);
 
       // SECURITY FIX: Removed console.log of full prompt — it contained user PII (diary entries)
 

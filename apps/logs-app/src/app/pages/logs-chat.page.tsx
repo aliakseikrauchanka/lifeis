@@ -54,7 +54,7 @@ export const LogsChatPage = () => {
 
       try {
         const params = getChatParams();
-        const { answer } = await askLogsChat(q, params);
+        const { answer } = await askLogsChat(q, { ...params, messages });
         setMessages((prev) => [...prev, { role: 'assistant', content: answer }]);
       } catch (err) {
         console.error('Chat error:', err);
@@ -63,7 +63,7 @@ export const LogsChatPage = () => {
         setIsLoading(false);
       }
     },
-    [question, isLoading, getChatParams],
+    [question, isLoading, getChatParams, messages],
   );
 
   return (
