@@ -135,6 +135,8 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
     }
   });
 
+  const LOGS_CHAT_LIMIT = 200;
+
   // POST /chat - ask bot questions about logs in a selected period
   router.post('/chat', verifyAccessToken, async (req, res) => {
     try {
@@ -171,7 +173,19 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
       }
 
       const baskets = await client.db('lifeis').collection('baskets').find().toArray();
-      const dbLogs = await client.db('lifeis').collection('logs').find(filter).sort({ timestamp: -1 }).toArray();
+      const dbLogs = await client
+        .db('lifeis')
+        .collection('logs')
+        .find(filter)
+        .sort({ timestamp: -1 })
+        .limit(LOGS_CHAT_LIMIT + 1)
+        .toArray();
+
+      if (dbLogs.length > LOGS_CHAT_LIMIT) {
+        return res.status(400).send({
+          message: `Log limit exceeded. Maximum ${LOGS_CHAT_LIMIT} logs per request. Try narrowing your date range or selecting a basket.`,
+        });
+      }
 
       const logs: IDiaryResponseLog[] = dbLogs.map((dbLog) => {
         const foundBasket = baskets.find((b) => b._id.toString() === dbLog.basket_id.toString());
