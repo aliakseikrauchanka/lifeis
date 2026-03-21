@@ -4,6 +4,7 @@ import https from 'https';
 import axios from 'axios';
 import { config } from '../config';
 import { tryConsume } from '../lib/daily-rate-limit';
+import { MAX_AUDIO_BYTES } from '../constants';
 
 function getVoiceOrAudioFileId(msg: Record<string, unknown>): string | null {
   if (msg && typeof msg === 'object') {
@@ -77,8 +78,8 @@ export async function handleVoice(ctx: Context) {
         Authorization: `Bearer ${config.telegramBotApiKey}`,
         'X-Telegram-Chat-Id': String(chatId),
       },
-      maxBodyLength: Infinity,
-      maxContentLength: Infinity,
+      maxBodyLength: MAX_AUDIO_BYTES,
+      maxContentLength: MAX_AUDIO_BYTES,
     });
 
     const { transcript } = response.data as { transcript?: string };
