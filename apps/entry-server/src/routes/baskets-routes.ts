@@ -11,7 +11,10 @@ export const getBasketRoutes = (client: MongoClient) => {
       const baskets = await client.db('lifeis').collection('baskets').find().toArray();
       res.json({ baskets });
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching baskets', error });
+      // SECURITY FIX: Do not serialise the raw error object — it can contain MongoDB internals,
+      // connection strings, or stack traces. Log server-side only.
+      console.error('Error fetching baskets:', error);
+      res.status(500).json({ message: 'Error fetching baskets' });
     }
   });
 
@@ -19,26 +22,27 @@ export const getBasketRoutes = (client: MongoClient) => {
   router.post('/', verifyAccessToken, async (req, res) => {
     try {
       const name = req.body.name;
-      console.log('req.body', req.body);
       if (!name) {
         return res.status(400).json({ message: 'Basket name is required' });
       }
 
-      const basketsCollection = await client.db('lifeis').collection('baskets');
+      const basketsCollection = client.db('lifeis').collection('baskets');
 
-      const savedBasket = basketsCollection.insertOne({
+      const savedBasket = await basketsCollection.insertOne({
         name,
       });
       res.status(201).json(savedBasket);
     } catch (error) {
-      res.status(500).json({ message: 'Error creating basket', error });
+      // SECURITY FIX: Same as above — sanitise error response.
+      console.error('Error creating basket:', error);
+      res.status(500).json({ message: 'Error creating basket' });
     }
   });
 
   // DELETE basket by id
   router.delete('/:id', verifyAccessToken, async (req, res) => {
     const basketId = req.params.id;
-    const basketsCollection = await client.db('lifeis').collection('baskets');
+    const basketsCollection = client.db('lifeis').collection('baskets');
     const result = await basketsCollection.deleteOne({ _id: new ObjectId(basketId) });
     if (result.deletedCount === 1) {
       res.status(200).send({ message: 'Basket deleted' });

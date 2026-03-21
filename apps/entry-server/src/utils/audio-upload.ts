@@ -28,7 +28,10 @@ const storage = multer.diskStorage({
   },
 });
 
-export const uploadMiddlewareFactory = multer({ storage });
+// SECURITY FIX: Added fileSize limit (5 MB) to prevent DoS via large audio uploads.
+// Without this limit an attacker could exhaust disk space or memory by uploading
+// arbitrarily large files.
+export const uploadMiddlewareFactory = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
 export const getFilePath = (mimeType: string | string[]) => path.join(__dirname, 'uploads', getFileName(mimeType));
 

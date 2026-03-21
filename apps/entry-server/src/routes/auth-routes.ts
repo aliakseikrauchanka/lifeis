@@ -110,7 +110,9 @@ router.post('/google/refresh', async (req, res) => {
     });
   } catch {
     console.error('Token exchange error');
-    res.status(500);
+    // SECURITY FIX: Previously `res.status(500)` was called without `.json()`, leaving
+    // the connection open and hanging forever. Added response body to terminate properly.
+    res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 

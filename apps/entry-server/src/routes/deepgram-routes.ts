@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { getFilePath, mp3FilePath, uploadMiddlewareFactory } from '../utils/audio-upload';
-import fs, { unlinkSync } from 'fs';
+import fs from 'fs';
 import { convertFile } from '../utils/ffmpeg-converter';
 
 import { createClient, DeepgramError } from '@deepgram/sdk';
@@ -10,7 +10,7 @@ import { safeUnlink } from '../helpers/fs';
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
 const routes = Router();
 
-routes.get('/authenticate', async (req, res) => {
+routes.get('/authenticate', verifyAccessToken, async (req, res) => {
   // exit early so we don't request 70000000 keys while in devmode
   if (process.env.ENV === 'development') {
     return res.json({
@@ -43,8 +43,9 @@ routes.get('/authenticate', async (req, res) => {
     });
 
     res.json({ ...newKeyResult, url });
-  } catch (error) {
-    res.json(error);
+  } catch (_error) {
+    console.error('Failed to create Deepgram temporary key', _error);
+    res.status(500).json({ error: 'Failed to create Deepgram temporary key' });
   }
 });
 

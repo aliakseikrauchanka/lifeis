@@ -416,13 +416,21 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
       return res.status(404).send({ message: 'agent not found' });
     }
 
+    // SECURITY FIX: Replaced `...req.body` spread with an explicit allowlist of editable fields.
+    // Previously an attacker could overwrite `ownerId`, `type`, or `creatorId` by including them
+    // in the request body (mass-assignment / prototype pollution vector).
+    const allowedUpdates: Partial<IAgent> = {};
+    if (typeof req.body.name === 'string') allowedUpdates.name = req.body.name;
+    if (typeof req.body.prefix === 'string') allowedUpdates.prefix = req.body.prefix;
+    if (typeof req.body.isArchived === 'boolean') allowedUpdates.isArchived = req.body.isArchived;
+
     const updatedAgent = await client
       .db('lifeis')
       .collection<IAgent | IAgentTemplate>('agents')
       .updateOne(
         { _id: new ObjectId(agentId), ownerId: res.locals.userId },
         {
-          $set: { ...foundAgent, ...req.body },
+          $set: allowedUpdates,
         },
       );
 
@@ -451,7 +459,6 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
     if (deleteResult.deletedCount > 1) {
       return res.status(500).send({ message: 'something went wrong' });
     }
-    1;
     res.status(200).send({ message: 'agent deleted' });
   });
 

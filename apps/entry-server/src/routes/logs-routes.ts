@@ -53,8 +53,10 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
   // DELETE log by id
   router.delete('/:id', verifyAccessToken, async (req, res) => {
     const logId = req.params.id;
+    const userId = res.locals.userId;
     const logsCollection = await client.db('lifeis').collection('logs');
-    const result = await logsCollection.deleteOne({ _id: new ObjectId(logId) });
+    // SECURITY FIX: Added owner_id to filter so users can only delete their own logs (IDOR fix)
+    const result = await logsCollection.deleteOne({ _id: new ObjectId(logId), owner_id: userId });
     if (result.deletedCount === 1) {
       res.status(200).send({ message: 'Log deleted' });
     } else {
@@ -126,6 +128,7 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
   // PATCH log message and optionally basket_id by log id
   router.patch('/:id', verifyAccessToken, async (req, res) => {
     const logId = req.params.id;
+    const userId = res.locals.userId;
     const { message, basket_id } = req.body;
     if (message === undefined) {
       return res.status(400).send({ message: 'message is required' });
@@ -135,7 +138,8 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
     if (basket_id) {
       update.basket_id = new ObjectId(basket_id);
     }
-    const result = await logsCollection.updateOne({ _id: new ObjectId(logId) }, { $set: update });
+    // SECURITY FIX: Added owner_id to filter so users can only update their own logs (IDOR fix)
+    const result = await logsCollection.updateOne({ _id: new ObjectId(logId), owner_id: userId }, { $set: update });
     if (result.matchedCount === 1) {
       res.status(200).send({ message: 'Log updated' });
     } else {
@@ -199,7 +203,7 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
       const todayUtc = new Date().toISOString().slice(0, 10);
       const prompt = buildLogsChatPrompt(logsContext, question, todayUtc);
 
-      console.log('debug prompt', prompt);
+      // SECURITY FIX: Removed console.log of full prompt — it contained user PII (diary entries)
 
       const result = await geminiModel.generateContent(prompt);
       const answer = result.response.text();
@@ -214,13 +218,15 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
   // PATCH log basket_id by log id (legacy/standalone basket update)
   router.patch('/:id/basket', verifyAccessToken, async (req, res) => {
     const logId = req.params.id;
+    const userId = res.locals.userId;
     const { basket_id } = req.body;
     if (!basket_id) {
       return res.status(400).send({ message: 'basket_id is required' });
     }
     const logsCollection = await client.db('lifeis').collection('logs');
+    // SECURITY FIX: Added owner_id to filter so users can only update their own logs (IDOR fix)
     const result = await logsCollection.updateOne(
-      { _id: new ObjectId(logId) },
+      { _id: new ObjectId(logId), owner_id: userId },
       { $set: { basket_id: new ObjectId(basket_id) } },
     );
     if (result.modifiedCount === 1) {

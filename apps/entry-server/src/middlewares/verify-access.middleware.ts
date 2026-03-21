@@ -1,7 +1,9 @@
 import { Response } from 'express';
 
 export const verifyAccessToken = (req, res: Response, next) => {
-  if (process.env.MODE === 'offline') {
+  // SECURITY FIX: Offline bypass is now additionally gated on NODE_ENV !== 'production'.
+  // This prevents accidental authentication bypass if MODE=offline leaks into production config.
+  if (process.env.MODE === 'offline' && process.env.NODE_ENV !== 'production') {
     res.locals.userId = 'local_user';
     next();
     return;

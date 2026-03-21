@@ -102,7 +102,10 @@ routes.get('/thread/run', verifyAccessToken, async (req, res) => {
     const run = await openai.beta.threads.runs.retrieve(threadId, runId);
     res.status(200).send(run);
   } catch (e) {
-    console.log('error happened', e);
+    // SECURITY FIX: Previously the catch block only logged and never sent a response,
+    // leaving the connection permanently open (resource leak / DoS amplifier).
+    console.error('Error retrieving thread run:', e);
+    res.status(500).json({ error: 'Failed to retrieve thread run' });
   }
 });
 

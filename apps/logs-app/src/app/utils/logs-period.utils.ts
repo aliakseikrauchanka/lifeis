@@ -3,7 +3,7 @@ import type { PeriodType } from '../components/logs-period-controls';
 
 export const getLogsPeriodDates = (
   period: PeriodType,
-  dateRange: { from: Date | null; to: Date | null }
+  dateRange: { from: Date | null; to: Date | null },
 ): { from?: Date; to?: Date } => {
   let from: Date | undefined;
   let to: Date | undefined;
@@ -16,15 +16,7 @@ export const getLogsPeriodDates = (
   } else if (period === 'range') {
     if (dateRange.from) from = startOfDay(dateRange.from);
     if (dateRange.to) {
-      to = new Date(
-        dateRange.to.getFullYear(),
-        dateRange.to.getMonth(),
-        dateRange.to.getDate(),
-        23,
-        59,
-        59,
-        999
-      );
+      to = new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate(), 23, 59, 59, 999);
     }
   }
   return { from, to };
@@ -33,7 +25,7 @@ export const getLogsPeriodDates = (
 export const getLogsPeriodParamsForApi = (
   period: PeriodType,
   dateRange: { from: Date | null; to: Date | null },
-  basketId: string
+  basketId: string,
 ): { from?: string; to?: string; basketId?: string } => {
   const { from, to } = getLogsPeriodDates(period, dateRange);
   return {
