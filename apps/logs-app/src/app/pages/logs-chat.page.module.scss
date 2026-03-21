@@ -57,6 +57,28 @@
   padding: 24px 16px;
 }
 
+.logs-date-header {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #888;
+  margin: 12px 0 4px;
+  text-align: center;
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.logs-time {
+  opacity: 0.85;
+  margin-right: 4px;
+}
+
+.logs-basket-in-user {
+  opacity: 0.9;
+  margin-right: 4px;
+}
+
 .message-user {
   align-self: flex-end;
   max-width: 85%;

@@ -1,13 +1,16 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { format, isToday, isYesterday } from 'date-fns';
 import { askLogsChat } from '../api/logs/logs-chat.api';
+import { getAllLogs } from '../api/logs/logs.api';
 import { BasketSelect } from '../components/basket-select';
 import { LogsPeriodControls } from '../components/logs-period-controls';
 import { useBaskets } from '../hooks/use-baskets';
-import { getLogsPeriodParamsForApi } from '../utils/logs-period.utils';
+import { getLogsPeriodDates, getLogsPeriodParamsForApi } from '../utils/logs-period.utils';
 import { TextField } from '@mui/material';
 import { OwnButton } from '@lifeis/common-ui';
+import type { IDiaryLog } from '../domains/log.domain';
 import css from './logs-chat.page.module.scss';
 
 interface ChatMessage {
@@ -22,13 +25,65 @@ export const LogsChatPage = () => {
   const [selectedBasketId, setSelectedBasketId] = useState<string | ''>('');
   const [question, setQuestion] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [logs, setLogs] = useState<IDiaryLog[]>([]);
+  const [logsLoading, setLogsLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
+  const messagesAreaRef = useRef<HTMLDivElement>(null);
+
+  const fetchLogs = useCallback(async (periodValue: typeof period, range: typeof dateRange, basketId: string) => {
+    setLogsLoading(true);
+    try {
+      const { from, to } = getLogsPeriodDates(periodValue, range);
+      const response = await getAllLogs(from, to, basketId || undefined);
+      setLogs(response.logs ?? []);
+    } catch {
+      setLogs([]);
+    } finally {
+      setLogsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (period === 'range') {
+      fetchLogs(period, dateRange, selectedBasketId);
+    } else {
+      fetchLogs(period, { from: null, to: null }, selectedBasketId);
+    }
+  }, [period, dateRange, selectedBasketId, fetchLogs]);
+
+  const logsWithDateHeaders = useMemo(() => {
+    const sorted = [...logs].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+    const items: Array<{ type: 'date-header'; label: string } | { type: 'log'; log: IDiaryLog }> = [];
+    let lastDateKey = '';
+
+    for (const log of sorted) {
+      const logDate = new Date(log.timestamp);
+      const dateKey = format(logDate, 'yyyy-MM-dd');
+
+      if (dateKey !== lastDateKey) {
+        lastDateKey = dateKey;
+        const label = isToday(logDate)
+          ? 'Today'
+          : isYesterday(logDate)
+          ? 'Yesterday'
+          : format(logDate, 'EEEE, MMM d, yyyy');
+        items.push({ type: 'date-header', label });
+      }
+      items.push({ type: 'log', log });
+    }
+
+    return items;
+  }, [logs]);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, [isLoading]);
+
+  useEffect(() => {
+    messagesAreaRef.current?.scrollTo({ top: messagesAreaRef.current.scrollHeight, behavior: 'smooth' });
+  }, [messages, isLoading, logs]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
@@ -81,8 +136,28 @@ export const LogsChatPage = () => {
       </div>
 
       <div className={css.chatSection}>
-        <div className={css.messagesArea}>
-          {messages.length === 0 && (
+        <div ref={messagesAreaRef} className={css.messagesArea}>
+          {logsLoading ? (
+            <div className={css.emptyState}>Loading logs...</div>
+          ) : logsWithDateHeaders.length > 0 ? (
+            <>
+              {logsWithDateHeaders.map((item, i) =>
+                item.type === 'date-header' ? (
+                  <div key={`h-${i}`} className={css.logsDateHeader}>
+                    {item.label}
+                  </div>
+                ) : (
+                  <div key={item.log.id} className={css.messageUser}>
+                    <div className={css.messageContent}>
+                      <span className={css.logsTime}>{format(new Date(item.log.timestamp), 'HH:mm')}</span>
+                      <span className={css.logsBasketInUser}>({item.log.basket_name})</span> {item.log.message}
+                    </div>
+                  </div>
+                ),
+              )}
+            </>
+          ) : null}
+          {messages.length === 0 && !logsLoading && logs.length === 0 && (
             <div className={css.emptyState}>
               Ask a question about your logs. For example: &quot;What did I eat this week?&quot; or &quot;Summarize my
               entries.&quot;
