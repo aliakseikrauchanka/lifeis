@@ -6,7 +6,7 @@
     "build": "npx nx run entry-server:build --configuration=production",
     "start": "node ./dist/apps/entry-server/src/main.js",
     "build:telegram-bot": "npx nx run telegram-bot:build --configuration=production",
-    "start:telegram-bot": "npm run build:telegram-bot && node ./dist/apps/telegram-bot/main.js"
+    "start:telegram-bot": "node ./dist/apps/telegram-bot/main.js"
   },
   "private": true,
   "engines": {
