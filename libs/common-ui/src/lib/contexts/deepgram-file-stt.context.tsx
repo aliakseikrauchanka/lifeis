@@ -46,7 +46,7 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({
     (onStop: (blob: Blob) => void) => {
       const audioConstraints: MediaTrackConstraints = audioInputDeviceId
         ? { deviceId: { exact: audioInputDeviceId } }
-        : true;
+        : {};
       navigator.mediaDevices
         .getUserMedia({ audio: audioConstraints })
         .then((stream) => {
