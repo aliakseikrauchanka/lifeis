@@ -10,7 +10,7 @@ import { useBaskets } from '../hooks/use-baskets';
 import { getLogsPeriodDates, getLogsPeriodParamsForApi } from '../utils/logs-period.utils';
 import { CHAT_PROMPTS } from '../prompts/logs-chat-prompts';
 import { TextField } from '@mui/material';
-import { OwnButton } from '@lifeis/common-ui';
+import { OwnButton, SpeechToText } from '@lifeis/common-ui';
 import type { IDiaryLog } from '../domains/log.domain';
 import css from './logs-chat.page.module.scss';
 
@@ -29,6 +29,8 @@ export const LogsChatPage = () => {
   const [logs, setLogs] = useState<IDiaryLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
+  const [isListeningFired, setIsListeningFired] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
   const messagesAreaRef = useRef<HTMLDivElement>(null);
@@ -79,7 +81,7 @@ export const LogsChatPage = () => {
   }, [logs]);
 
   useEffect(() => {
-    inputRef.current?.focus();
+    if (!isLoading) inputRef.current?.focus();
   }, [isLoading]);
 
   useEffect(() => {
@@ -91,12 +93,24 @@ export const LogsChatPage = () => {
     setTimeout(() => inputRef.current?.focus(), 0);
   }, []);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setIsListeningFired(false);
+    }
+    if (e.code === 'KeyS' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      setIsListeningFired((prev) => !prev);
+    }
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
       formRef.current?.requestSubmit();
     }
   }, []);
+
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
 
   const getChatParams = useCallback(
     () => getLogsPeriodParamsForApi(period, dateRange, selectedBasketId),
@@ -109,6 +123,7 @@ export const LogsChatPage = () => {
       const q = question.trim();
       if (!q || isLoading) return;
 
+      setIsCaptionsNeedClear(true);
       setQuestion('');
       setMessages((prev) => [...prev, { role: 'user', content: q }]);
       setIsLoading(true);
@@ -205,11 +220,23 @@ export const LogsChatPage = () => {
             placeholder="Ask a question about your logs..."
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={handleKeyDown}
+            // onKeyDown={(e) => handleKeyDown(e.nativeEvent)}
             variant="outlined"
             size="small"
             fullWidth
             disabled={isLoading}
+          />
+          <SpeechToText
+            onCaption={(caption) => {
+              const last = caption?.length ? caption[caption.length - 1] : '';
+              if (last) setQuestion((q) => (q ? `${q} ${last}` : last));
+            }}
+            onCleared={() => setIsCaptionsNeedClear(false)}
+            isNeedClear={isCaptionsNeedClear}
+            id="chat"
+            isToggledListening={isListeningFired}
+            onListeningToggled={() => setIsListeningFired((prev) => !prev)}
+            showPlayButton={false}
           />
           <OwnButton type="submit" disabled={!question.trim() || isLoading}>
             Ask

@@ -61,7 +61,14 @@ export function App() {
                     </DeepgramFileSTTProvider>
                   }
                 />
-                <Route path="/chat" element={<LogsChatPage />} />
+                <Route
+                  path="/chat"
+                  element={
+                    <DeepgramFileSTTProvider language="ru">
+                      <LogsChatPage />
+                    </DeepgramFileSTTProvider>
+                  }
+                />
                 <Route
                   path="/baskets"
                   element={
