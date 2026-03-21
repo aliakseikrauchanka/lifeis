@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { LogsPage } from './pages/logs.page';
 import { LogsChatPage } from './pages/logs-chat.page';
 import { BasketsPage } from './pages/baskets.page';
+import { UploadPage } from './pages/upload.page';
 import css from './app.module.scss';
 
 export function App() {
@@ -38,6 +39,9 @@ export function App() {
                 <NavLink to="/baskets" className={({ isActive }) => (isActive ? css.active : undefined)}>
                   Baskets
                 </NavLink>
+                <NavLink to="/upload" className={({ isActive }) => (isActive ? css.active : undefined)}>
+                  Upload
+                </NavLink>
               </nav>
             )}
             <UserSession
@@ -66,6 +70,7 @@ export function App() {
                     </div>
                   }
                 />
+                <Route path="/upload" element={<UploadPage />} />
               </Routes>
             </div>
           )}

@@ -5,6 +5,12 @@ import { MongoClient, ObjectId } from 'mongodb';
 import { GenerativeModel } from '@google/generative-ai';
 import { addYears, endOfToday } from 'date-fns';
 import { buildLogsChatPrompt } from '../prompts/logs-prompts';
+import { createClient } from '@deepgram/sdk';
+import fs from 'fs';
+import { safeUnlink } from '../helpers/fs';
+import { resolveBasketForMessage } from '../helpers/basket-resolver';
+import multer from 'multer';
+import path from 'path';
 
 export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeModel) => {
   const router = Router();
@@ -15,29 +21,11 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
     const userId = res.locals.userId;
     const logsCollection = await client.db('lifeis').collection('logs');
 
-    const baskets = await client.db('lifeis').collection('baskets').find().toArray();
-    let basket_id: (typeof baskets)[0]['_id'];
-
-    if (basketId) {
-      basket_id = new ObjectId(basketId);
-    } else {
-      const basketsNames = baskets.map((basket) => basket.name);
-      const prompt = `What basket does message "${message}" belong out of the following baskets: ${basketsNames.join(
-        ', ',
-      )}. As a result please provide only name of matched basket without modifying case and without newlines at the end`;
-
-      console.log({ prompt });
-
-      const resultBasket = await geminiModel.generateContent(prompt);
-      const matchedBasketName = await resultBasket.response.text().trim();
-
-      let finalMatchedBasket = 'unspecified';
-      if (basketsNames.includes(matchedBasketName)) {
-        finalMatchedBasket = matchedBasketName;
-      }
-
-      basket_id = baskets.find((basket) => basket.name === finalMatchedBasket)?._id ?? baskets[0]?._id;
-    }
+    const baskets = (await client.db('lifeis').collection('baskets').find().toArray()) as {
+      _id: ObjectId;
+      name: string;
+    }[];
+    const basket_id = await resolveBasketForMessage(baskets, message, basketId, geminiModel);
 
     const log: IDiaryLog = {
       message,
@@ -213,6 +201,110 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
       console.error('Logs chat error:', e);
       res.status(500).send({ message: (e as Error)?.message || 'Failed to get answer' });
     }
+  });
+
+  // POST /transcribe-audio - upload multiple WAV files, transcribe, create logs
+  const wavStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      const d = path.join(__dirname, '..', 'uploads');
+      if (!fs.existsSync(d)) {
+        fs.mkdirSync(d, { recursive: true });
+      }
+      cb(null, d);
+    },
+    filename: (req, file, cb) => {
+      cb(null, `${Date.now()}-${file.originalname}`);
+    },
+  });
+  const wavUpload = multer({
+    storage: wavStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      if (
+        file.mimetype === 'audio/wav' ||
+        file.mimetype === 'audio/wave' ||
+        file.originalname.endsWith('.wav') ||
+        file.originalname.endsWith('.WAV')
+      ) {
+        cb(null, true);
+      } else {
+        cb(new Error('Only WAV files are allowed'));
+      }
+    },
+  });
+
+  router.post('/transcribe-audio', verifyAccessToken, wavUpload.array('audio', 20), async (req, res) => {
+    const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
+    const userId = res.locals.userId;
+    const files = req.files as Express.Multer.File[];
+
+    if (!files || files.length === 0) {
+      return res.status(400).send({ message: 'No files uploaded' });
+    }
+
+    const basketId = req.body.basket_id;
+    const timestampsRaw = req.body.timestamps;
+    let timestamps: Record<string, string> = {};
+    if (typeof timestampsRaw === 'string') {
+      try {
+        timestamps = (JSON.parse(timestampsRaw) as Record<string, string>) ?? {};
+      } catch {
+        // ignore malformed JSON
+      }
+    }
+    const baskets = (await client.db('lifeis').collection('baskets').find().toArray()) as {
+      _id: ObjectId;
+      name: string;
+    }[];
+    const logsCollection = await client.db('lifeis').collection('logs');
+
+    const results: { filename: string; message: string; timestamp: number; error?: string }[] = [];
+
+    for (const file of files) {
+      try {
+        const isoDate = timestamps[file.originalname];
+        const timestamp = isoDate ? new Date(isoDate).getTime() : Date.now();
+
+        // Transcribe with Deepgram
+        const { result, error } = await deepgram.listen.prerecorded.transcribeFile(fs.readFileSync(file.path), {
+          model: 'nova-3',
+          smart_format: true,
+          language: 'ru',
+        });
+
+        if (error) throw error;
+
+        const transcript = result?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? '';
+
+        if (!transcript.trim()) {
+          results.push({ filename: file.originalname, message: '', timestamp, error: 'Empty transcription' });
+          continue;
+        }
+
+        const basket_id = await resolveBasketForMessage(baskets, transcript, basketId, geminiModel);
+
+        const log: IDiaryLog = {
+          message: transcript,
+          timestamp,
+          basket_id,
+          owner_id: userId,
+        };
+
+        await logsCollection.insertOne(log);
+        results.push({ filename: file.originalname, message: transcript, timestamp });
+      } catch (err) {
+        results.push({
+          filename: file.originalname,
+          message: '',
+          timestamp: Date.now(),
+          error: (err as Error).message,
+        });
+      } finally {
+        safeUnlink(file.path);
+      }
+    }
+
+    res.status(200).send({ results });
   });
 
   // PATCH log basket_id by log id (legacy/standalone basket update)
