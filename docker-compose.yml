@@ -37,6 +37,8 @@ services:
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
       - NOTION_API_KEY=${NOTION_API_KEY}
+      - TELEGRAM_BOT_API_KEY=${TELEGRAM_BOT_API_KEY}
+      - TELEGRAM_ALLOWED_CHAT_IDS=${TELEGRAM_ALLOWED_CHAT_IDS:-}
 
   logs-app:
     extends:
@@ -48,6 +50,21 @@ services:
     environment:
       - VITE_BE=${NGINX_DOMAIN}
       - VITE_CLIENT_ID=${LOGS_CLIENT_ID}
+
+  telegram-bot:
+    extends:
+      file: docker-compose.base.yml
+      service: nx-app-base
+    command: npx nx run telegram-bot:serve
+    depends_on:
+      - entry-server
+    environment:
+      - NX_DAEMON=false
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_BOT_API_KEY=${TELEGRAM_BOT_API_KEY}
+      - TELEGRAM_ALLOWED_CHAT_IDS=${TELEGRAM_ALLOWED_CHAT_IDS:-}
+      - BE_URL=https://lifeis-production.up.railway.app
+      - TRANSCRIPTION_LANGUAGE=ru
 
 volumes:
   mono-node-modules: null

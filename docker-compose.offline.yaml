@@ -36,6 +36,8 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - NOTION_API_KEY=${NOTION_API_KEY}
+      - TELEGRAM_BOT_API_KEY=${TELEGRAM_BOT_API_KEY}
+      - TELEGRAM_ALLOWED_CHAT_IDS=${TELEGRAM_ALLOWED_CHAT_IDS:-}
 
   logs-app:
     extends:
@@ -47,6 +49,20 @@ services:
     environment:
       - VITE_BE=${NGINX_DOMAIN}
       - VITE_CLIENT_ID=${LOGS_CLIENT_ID}
+
+  telegram-bot:
+    extends:
+      file: docker-compose.base.yml
+      service: nx-app-base
+    command: npx nx run telegram-bot:serve
+    depends_on:
+      - entry-server
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_BOT_API_KEY=${TELEGRAM_BOT_API_KEY}
+      - TELEGRAM_ALLOWED_CHAT_IDS=${TELEGRAM_ALLOWED_CHAT_IDS:-}
+      - BE_URL=http://entry-server:3000
+      - TRANSCRIPTION_LANGUAGE=${TRANSCRIPTION_LANGUAGE:-}
 
 volumes:
   mono-node-modules: null

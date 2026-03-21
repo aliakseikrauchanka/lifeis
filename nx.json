@@ -45,6 +45,11 @@
     "@nx/vitest:test": {
       "inputs": ["default", "^production", "{workspaceRoot}/jest.preset.js"],
       "cache": true
+    },
+    "@nx/esbuild:esbuild": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
     }
   },
   "namedInputs": {

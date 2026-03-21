@@ -4,8 +4,11 @@ import fs from 'fs';
 
 const getFileName = (mime: string | string[]) => {
   const mimeStr: string = Array.isArray(mime) ? mime[0] : mime;
-  if (mimeStr === 'audio/mp3;') {
+  if (mimeStr === 'audio/mp3;' || mimeStr === 'audio/mpeg') {
     return 'record.mp3';
+  }
+  if (mimeStr === 'audio/ogg' || mimeStr?.includes('opus')) {
+    return 'record.ogg';
   }
   const fileName = mimeStr === 'audio/webm; codecs=opus' ? 'record.webm' : 'record.mp4';
   return fileName;

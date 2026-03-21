@@ -16,6 +16,7 @@ import insightsRoutes from './routes/insights-routes';
 import { createAgentsRoutes } from './routes/agents-routes';
 import deepgramRoutes from './routes/deepgram-routes';
 import elevenLabsRoutes from './routes/elevenlabs-routes';
+import telegramRoutes from './routes/telegram-routes';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getBasketRoutes } from './routes/baskets-routes';
 import OpenAI from 'openai';
@@ -69,6 +70,7 @@ app.use('/api/openai', openaiRoutes);
 app.use('/api/deepgram', deepgramRoutes);
 app.use('/api/elevenlabs', elevenLabsRoutes);
 app.use('/api/baskets', getBasketRoutes(client));
+app.use('/api/telegram', telegramRoutes);
 
 app.get('/api/ping', verifyAccessToken, (req, res) => {
   res.send({ message: 'pong' });
