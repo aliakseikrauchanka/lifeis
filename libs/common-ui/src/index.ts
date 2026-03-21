@@ -14,3 +14,9 @@ export * from './lib/components/image-preview-from-buffer/image-preview-from-buf
 export * from './lib/components/language-selector/language-selector';
 export * from './lib/contexts/elevenlabs-stt.context';
 export * from './lib/contexts/deepgram-file-stt.context';
+export * from './lib/contexts/audio-devices.context';
+export {
+  AudioDeviceSelector,
+  AudioInputDeviceSelector,
+  AudioOutputDeviceSelector,
+} from './lib/components/audio-device-selector';

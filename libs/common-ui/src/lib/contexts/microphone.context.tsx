@@ -42,9 +42,10 @@ const MicrophoneContext = createContext<MicrophoneContextType | undefined>(undef
 
 interface MicrophoneContextProviderProps {
   children: ReactNode;
+  audioInputDeviceId?: string;
 }
 
-const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ children }) => {
+const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ children, audioInputDeviceId }) => {
   const [microphoneState, setMicrophoneState] = useState<MicrophoneState>(MicrophoneState.NotSetup);
   const [microphone, setMicrophone] = useState<MediaRecorder | null>(null);
   const [stream, setStream] = useState<MediaStream>();
@@ -61,12 +62,12 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
   } = useQueue<Blob>([]);
 
   const setupMicrophone = useCallback(async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        noiseSuppression: true,
-        echoCancellation: true,
-      },
-    });
+    const audioConstraints: MediaTrackConstraints = {
+      noiseSuppression: true,
+      echoCancellation: true,
+      ...(audioInputDeviceId && { deviceId: { exact: audioInputDeviceId } }),
+    };
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
 
     setStream(stream);
 
@@ -75,7 +76,7 @@ const MicrophoneContextProvider: React.FC<MicrophoneContextProviderProps> = ({ c
     setMicrophone(microphone);
 
     return microphone;
-  }, []);
+  }, [audioInputDeviceId]);
 
   const resetMicrophone = useCallback(() => {
     setMicrophoneState(MicrophoneState.NotSetup);

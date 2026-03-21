@@ -31,7 +31,15 @@ export const SpeechToText = ({
 }: ISpeechToTextProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { startListening, pauseListening, stopListening, caption, recordedBlobs, connectionReady } = useSpeechToText();
+  const {
+    startListening,
+    pauseListening,
+    stopListening,
+    caption,
+    recordedBlobs,
+    connectionReady,
+    audioOutputDeviceId,
+  } = useSpeechToText();
   const [isRecording, setIsRecording] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -61,7 +69,7 @@ export const SpeechToText = ({
     }
   }, [pauseListening]);
 
-  const handlePlayRecording = useCallback(() => {
+  const handlePlayRecording = useCallback(async () => {
     const blobs = recordedBlobs[id];
     if (!blobs?.length) return;
     const blob = blobs[blobs.length - 1];
@@ -76,8 +84,15 @@ export const SpeechToText = ({
     source.type = mimeType;
     audio.appendChild(source);
     audio.load();
+    if (audioOutputDeviceId && typeof audio.setSinkId === 'function') {
+      try {
+        await audio.setSinkId(audioOutputDeviceId);
+      } catch {
+        // setSinkId may fail if device unavailable
+      }
+    }
     audio.play().catch(() => URL.revokeObjectURL(url));
-  }, [recordedBlobs, id]);
+  }, [recordedBlobs, id, audioOutputDeviceId]);
 
   const hasPlayback = !!(recordedBlobs[id]?.length || caption[id]?.length);
 

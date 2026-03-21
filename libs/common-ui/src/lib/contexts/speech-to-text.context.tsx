@@ -12,6 +12,7 @@ export interface SpeechToTextContextType {
   startListening: (id: string) => void;
   stopListening: (id: string) => void;
   pauseListening: () => void;
+  audioOutputDeviceId?: string;
 }
 
 const utteranceText = (event: LiveTranscriptionEvent) => {
@@ -23,10 +24,15 @@ export const SpeechToTextContext = createContext<SpeechToTextContextType | undef
 
 interface SpeechToTextContextProviderProps {
   onBlob?: (blob: Blob) => void;
+  audioOutputDeviceId?: string;
   children: ReactNode;
 }
 
-const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = ({ onBlob, children }) => {
+const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = ({
+  onBlob,
+  audioOutputDeviceId,
+  children,
+}) => {
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [caption, setCaption] = useState<{ [activeId: string]: string[] }>({});
   const [recordedBlobs, setRecordedBlobs] = useState<{ [id: string]: Blob[] }>({});
@@ -312,6 +318,7 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
         pauseListening,
         stopListening,
         connectionReady,
+        audioOutputDeviceId,
       }}
     >
       {children}

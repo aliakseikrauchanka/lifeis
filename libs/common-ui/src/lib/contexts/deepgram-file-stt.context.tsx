@@ -6,6 +6,8 @@ import { SpeechToTextContext } from './speech-to-text.context';
 
 interface DeepgramFileSTTProviderProps {
   language?: string;
+  audioInputDeviceId?: string;
+  audioOutputDeviceId?: string;
   children: ReactNode;
 }
 
@@ -28,45 +30,56 @@ async function transcribeBlob(blob: Blob, language?: string): Promise<string> {
   return data?.results?.channels?.[0]?.alternatives?.[0]?.transcript ?? '';
 }
 
-const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({ language, children }) => {
+const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({
+  language,
+  audioInputDeviceId,
+  audioOutputDeviceId,
+  children,
+}) => {
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [caption, setCaption] = useState<{ [activeId: string]: string[] }>({});
   const [recordedBlobs, setRecordedBlobs] = useState<{ [id: string]: Blob[] }>({});
   const activeIdRef = useRef<string | undefined>(undefined);
   const cancelledRef = useRef(false);
 
-  const startRecording = useCallback((onStop: (blob: Blob) => void) => {
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then((stream) => {
-        let options: MediaRecorderOptions | undefined;
-        if (MediaRecorder.isTypeSupported('audio/webm; codecs=opus')) {
-          options = { mimeType: 'audio/webm; codecs=opus' };
-        } else {
-          options = { mimeType: 'video/mp4', videoBitsPerSecond: 100000 };
-        }
-        const mediaRecorder = new MediaRecorder(stream, options);
-        mediaRecorderRef = mediaRecorder;
-        chunksRef.length = 0;
-
-        mediaRecorder.ondataavailable = (e) => {
-          if (e.data.size > 0) chunksRef.push(e.data);
-        };
-
-        mediaRecorder.onstop = () => {
-          const blob = new Blob(chunksRef, { type: options?.mimeType });
+  const startRecording = useCallback(
+    (onStop: (blob: Blob) => void) => {
+      const audioConstraints: MediaTrackConstraints = audioInputDeviceId
+        ? { deviceId: { exact: audioInputDeviceId } }
+        : true;
+      navigator.mediaDevices
+        .getUserMedia({ audio: audioConstraints })
+        .then((stream) => {
+          let options: MediaRecorderOptions | undefined;
+          if (MediaRecorder.isTypeSupported('audio/webm; codecs=opus')) {
+            options = { mimeType: 'audio/webm; codecs=opus' };
+          } else {
+            options = { mimeType: 'video/mp4', videoBitsPerSecond: 100000 };
+          }
+          const mediaRecorder = new MediaRecorder(stream, options);
+          mediaRecorderRef = mediaRecorder;
           chunksRef.length = 0;
-          mediaRecorderRef = null;
-          onStop(blob);
-          stream.getTracks().forEach((track) => track.stop());
-        };
 
-        mediaRecorder.start();
-      })
-      .catch((err) => {
-        console.error('Error while recording:', err);
-      });
-  }, []);
+          mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) chunksRef.push(e.data);
+          };
+
+          mediaRecorder.onstop = () => {
+            const blob = new Blob(chunksRef, { type: options?.mimeType });
+            chunksRef.length = 0;
+            mediaRecorderRef = null;
+            onStop(blob);
+            stream.getTracks().forEach((track) => track.stop());
+          };
+
+          mediaRecorder.start();
+        })
+        .catch((err) => {
+          console.error('Error while recording:', err);
+        });
+    },
+    [audioInputDeviceId],
+  );
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef?.state === 'recording') {
@@ -137,6 +150,7 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({ langu
         startListening,
         stopListening,
         pauseListening,
+        audioOutputDeviceId,
       }}
     >
       {children}

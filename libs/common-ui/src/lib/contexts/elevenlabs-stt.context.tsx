@@ -8,6 +8,7 @@ import { SpeechToTextContext } from './speech-to-text.context';
 
 interface ElevenLabsSTTProviderProps {
   language?: string;
+  audioInputDeviceId?: string;
   children: ReactNode;
 }
 
@@ -23,7 +24,11 @@ async function getToken(): Promise<string> {
   return result.token;
 }
 
-const ElevenLabsSTTProvider: React.FC<ElevenLabsSTTProviderProps> = ({ language = 'en', children }) => {
+const ElevenLabsSTTProvider: React.FC<ElevenLabsSTTProviderProps> = ({
+  language = 'en',
+  audioInputDeviceId,
+  children,
+}) => {
   const [activeId, setActiveId] = useState<string | undefined>(undefined);
   const [caption, setCaption] = useState<{ [activeId: string]: string[] }>({});
 
@@ -64,9 +69,12 @@ const ElevenLabsSTTProvider: React.FC<ElevenLabsSTTProviderProps> = ({ language 
       setActiveId(id);
 
       try {
-        const probeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        const deviceId = probeStream.getAudioTracks()[0].getSettings().deviceId;
-        probeStream.getTracks().forEach((t) => t.stop());
+        let deviceId = audioInputDeviceId;
+        if (!deviceId) {
+          const probeStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          deviceId = probeStream.getAudioTracks()[0].getSettings().deviceId;
+          probeStream.getTracks().forEach((t) => t.stop());
+        }
 
         const token = await getToken();
         await scribe.connect({
@@ -83,7 +91,7 @@ const ElevenLabsSTTProvider: React.FC<ElevenLabsSTTProviderProps> = ({ language 
         scribe.disconnect();
       }
     },
-    [scribe, isActive],
+    [scribe, isActive, audioInputDeviceId],
   );
 
   const stopListening = useCallback(

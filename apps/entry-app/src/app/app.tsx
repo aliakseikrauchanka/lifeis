@@ -6,6 +6,9 @@ import { GoogleOAuthProvider } from '@react-oauth/google';
 import css from './app.module.scss';
 
 import {
+  AudioInputDeviceSelector,
+  AudioOutputDeviceSelector,
+  AudioDevicesProvider,
   AudioProvider,
   DeepgramContextProvider,
   DeepgramFileSTTProvider,
@@ -14,6 +17,7 @@ import {
   MicrophoneContextProvider,
   OwnButton,
   SpeechToTextContextProvider,
+  useAudioDevices,
   UserSession,
 } from '@lifeis/common-ui';
 import { SttProviderType } from './contexts/storage.context';
@@ -25,7 +29,6 @@ import { ExperimentsPage } from './pages/experiments.page';
 import { init } from '@lifeis/common-ui';
 import './styles/reset.css';
 import AudioSwitch from './components/audio-switch/audio-switch';
-import { MicIndicator } from './components/mic-indicator/mic-indicator';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
 import classNames from 'classnames';
@@ -34,6 +37,52 @@ import Select from '@mui/joy/Select';
 import Option from '@mui/joy/Option';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
+
+function AgentsWithDevices({
+  sttProvider,
+  getDeepgramLanguage,
+  getElevenLabsLanguage,
+  onBlob,
+}: {
+  sttProvider: SttProviderType;
+  getDeepgramLanguage: () => string;
+  getElevenLabsLanguage: () => string;
+  onBlob: (blob: Blob) => void;
+}) {
+  const { inputDeviceId, outputDeviceId } = useAudioDevices();
+  const inputId = inputDeviceId || undefined;
+  const outputId = outputDeviceId || undefined;
+
+  if (sttProvider === 'elevenlabs') {
+    return (
+      <ElevenLabsSTTProvider language={getElevenLabsLanguage()} audioInputDeviceId={inputId}>
+        <AgentsPage />
+      </ElevenLabsSTTProvider>
+    );
+  }
+  if (sttProvider === 'deepgram-file') {
+    return (
+      <DeepgramFileSTTProvider
+        language={getDeepgramLanguage()}
+        audioInputDeviceId={inputId}
+        audioOutputDeviceId={outputId}
+      >
+        <AgentsPage />
+      </DeepgramFileSTTProvider>
+    );
+  }
+  return (
+    <MicrophoneContextProvider audioInputDeviceId={inputId}>
+      <DeepgramContextProvider language={getDeepgramLanguage()}>
+        <AudioProvider>
+          <SpeechToTextContextProvider onBlob={onBlob} audioOutputDeviceId={outputId}>
+            <AgentsPage />
+          </SpeechToTextContextProvider>
+        </AudioProvider>
+      </DeepgramContextProvider>
+    </MicrophoneContextProvider>
+  );
+}
 
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn() || isOfflineModeOn);
@@ -157,34 +206,35 @@ export default function App() {
   return (
     isInitialized && (
       <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
-        <main
-          className={classNames(css.main, {
-            [css.mainFullScreen]: isFullScreen,
-          })}
-        >
-          <audio ref={audioRef} />
-          <header
-            className={classNames(css.header, {
-              [css.headerFullScreen]: isFullScreen,
+        <AudioDevicesProvider>
+          <main
+            className={classNames(css.main, {
+              [css.mainFullScreen]: isFullScreen,
             })}
           >
-            <div className={css.headerContent}>
-              <UserSession
-                isFullScreen={isFullScreen}
-                isOfflineMode={isOfflineModeOn}
-                isLoggedIn={isLoggedIn}
-                onLoginSuccess={(googleUserId) => {
-                  setIsLoggedIn(true);
-                  setLoggedInUserId(googleUserId);
-                }}
-                onLogOut={() => setIsLoggedIn(false)}
-              />
-              <div
-                className={classNames(css.headerIcons, {
-                  [css.headerIconsFullScreen]: isFullScreen,
-                })}
-              >
-                {/* {audioEnabled && (
+            <audio ref={audioRef} />
+            <header
+              className={classNames(css.header, {
+                [css.headerFullScreen]: isFullScreen,
+              })}
+            >
+              <div className={css.headerContent}>
+                <UserSession
+                  isFullScreen={isFullScreen}
+                  isOfflineMode={isOfflineModeOn}
+                  isLoggedIn={isLoggedIn}
+                  onLoginSuccess={(googleUserId) => {
+                    setIsLoggedIn(true);
+                    setLoggedInUserId(googleUserId);
+                  }}
+                  onLogOut={() => setIsLoggedIn(false)}
+                />
+                <div
+                  className={classNames(css.headerIcons, {
+                    [css.headerIconsFullScreen]: isFullScreen,
+                  })}
+                >
+                  {/* {audioEnabled && (
                 <LanguageSelector
                   languageCode={languageCode}
                   selectRef={selectRef}
@@ -193,110 +243,99 @@ export default function App() {
                   sx={{ minWidth: '50px' }}
                 />
               )} */}
-                <OwnButton
-                  onClick={() => {
-                    setIsSearchOpened((prev) => !prev);
-                  }}
-                >
-                  <SearchRounded />
-                </OwnButton>
-                <OwnButton
-                  onClick={() => {
-                    setFocusedAgentIndex((prev) => {
-                      const newValue = prev - 1;
-                      if (newValue < 0) {
-                        return 0;
-                      }
-                      return newValue;
-                    });
-                  }}
-                >
-                  <ArrowUpward />
-                </OwnButton>
-                <OwnButton
-                  onClick={() => {
-                    setFocusedAgentIndex((prev) => prev + 1);
-                  }}
-                >
-                  <ArrowDownwardRounded />
-                </OwnButton>
-                <OwnButton
-                  onClick={() => {
-                    typeof prevFocusedAgentIndex !== 'undefined' && setFocusedAgentIndex(prevFocusedAgentIndex);
-                  }}
-                >
-                  <Reply />
-                </OwnButton>
-                {/* {audioEnabled && (
+                  <OwnButton
+                    onClick={() => {
+                      setIsSearchOpened((prev) => !prev);
+                    }}
+                  >
+                    <SearchRounded />
+                  </OwnButton>
+                  <OwnButton
+                    onClick={() => {
+                      setFocusedAgentIndex((prev) => {
+                        const newValue = prev - 1;
+                        if (newValue < 0) {
+                          return 0;
+                        }
+                        return newValue;
+                      });
+                    }}
+                  >
+                    <ArrowUpward />
+                  </OwnButton>
+                  <OwnButton
+                    onClick={() => {
+                      setFocusedAgentIndex((prev) => prev + 1);
+                    }}
+                  >
+                    <ArrowDownwardRounded />
+                  </OwnButton>
+                  <OwnButton
+                    onClick={() => {
+                      typeof prevFocusedAgentIndex !== 'undefined' && setFocusedAgentIndex(prevFocusedAgentIndex);
+                    }}
+                  >
+                    <Reply />
+                  </OwnButton>
+                  {/* {audioEnabled && (
                 <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
                   <PlayArrow />
                 </OwnButton>
               )} */}
-                <OwnButton
-                  type="button"
-                  color="success"
-                  onClick={() => {
-                    setAudioEnabled(!audioEnabled);
-                  }}
-                >
-                  {audioEnabled ? <MicOff /> : <Mic />}
-                </OwnButton>
-                {audioEnabled && (
-                  <>
-                    <MicIndicator />
-                    <Select
-                      value={sttProvider}
-                      onChange={(_, val) => val && setSttProvider(val as SttProviderType)}
-                      size="sm"
-                      sx={{ minHeight: 'initial', padding: '0.2rem', fontSize: '12px', minWidth: '40px' }}
-                    >
-                      <Option value="elevenlabs">11Labs Realtime</Option>
-                      <Option value="deepgram">DG Realtime</Option>
-                      <Option value="deepgram-file">DG File</Option>
-                    </Select>
-                  </>
-                )}
+                  <OwnButton
+                    type="button"
+                    color="success"
+                    onClick={() => {
+                      setAudioEnabled(!audioEnabled);
+                    }}
+                  >
+                    {audioEnabled ? <MicOff /> : <Mic />}
+                  </OwnButton>
+                  {audioEnabled && (
+                    <>
+                      <AudioInputDeviceSelector />
+                      <AudioOutputDeviceSelector />
+                      <Select
+                        value={sttProvider}
+                        onChange={(_, val) => val && setSttProvider(val as SttProviderType)}
+                        size="sm"
+                        sx={{ minHeight: 'initial', padding: '0.2rem', fontSize: '12px', minWidth: '40px' }}
+                      >
+                        <Option value="elevenlabs">11Labs Realtime</Option>
+                        <Option value="deepgram">DG Realtime</Option>
+                        <Option value="deepgram-file">DG File</Option>
+                      </Select>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          </header>
+            </header>
 
-          {isLoggedIn && (
-            <div className={css.content}>
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    <AudioSwitch
-                      audioElement={
-                        sttProvider === 'elevenlabs' ? (
-                          <ElevenLabsSTTProvider language={getElevenLabsLanguage()}>
-                            <AgentsPage />
-                          </ElevenLabsSTTProvider>
-                        ) : sttProvider === 'deepgram-file' ? (
-                          <DeepgramFileSTTProvider language={getDeepgramLanguage()}>
-                            <AgentsPage />
-                          </DeepgramFileSTTProvider>
-                        ) : (
-                          <MicrophoneContextProvider>
-                            <DeepgramContextProvider language={getDeepgramLanguage()}>
-                              <AudioProvider>
-                                <SpeechToTextContextProvider onBlob={handleOnGetBlob}>
-                                  <AgentsPage />
-                                </SpeechToTextContextProvider>
-                              </AudioProvider>
-                            </DeepgramContextProvider>
-                          </MicrophoneContextProvider>
-                        )
-                      }
-                      nonAudioElement={<AgentsPage />}
-                    />
-                  }
-                />
-                <Route path="/experiments" element={<ExperimentsPage />} />
-              </Routes>
-            </div>
-          )}
-        </main>
+            {isLoggedIn && (
+              <div className={css.content}>
+                <Routes>
+                  <Route
+                    path="/"
+                    element={
+                      <AudioSwitch
+                        audioElement={
+                          <AgentsWithDevices
+                            sttProvider={sttProvider}
+                            getDeepgramLanguage={getDeepgramLanguage}
+                            getElevenLabsLanguage={getElevenLabsLanguage}
+                            onBlob={handleOnGetBlob}
+                          />
+                        }
+                        nonAudioElement={<AgentsPage />}
+                      />
+                    }
+                  />
+                  <Route path="/experiments" element={<ExperimentsPage />} />
+                </Routes>
+              </div>
+            )}
+          </main>
+        </AudioDevicesProvider>
       </GoogleOAuthProvider>
     )
   );
