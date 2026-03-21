@@ -53,6 +53,8 @@ TELEGRAM_BOT_TOKEN=<paste token from step 1>
 TELEGRAM_BOT_API_KEY=<paste value from step 2>
 TELEGRAM_ALLOWED_CHAT_IDS=123456789,-987654321
 # ↑ Optional. Comma-separated chat/group IDs. Empty = allow all.
+TRANSCRIPTION_DAILY_LIMIT=100
+# ↑ Optional. Max transcriptions per chat per day. Default 100. 0 = unlimited.
 BE_URL=http://localhost:3000
 # For Docker Compose, BE_URL is set to http://entry-server:3000 automatically
 ```
@@ -68,5 +70,6 @@ BE_URL=http://localhost:3000
 | `TELEGRAM_BOT_TOKEN` | @BotFather on Telegram (step 1) |
 | `TELEGRAM_BOT_API_KEY` | Generate locally with `openssl rand -hex 32` (step 2) |
 | `TELEGRAM_ALLOWED_CHAT_IDS` | Optional. Comma-separated. Get IDs via @userinfobot (step 3) |
+| `TRANSCRIPTION_DAILY_LIMIT` | Optional. Max transcriptions per chat per day (default: 100). Set to 0 for unlimited. |
 
 No other API keys or tokens are required from Telegram.

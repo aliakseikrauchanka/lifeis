@@ -3,6 +3,7 @@ import FormData from 'form-data';
 import https from 'https';
 import axios from 'axios';
 import { config } from '../config';
+import { tryConsume } from '../lib/daily-rate-limit';
 
 function getVoiceOrAudioFileId(msg: Record<string, unknown>): string | null {
   if (msg && typeof msg === 'object') {
@@ -27,6 +28,14 @@ export async function handleVoice(ctx: Context) {
 
   if (config.allowedChatIds && !config.allowedChatIds.has(chatId)) {
     await ctx.reply(`This chat is not allowed to use transcription. Chat ID: ${chatId}, allowed chat IDs: ${Array.from(config.allowedChatIds).join(', ')}`);
+    return;
+  }
+
+  const limit = config.transcriptionDailyLimit;
+  if (limit > 0 && !tryConsume(chatId, limit)) {
+    await ctx.reply(
+      `Daily limit reached (${limit} transcription${limit === 1 ? '' : 's'} per day). Resets at midnight UTC.`
+    );
     return;
   }
 
@@ -92,7 +101,7 @@ export async function handleVoice(ctx: Context) {
       chatId,
       statusMsg.message_id,
       undefined,
-      `Error: hui ${message}`
+      `Error: ${message}`
     );
   }
 }

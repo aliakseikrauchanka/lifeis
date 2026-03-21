@@ -1,3 +1,5 @@
+import { DEFAULT_TRANSCRIPTION_DAILY_LIMIT } from './constants';
+
 function requireEnv(name: string): string {
   const val = process.env[name];
   if (!val) {
@@ -28,10 +30,18 @@ function parseAllowedChatIds(): Set<number> | null {
   return ids.length > 0 ? new Set(ids) : null;
 }
 
+function parseDailyLimit(): number {
+  const raw = process.env.TRANSCRIPTION_DAILY_LIMIT?.trim();
+  if (!raw) return DEFAULT_TRANSCRIPTION_DAILY_LIMIT;
+  const n = parseInt(raw, 10);
+  return Number.isNaN(n) || n < 0 ? DEFAULT_TRANSCRIPTION_DAILY_LIMIT : n;
+}
+
 export const config = {
   telegramBotToken: requireEnv('TELEGRAM_BOT_TOKEN'),
   telegramBotApiKey: requireEnv('TELEGRAM_BOT_API_KEY'),
   beUrl: requireEnv('BE_URL').replace(/\/$/, ''),
   language: process.env.TRANSCRIPTION_LANGUAGE || '',
   allowedChatIds: parseAllowedChatIds(),
+  transcriptionDailyLimit: parseDailyLimit(),
 };
