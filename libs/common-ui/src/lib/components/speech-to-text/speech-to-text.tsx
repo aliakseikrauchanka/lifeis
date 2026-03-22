@@ -5,6 +5,7 @@ import { OwnButton } from '../button/button';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTheme } from '@mui/joy';
 import { useMediaQuery } from '@mui/material';
+import { DEFAULT_MAX_RECORDING_DURATION_MS } from './constants';
 
 interface ISpeechToTextProps {
   id: string;
@@ -16,6 +17,8 @@ interface ISpeechToTextProps {
   onListeningToggled?: () => void;
   onHasRecording?: (hasRecording: boolean) => void;
   showPlayButton?: boolean;
+  /** Max recording duration in ms. Default: 30 seconds. */
+  maxRecordingDurationMs?: number;
 }
 
 export const SpeechToText = ({
@@ -28,6 +31,7 @@ export const SpeechToText = ({
   onListeningToggled,
   onHasRecording,
   showPlayButton = true,
+  maxRecordingDurationMs = DEFAULT_MAX_RECORDING_DURATION_MS,
 }: ISpeechToTextProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -58,8 +62,8 @@ export const SpeechToText = ({
     timeoutRef.current = setTimeout(() => {
       stopListening(id);
       setIsRecording(false);
-    }, 30000);
-  }, [id, startListening, stopListening]);
+    }, maxRecordingDurationMs);
+  }, [id, startListening, stopListening, maxRecordingDurationMs]);
 
   const handlePauseListening = useCallback(() => {
     pauseListening();
