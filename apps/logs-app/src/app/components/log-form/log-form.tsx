@@ -24,7 +24,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
   const [selectedBasketId, setSelectedBasketId] = useState<string | null>(null);
   const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
   const [isListeningFired, setIsListeningFired] = useState(false);
-  const [isDescribingFood, setIsDescribingFood] = useState(false);
+  const [isParsingPhoto, setIsParsingPhoto] = useState(false);
   const [imageBuffer, setImageBuffer] = useState<ArrayBuffer | null>(null);
   const [imageMode, setImageMode] = useState<DescribeFromImageMode>('describe-food-ru');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -59,14 +59,14 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
       const buffer = await file.arrayBuffer();
       setImageBuffer(buffer);
       try {
-        setIsDescribingFood(true);
+        setIsParsingPhoto(true);
         const { answer } = await describeFromImage(buffer, imageMode);
         setMessage((prev) => (prev ? `${prev}\n\n${answer}` : answer));
       } catch (err) {
-        console.error('Failed to describe food from image', err);
+        console.error('Failed to parse photo', err);
         setImageBuffer(null);
       } finally {
-        setIsDescribingFood(false);
+        setIsParsingPhoto(false);
         event.target.value = '';
       }
     },
@@ -159,9 +159,9 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
       <Box display="flex" alignItems="center" gap={0.5}>
         <label htmlFor="log-form-photo" className={css.photoButton}>
           <CameraAlt fontSize="large" color="inherit" />
-          {isDescribingFood && <span className={css.photoLoading}>...</span>}
+          {isParsingPhoto && <span className={css.photoLoading}>...</span>}
         </label>
-        <FormControl size="small" className={css.basketSelect} disabled={isDescribingFood}>
+        <FormControl size="small" className={css.basketSelect} disabled={isParsingPhoto}>
           <InputLabel id="log-form-image-mode-label">Mode</InputLabel>
           <Select
             labelId="log-form-image-mode-label"
@@ -182,7 +182,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
         accept="image/*"
         className={css.fileInput}
         onChange={handleCapture}
-        disabled={isDescribingFood}
+        disabled={isParsingPhoto}
       />
       <Box className={css.actionsSpacer} />
       {!editLog && (
@@ -209,7 +209,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
             inputRef={textareaRef}
             className={css.textAreaField}
             multiline
-            rows={compact ? 1 : 2}
+            rows={compact ? 1 : imageBuffer ? 3 : 2}
             variant="outlined"
             name="message"
             placeholder="Enter your message here"
@@ -219,7 +219,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
           />
           {imageBuffer && (
             <Box className={css.imagePreviewBox}>
-              <ImagePreviewFromBuffer buffer={imageBuffer} onClose={clearImage} isLoading={isDescribingFood} />
+              <ImagePreviewFromBuffer buffer={imageBuffer} onClose={clearImage} isLoading={isParsingPhoto} />
             </Box>
           )}
         </Box>
