@@ -8,7 +8,7 @@ import { AudioDevicesProvider, isUserLoggedIn } from '@lifeis/common-ui';
 import { CONFIG } from '../config';
 
 import { Route, Routes } from 'react-router-dom';
-import { AgentsPage } from './pages/agents.page';
+import { AllAgentsPage } from './pages/all-agents.page';
 import { ExperimentsPage } from './pages/experiments.page';
 import { init } from '@lifeis/common-ui';
 import './styles/reset.css';
@@ -79,7 +79,7 @@ export default function App() {
                             onBlob={handleOnGetBlob}
                           />
                         }
-                        nonAudioElement={<AgentsPage />}
+                        nonAudioElement={<AllAgentsPage />}
                       />
                     }
                   />

@@ -1,20 +1,20 @@
-import { getAllAgents, updateAgent } from '../../api/agents/agents.api';
+import { getAllAgents, updateAgent } from '../api/agents/agents.api';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Agent, IAgentHandle } from './agent/agent';
-import AgentForm from './agent-create/agent-create';
-import css from './all-agents.module.scss';
+import { Agent, IAgentHandle } from '../components/agents/agent/agent';
+import AgentForm from '../components/agents/agent-create/agent-create';
+import css from '../components/agents/all-agents.module.scss';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { IAgentResponse } from '../../domains/agent.domain';
-import { useStorageContext } from '../../contexts/storage.context';
+import { IAgentResponse } from '../domains/agent.domain';
+import { useStorageContext } from '../contexts/storage.context';
 import { Accordion, AccordionDetails, AccordionSummary, Select, Option } from '@mui/joy';
 import classNames from 'classnames';
-import { AgentSearch } from './agent-search/agent-search';
+import { AgentSearch } from '../components/agents/agent-search/agent-search';
 import { LanguageSelector, OwnButton } from '@lifeis/common-ui';
-import { speak } from './all-agents.helpers';
+import { speak } from '../components/agents/all-agents.helpers';
 
 const AVAILABLE_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
-export const AllAgents = () => {
+export const AllAgentsPage = () => {
   const query = useQuery({ queryKey: ['agents'], queryFn: getAllAgents, select: (data) => data.agents });
 
   const agentsRef = useRef<Record<string, IAgentHandle>>({});

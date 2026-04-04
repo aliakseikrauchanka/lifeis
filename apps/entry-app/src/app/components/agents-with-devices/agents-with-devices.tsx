@@ -7,7 +7,7 @@ import {
   SpeechToTextContextProvider,
   useAudioDevices,
 } from '@lifeis/common-ui';
-import { AgentsPage } from '../../pages/agents.page';
+import { AllAgentsPage } from '../../pages/all-agents.page';
 import { SttProviderType } from '../../contexts/storage.context';
 
 interface IAgentsWithDevicesProps {
@@ -30,7 +30,7 @@ export function AgentsWithDevices({
   if (sttProvider === 'elevenlabs') {
     return (
       <ElevenLabsSTTProvider language={getElevenLabsLanguage()} audioInputDeviceId={inputId}>
-        <AgentsPage />
+        <AllAgentsPage />
       </ElevenLabsSTTProvider>
     );
   }
@@ -41,7 +41,7 @@ export function AgentsWithDevices({
         audioInputDeviceId={inputId}
         audioOutputDeviceId={outputId}
       >
-        <AgentsPage />
+        <AllAgentsPage />
       </DeepgramFileSTTProvider>
     );
   }
@@ -50,7 +50,7 @@ export function AgentsWithDevices({
       <DeepgramContextProvider language={getDeepgramLanguage()}>
         <AudioProvider>
           <SpeechToTextContextProvider onBlob={onBlob} audioOutputDeviceId={outputId}>
-            <AgentsPage />
+            <AllAgentsPage />
           </SpeechToTextContextProvider>
         </AudioProvider>
       </DeepgramContextProvider>
