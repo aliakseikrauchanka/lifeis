@@ -6,8 +6,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile_local
-    # environment:
-    #   - DEV_PLATFORM=DOCKER
+    environment:
+      - NODE_OPTIONS=--no-deprecation
     volumes:
       - ./:/app
       - mono-node-modules:/app/node_modules
