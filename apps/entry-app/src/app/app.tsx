@@ -1,26 +1,10 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 import css from './app.module.scss';
 
-import {
-  AudioInputDeviceSelector,
-  AudioOutputDeviceSelector,
-  AudioDevicesProvider,
-  AudioProvider,
-  DeepgramContextProvider,
-  DeepgramFileSTTProvider,
-  ElevenLabsSTTProvider,
-  isUserLoggedIn,
-  MicrophoneContextProvider,
-  OwnButton,
-  SpeechToTextContextProvider,
-  useAudioDevices,
-  UserSession,
-} from '@lifeis/common-ui';
-import { SttProviderType } from './contexts/storage.context';
+import { AudioDevicesProvider, isUserLoggedIn } from '@lifeis/common-ui';
 import { CONFIG } from '../config';
 
 import { Route, Routes } from 'react-router-dom';
@@ -31,142 +15,22 @@ import './styles/reset.css';
 import AudioSwitch from './components/audio-switch/audio-switch';
 import { useStorageContext } from './contexts/storage.context';
 import { useFeatureFlags } from './hooks/ff.hook';
+import { useLanguageCodes } from './hooks/use-language-codes.hook';
 import classNames from 'classnames';
-import { ArrowDownwardRounded, ArrowUpward, Mic, MicOff, Reply, SearchRounded } from '@mui/icons-material';
-import Select from '@mui/joy/Select';
-import Option from '@mui/joy/Option';
+import { AgentsWithDevices } from './components/agents-with-devices/agents-with-devices';
+import { AppHeader } from './components/app-header/app-header';
 
 const isOfflineModeOn = import.meta.env.VITE_MODE === 'offline';
 
-function AgentsWithDevices({
-  sttProvider,
-  getDeepgramLanguage,
-  getElevenLabsLanguage,
-  onBlob,
-}: {
-  sttProvider: SttProviderType;
-  getDeepgramLanguage: () => string;
-  getElevenLabsLanguage: () => string;
-  onBlob: (blob: Blob) => void;
-}) {
-  const { inputDeviceId, outputDeviceId } = useAudioDevices();
-  const inputId = inputDeviceId || undefined;
-  const outputId = outputDeviceId || undefined;
-
-  if (sttProvider === 'elevenlabs') {
-    return (
-      <ElevenLabsSTTProvider language={getElevenLabsLanguage()} audioInputDeviceId={inputId}>
-        <AgentsPage />
-      </ElevenLabsSTTProvider>
-    );
-  }
-  if (sttProvider === 'deepgram-file') {
-    return (
-      <DeepgramFileSTTProvider
-        language={getDeepgramLanguage()}
-        audioInputDeviceId={inputId}
-        audioOutputDeviceId={outputId}
-      >
-        <AgentsPage />
-      </DeepgramFileSTTProvider>
-    );
-  }
-  return (
-    <MicrophoneContextProvider audioInputDeviceId={inputId}>
-      <DeepgramContextProvider language={getDeepgramLanguage()}>
-        <AudioProvider>
-          <SpeechToTextContextProvider onBlob={onBlob} audioOutputDeviceId={outputId}>
-            <AgentsPage />
-          </SpeechToTextContextProvider>
-        </AudioProvider>
-      </DeepgramContextProvider>
-    </MicrophoneContextProvider>
-  );
-}
-
 export default function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn() || isOfflineModeOn);
-  const {
-    audioEnabled,
-    setAudioEnabled,
-    loggedInUserId,
-    setLoggedInUserId,
-    languageCode,
-    isFullScreen,
-    setIsSearchOpened,
-    prevFocusedAgentIndex,
-    setFocusedAgentIndex,
-    sttProvider,
-    setSttProvider,
-  } = useStorageContext();
+  const { loggedInUserId, setLoggedInUserId, isFullScreen, sttProvider } = useStorageContext();
   const [isInitialized, setIsInitialized] = useState(false);
-  const prevFocusedElement = useRef<HTMLElement | null>(null);
-
-  const audioRef = useRef<HTMLAudioElement>(null);
 
   const blobsRef = useRef<Blob[]>([]);
-  const selectRef = useRef(null);
 
-  useEffect(() => {
-    //global event listener that will open language select on ctrl + l
-    const keydownHandler = (event: any) => {
-      if (event.ctrlKey && event.code === 'KeyL') {
-        event.preventDefault();
-        const a = selectRef.current as any;
-        if (!a) {
-          return;
-        }
-        prevFocusedElement.current = document.activeElement as HTMLElement;
-        const selectButton = a.querySelector('button');
-        if (selectButton) {
-          selectButton.focus();
-          selectButton.click();
-        }
-      }
-    };
-    document.addEventListener('keydown', keydownHandler);
-
-    return () => {
-      document.removeEventListener('keydown', keydownHandler);
-    };
-  }, [selectRef]);
-
-  // const handlePlayRecordedAudio = useCallback(() => {
-  //   if (audioRef.current) {
-  //     const concatenatedBlob = new Blob(blobsRef.current, { type: 'audio/webm' });
-  //     const audioUrl = URL.createObjectURL(concatenatedBlob);
-
-  //     // can I open it in separate tab?
-  //     window.open(audioUrl, '_blank');
-
-  //     audioRef.current.src = audioUrl;
-  //     audioRef.current.play();
-
-  //     // audioRef.current.onended = () => {
-  //     //   URL.revokeObjectURL(audioUrl);
-  //     // };
-  //   }
-  // }, [blobsRef]);
-
-  const handleOnGetBlob = useCallback((blob: Blob) => {
-    blobsRef.current.push(blob);
-  }, []);
-
-  // const handleLanguageChange = useCallback((_: any, newLanguageValue: string | null) => {
-  //   setLanguageCode(newLanguageValue as string);
-  //   // }
-  // }, []);
-
-  // const handleLanguageClose = useCallback(() => {
-  //   if (prevFocusedElement.current) {
-  //     setTimeout(() => {
-  //       prevFocusedElement.current?.focus();
-  //       prevFocusedElement.current = null;
-  //     }, 100);
-  //   }
-  // }, [prevFocusedElement]);
-
-  const { hasExperimentsFeature } = useFeatureFlags(isLoggedIn, loggedInUserId);
+  const { getDeepgramLanguage, getElevenLabsLanguage } = useLanguageCodes();
+  useFeatureFlags(isLoggedIn, loggedInUserId);
 
   useEffect(() => {
     init({
@@ -177,31 +41,9 @@ export default function App() {
     setIsInitialized(true);
   }, []);
 
-  const getDeepgramLanguage = useCallback(() => {
-    if (languageCode === 'cs-CZ') {
-      return 'cs';
-    }
-    if (languageCode === 'de-DE') {
-      return 'de';
-    }
-    if (languageCode === 'fr-FR') {
-      return 'fr';
-    }
-    return languageCode;
-  }, [languageCode]);
-
-  const getElevenLabsLanguage = useCallback(() => {
-    const mapping: Record<string, string> = {
-      pl: 'pl',
-      ru: 'ru',
-      en: 'en',
-      es: 'es',
-      'cs-CZ': 'cs',
-      'de-DE': 'de',
-      'fr-FR': 'fr',
-    };
-    return mapping[languageCode] || languageCode.split('-')[0];
-  }, [languageCode]);
+  const handleOnGetBlob = useCallback((blob: Blob) => {
+    blobsRef.current.push(blob);
+  }, []);
 
   return (
     isInitialized && (
@@ -212,104 +54,15 @@ export default function App() {
               [css.mainFullScreen]: isFullScreen,
             })}
           >
-            <audio ref={audioRef} />
-            <header
-              className={classNames(css.header, {
-                [css.headerFullScreen]: isFullScreen,
-              })}
-            >
-              <div className={css.headerContent}>
-                <UserSession
-                  isFullScreen={isFullScreen}
-                  isOfflineMode={isOfflineModeOn}
-                  isLoggedIn={isLoggedIn}
-                  onLoginSuccess={(googleUserId) => {
-                    setIsLoggedIn(true);
-                    setLoggedInUserId(googleUserId);
-                  }}
-                  onLogOut={() => setIsLoggedIn(false)}
-                />
-                <div
-                  className={classNames(css.headerIcons, {
-                    [css.headerIconsFullScreen]: isFullScreen,
-                  })}
-                >
-                  {/* {audioEnabled && (
-                <LanguageSelector
-                  languageCode={languageCode}
-                  selectRef={selectRef}
-                  handleLanguageChange={handleLanguageChange}
-                  handleLanguageClose={handleLanguageClose}
-                  sx={{ minWidth: '50px' }}
-                />
-              )} */}
-                  <OwnButton
-                    onClick={() => {
-                      setIsSearchOpened((prev) => !prev);
-                    }}
-                  >
-                    <SearchRounded />
-                  </OwnButton>
-                  <OwnButton
-                    onClick={() => {
-                      setFocusedAgentIndex((prev) => {
-                        const newValue = prev - 1;
-                        if (newValue < 0) {
-                          return 0;
-                        }
-                        return newValue;
-                      });
-                    }}
-                  >
-                    <ArrowUpward />
-                  </OwnButton>
-                  <OwnButton
-                    onClick={() => {
-                      setFocusedAgentIndex((prev) => prev + 1);
-                    }}
-                  >
-                    <ArrowDownwardRounded />
-                  </OwnButton>
-                  <OwnButton
-                    onClick={() => {
-                      typeof prevFocusedAgentIndex !== 'undefined' && setFocusedAgentIndex(prevFocusedAgentIndex);
-                    }}
-                  >
-                    <Reply />
-                  </OwnButton>
-                  {/* {audioEnabled && (
-                <OwnButton type="button" onClick={handlePlayRecordedAudio} color="success">
-                  <PlayArrow />
-                </OwnButton>
-              )} */}
-                  <OwnButton
-                    type="button"
-                    color="success"
-                    onClick={() => {
-                      setAudioEnabled(!audioEnabled);
-                    }}
-                  >
-                    {audioEnabled ? <MicOff /> : <Mic />}
-                  </OwnButton>
-                  {audioEnabled && (
-                    <>
-                      <AudioInputDeviceSelector />
-                      <AudioOutputDeviceSelector />
-                      <Select
-                        value={sttProvider}
-                        onChange={(_, val) => val && setSttProvider(val as SttProviderType)}
-                        size="sm"
-                        sx={{ minHeight: 'initial', padding: '0.2rem', fontSize: '12px', minWidth: '40px' }}
-                      >
-                        <Option value="elevenlabs">11Labs Realtime</Option>
-                        <Option value="deepgram">DG Realtime</Option>
-                        <Option value="deepgram-file">DG File</Option>
-                      </Select>
-                    </>
-                  )}
-                </div>
-              </div>
-            </header>
+            <AppHeader
+              isOfflineMode={isOfflineModeOn}
+              isLoggedIn={isLoggedIn}
+              onLoginSuccess={(googleUserId) => {
+                setIsLoggedIn(true);
+                setLoggedInUserId(googleUserId);
+              }}
+              onLogOut={() => setIsLoggedIn(false)}
+            />
 
             {isLoggedIn && (
               <div className={css.content}>

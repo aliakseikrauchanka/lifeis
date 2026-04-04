@@ -1,0 +1,38 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+
+  &--full-screen {
+    position: unset;
+    display: flex;
+    flex-direction: column;
+    width: 30px;
+    max-width: 30px;
+    min-height: 100dvh;
+  }
+
+  &-content {
+    position: sticky;
+    top: 0;
+  }
+
+  &-icons {
+    position: absolute;
+    top: 4px;
+    right: 246px;
+    display: flex;
+    max-height: 30px;
+    gap: 5px;
+    max-width: 30px;
+
+    &--full-screen {
+      position: relative;
+      right: 0;
+      top: 0;
+      display: flex;
+      flex-direction: column;
+      width: 30px;
+    }
+  }
+}
