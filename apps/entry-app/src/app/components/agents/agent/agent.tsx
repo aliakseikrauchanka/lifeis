@@ -111,11 +111,13 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
       () => undefined,
     );
 
-    const onHistoryItemSelect = useCallback((msg: string, resp: string, agentType?: string) => {
-      setMessage(msg);
-      const providerKey = agentType ?? 'response';
-      setProviderResponses({ [providerKey]: { answer: resp, status: 'done' } });
-    }, []);
+    const onHistoryGroupSelect = useCallback(
+      (msg: string, responses: Record<string, ProviderResponse>) => {
+        setMessage(msg);
+        setProviderResponses(responses);
+      },
+      [],
+    );
 
     useEffect(() => {
       if (formRef.current && focused) {
@@ -431,7 +433,7 @@ export const Agent = forwardRef<IAgentHandle, IAgentProps>(
                 isWideMode={isWideMode}
                 textAreaRef={textAreaRef}
                 hasSubmitted={hasSubmitted}
-                onHistoryItemSelect={onHistoryItemSelect}
+                onHistoryGroupSelect={onHistoryGroupSelect}
                 languageProps={languageProps}
                 dictationProps={dictationProps}
               />

@@ -10,7 +10,7 @@ import { AgentHistoryModal } from '../agent-history';
 import { submitImageOnParsing } from '../../../../../api/agents/agents.api';
 import { speak } from '../../../all-agents.helpers';
 import { useTextareaResize } from '../../hooks/useTextareaResize';
-import { useAgentHistory } from '../../hooks/useAgentHistory';
+import { historyGroupToProviderResponses, useAgentHistory } from '../../hooks/useAgentHistory';
 import css from './agent-text-input.module.scss';
 
 export interface ILanguageProps {
@@ -46,7 +46,7 @@ interface IAgentTextInputProps {
   isWideMode: boolean;
   textAreaRef: Ref<HTMLTextAreaElement>;
   hasSubmitted: boolean;
-  onHistoryItemSelect: (message: string, response: string, agentType?: string) => void;
+  onHistoryGroupSelect: (message: string, responses: Record<string, { answer: string; status: 'done' | 'loading' | 'error' | 'idle' }>) => void;
   languageProps: ILanguageProps;
   dictationProps: IDictationProps;
 }
@@ -66,7 +66,7 @@ export const AgentTextInput = forwardRef<IAgentTextInputHandle, IAgentTextInputP
       isWideMode,
       textAreaRef,
       hasSubmitted,
-      onHistoryItemSelect,
+      onHistoryGroupSelect,
       languageProps,
       dictationProps,
     },
@@ -84,8 +84,15 @@ export const AgentTextInput = forwardRef<IAgentTextInputHandle, IAgentTextInputP
       isMobile ? 190 : 140,
     );
 
-    const { clientHistoryItems, historyCurrentIndex, handleHistoryIndexChange, handleHistoryEduClick } =
-      useAgentHistory(id, hasSubmitted);
+    const {
+      clientHistoryItems,
+      historyGroups,
+      historyCurrentIndex,
+      handleHistoryIndexChange,
+      handleHistoryEduClick,
+    } = useAgentHistory(id, hasSubmitted);
+
+    const historyGroupCount = historyGroups.length;
 
     const processImageBuffer = useCallback(
       async (buffer: ArrayBuffer) => {
@@ -135,13 +142,13 @@ export const AgentTextInput = forwardRef<IAgentTextInputHandle, IAgentTextInputP
     const handleInternalKeyDown = useCallback(
       (e: KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.code === 'ArrowLeft' && e.ctrlKey && e.shiftKey) {
-          const { message: msg, response, agentType } = handleHistoryIndexChange(historyCurrentIndex + 1);
-          onHistoryItemSelect(msg, response, agentType);
+          const group = handleHistoryIndexChange(historyCurrentIndex + 1);
+          onHistoryGroupSelect(group.message, historyGroupToProviderResponses(group));
           return;
         }
         if (e.code === 'ArrowRight' && e.ctrlKey && e.shiftKey) {
-          const { message: msg, response, agentType } = handleHistoryIndexChange(historyCurrentIndex - 1);
-          onHistoryItemSelect(msg, response, agentType);
+          const group = handleHistoryIndexChange(historyCurrentIndex - 1);
+          onHistoryGroupSelect(group.message, historyGroupToProviderResponses(group));
           return;
         }
         if (e.code === 'KeyL' && e.ctrlKey && e.shiftKey) {
@@ -159,15 +166,15 @@ export const AgentTextInput = forwardRef<IAgentTextInputHandle, IAgentTextInputP
         }
         onKeyDown(e);
       },
-      [onKeyDown, handleHistoryIndexChange, historyCurrentIndex, onHistoryItemSelect],
+      [onKeyDown, handleHistoryIndexChange, historyCurrentIndex, onHistoryGroupSelect],
     );
 
     const handleHistoryNavigationIndexChange = useCallback(
       (index: number) => {
-        const { message: msg, response, agentType } = handleHistoryIndexChange(index);
-        onHistoryItemSelect(msg, response, agentType);
+        const group = handleHistoryIndexChange(index);
+        onHistoryGroupSelect(group.message, historyGroupToProviderResponses(group));
       },
-      [handleHistoryIndexChange, onHistoryItemSelect],
+      [handleHistoryIndexChange, onHistoryGroupSelect],
     );
 
     const {
@@ -289,6 +296,7 @@ export const AgentTextInput = forwardRef<IAgentTextInputHandle, IAgentTextInputP
           )}
           <AgentHistoryNavigation
             className={css.historyNavigation}
+            historyGroupCount={historyGroupCount}
             historyItems={clientHistoryItems}
             index={historyCurrentIndex}
             isEduEnabled={readLanguageCode === 'pl' || listenLanguageCode === 'pl'}

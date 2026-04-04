@@ -7,6 +7,8 @@ import { useCallback } from 'react';
 interface IAgentHistoryNavigationProps {
   className: string;
   index: number;
+  /** Index is over grouped history; bounds use this count (not flat history length). */
+  historyGroupCount: number;
   historyItems: IAgentHistoryItem[] | undefined;
   isEduEnabled: boolean;
   onIndexChange: (index: number) => void;
@@ -17,6 +19,7 @@ interface IAgentHistoryNavigationProps {
 export const AgentHistoryNavigation = ({
   className,
   index,
+  historyGroupCount,
   historyItems,
   isEduEnabled,
   onIndexChange,
@@ -30,18 +33,26 @@ export const AgentHistoryNavigation = ({
     onIndexChange(index - 1);
   };
 
+  const atOldestGroup = index >= historyGroupCount - 1;
+
   return (
     <div className={className}>
       <IconButton
-        aria-label="Copy"
+        aria-label="Older history group"
         size="sm"
         color="primary"
-        disabled={index > (historyItems?.length ?? 0) - 1}
+        disabled={atOldestGroup || historyGroupCount === 0}
         onClick={handlePreviousClick}
       >
         <ChevronLeft />
       </IconButton>
-      <IconButton aria-label="Copy" size="sm" color="primary" disabled={index <= 0} onClick={handleNextClick}>
+      <IconButton
+        aria-label="Newer history group"
+        size="sm"
+        color="primary"
+        disabled={index <= 0}
+        onClick={handleNextClick}
+      >
         <ChevronRight />
       </IconButton>
       {/* <IconButton aria-label="Copy" size="sm" color="primary" disabled={index === 0} onClick={handleReset}>
