@@ -70,7 +70,7 @@ export const AgentResponse = ({ providerResponses, isWideMode, responseRef, onCo
           value={activeProvider}
           onChange={(_, value) => setSelectedTab(value as string)}
           size="sm"
-          sx={{ overflow: 'auto' }}
+          sx={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '100%' }}
         >
           <div className={css.responseTitle}>
             {canCopy && (
@@ -100,7 +100,7 @@ export const AgentResponse = ({ providerResponses, isWideMode, responseRef, onCo
             const resp = providerResponses[providerId];
             const isActive = providerId === activeProvider;
             return (
-              <TabPanel key={providerId} value={providerId} sx={{ p: 0 }}>
+              <TabPanel key={providerId} value={providerId} sx={{ p: 0, overflow: 'auto', flex: 1 }}>
                 <div className="response-body" ref={isActive ? responseRef : undefined}>
                   {resp?.status === 'loading' && 'Generating ...'}
                   {resp?.status === 'error' && 'Error generating response.'}
