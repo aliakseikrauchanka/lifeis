@@ -207,7 +207,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
   return (
     <>
       <form onSubmit={handleSubmit}>
-        <Box className={`${css.formContainer} ${compact ? css.formCompact : ''}`}>
+        <Box id="log-form-details" className={`${css.formContainer} ${compact ? css.formCompact : ''}`}>
           <Box className={css.textFieldWrapper}>
             <TextField
               inputRef={textareaRef}
@@ -254,6 +254,8 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
           size="small"
           className={css.expandButton}
           onClick={() => setIsExpanded((v: boolean) => !v)}
+          aria-expanded={isExpanded}
+          aria-controls="log-form-details"
           aria-label={isExpanded ? 'Shrink form' : 'Expand form'}
           title={isExpanded ? 'Shrink form to show more logs' : 'Expand form'}
         >

@@ -61,3 +61,5 @@ Nx comes with local caching already built-in (check your `nx.json`). On CI you m
 - [Join the community](https://nx.dev/community)
 - [Subscribe to the Nx Youtube Channel](https://www.youtube.com/@nxdevtools)
 - [Follow us on Twitter](https://twitter.com/nxdevtools)
+
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/aliakseikrauchanka/lifeis?utm_source=oss&utm_medium=github&utm_campaign=aliakseikrauchanka%2Flifeis&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)

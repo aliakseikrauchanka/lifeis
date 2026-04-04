@@ -92,7 +92,8 @@
 }
 
 .expand-button {
-  padding: 2px !important;
+  min-width: 40px ;
+  min-height: 40px;
 
   svg {
     font-size: 1.25rem;
