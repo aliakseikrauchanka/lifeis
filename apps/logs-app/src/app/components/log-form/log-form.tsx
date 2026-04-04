@@ -1,9 +1,9 @@
 import React, { useState, KeyboardEvent, useEffect, useCallback, useRef } from 'react';
 import { ImagePreviewFromBuffer, OwnButton, SpeechToText } from '@lifeis/common-ui';
-import { CameraAlt } from '@mui/icons-material';
+import { CameraAlt, ExpandLess, ExpandMore } from '@mui/icons-material';
 import { createLog, describeFromImage, type DescribeFromImageMode, updateLog } from '../../api/logs/logs.api';
 import css from './log-form.module.scss';
-import { Box, FormControl, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
+import { Box, FormControl, IconButton, InputLabel, MenuItem, Select, Stack, TextField } from '@mui/material';
 
 export interface IEditLog {
   id: string;
@@ -16,10 +16,11 @@ interface ILogFormProps {
   editLog?: IEditLog;
   onEditCancel?: () => void;
   baskets: { _id: string; name: string }[];
-  compact?: boolean;
 }
 
-export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = false }: ILogFormProps) => {
+export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormProps) => {
+  const [isExpanded, setIsExpanded] = useState(true);
+
   const [message, setMessage] = React.useState(editLog?.message ?? '');
   const [selectedBasketId, setSelectedBasketId] = useState<string | null>(null);
   const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
@@ -201,49 +202,64 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets, compact = fa
     </Stack>
   );
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <Box className={`${css.formContainer} ${compact ? css.formCompact : ''}`}>
-        <Box className={css.textFieldWrapper}>
-          <TextField
-            inputRef={textareaRef}
-            className={css.textAreaField}
-            multiline
-            rows={compact ? 1 : imageBuffer ? 3 : 2}
-            variant="outlined"
-            name="message"
-            placeholder="Enter your message here"
-            value={message}
-            onChange={handleChange}
-            fullWidth
-          />
-          {imageBuffer && (
-            <Box className={css.imagePreviewBox}>
-              <ImagePreviewFromBuffer buffer={imageBuffer} onClose={clearImage} isLoading={isParsingPhoto} />
-            </Box>
-          )}
-        </Box>
+  const compact = !isExpanded;
 
-        <FormControl size="small" className={css.basketSelect}>
-          <InputLabel id="log-form-basket-label">{compact ? 'Basket' : 'Basket (optional)'}</InputLabel>
-          <Select
-            labelId="log-form-basket-label"
-            value={selectedBasketId ?? ''}
-            label={compact ? 'Basket' : 'Basket (optional)'}
-            onChange={(e) => setSelectedBasketId(e.target.value || null)}
-          >
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem>
-            {baskets.map((b) => (
-              <MenuItem key={b._id} value={b._id}>
-                {b.name}
+  return (
+    <>
+      <form onSubmit={handleSubmit}>
+        <Box className={`${css.formContainer} ${compact ? css.formCompact : ''}`}>
+          <Box className={css.textFieldWrapper}>
+            <TextField
+              inputRef={textareaRef}
+              className={css.textAreaField}
+              multiline
+              rows={compact ? 1 : imageBuffer ? 3 : 2}
+              variant="outlined"
+              name="message"
+              placeholder="Enter your message here"
+              value={message}
+              onChange={handleChange}
+              fullWidth
+            />
+            {imageBuffer && (
+              <Box className={css.imagePreviewBox}>
+                <ImagePreviewFromBuffer buffer={imageBuffer} onClose={clearImage} isLoading={isParsingPhoto} />
+              </Box>
+            )}
+          </Box>
+
+          <FormControl size="small" className={css.basketSelect}>
+            <InputLabel id="log-form-basket-label">{compact ? 'Basket' : 'Basket (optional)'}</InputLabel>
+            <Select
+              labelId="log-form-basket-label"
+              value={selectedBasketId ?? ''}
+              label={compact ? 'Basket' : 'Basket (optional)'}
+              onChange={(e) => setSelectedBasketId(e.target.value || null)}
+            >
+              <MenuItem value="">
+                <em>None</em>
               </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-        {compact ? <Box className={css.compactButtonsRow}>{actionButtons}</Box> : actionButtons}
-      </Box>
-    </form>
+              {baskets.map((b) => (
+                <MenuItem key={b._id} value={b._id}>
+                  {b.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          {compact ? <Box className={css.compactButtonsRow}>{actionButtons}</Box> : actionButtons}
+        </Box>
+      </form>
+      <div className={css.expandButtonRow}>
+        <IconButton
+          size="small"
+          className={css.expandButton}
+          onClick={() => setIsExpanded((v: boolean) => !v)}
+          aria-label={isExpanded ? 'Shrink form' : 'Expand form'}
+          title={isExpanded ? 'Shrink form to show more logs' : 'Expand form'}
+        >
+          {isExpanded ? <ExpandLess /> : <ExpandMore />}
+        </IconButton>
+      </div>
+    </>
   );
 };

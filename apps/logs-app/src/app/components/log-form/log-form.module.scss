@@ -85,6 +85,20 @@
   width: 100%;
 }
 
+.expand-button-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.expand-button {
+  padding: 2px !important;
+
+  svg {
+    font-size: 1.25rem;
+  }
+}
+
 .file-input {
   display: none;
 }
