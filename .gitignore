@@ -27,6 +27,9 @@ node_modules
 # Claude
 .claude
 
+# Opencode
+.opencode
+
 # misc
 /.sass-cache
 /connect.lock
