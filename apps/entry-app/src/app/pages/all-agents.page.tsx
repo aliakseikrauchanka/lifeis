@@ -6,11 +6,10 @@ import css from '../components/agents/all-agents.module.scss';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { IAgentResponse } from '../domains/agent.domain';
 import { useStorageContext } from '../contexts/storage.context';
-import { Accordion, AccordionDetails, AccordionSummary, Select, Option } from '@mui/joy';
+import { Accordion, AccordionDetails, AccordionSummary } from '@mui/joy';
 import classNames from 'classnames';
 import { AgentSearch } from '../components/agents/agent-search/agent-search';
-import { LanguageSelector, OwnButton } from '@lifeis/common-ui';
-import { speak } from '../components/agents/all-agents.helpers';
+import { SelectionContextMenu } from '../components/agents/selection-context-menu/selection-context-menu';
 
 const AVAILABLE_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'];
 
@@ -30,10 +29,6 @@ export const AllAgentsPage = () => {
     setFocusedAgentIndex,
     focusedAgentIndex,
   } = useStorageContext();
-
-  const audioRef = useRef<HTMLAudioElement>(null);
-
-  const [selectedAgentIndex, setSelectedAgentIndex] = useState<number>(0);
 
   const agents: IAgentResponse[] = query.data?.filter((agent) => agent.type === 'agent' || !agent.type) ?? [];
   const nonArchivedAgents = agents.filter((agent) => !agent.isArchived);
@@ -102,12 +97,6 @@ export const AllAgentsPage = () => {
     };
   }, [focusedAgentIndex, focusAgent]);
 
-  useEffect(() => {
-    if (focusedAgentIndex >= 0) {
-      setSelectedAgentIndex(focusedAgentIndex);
-    }
-  }, [focusedAgentIndex, setSelectedAgentIndex]);
-
   // Add keyboard shortcut to open search
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -144,10 +133,6 @@ export const AllAgentsPage = () => {
   // array of agents where pinnedAgents are first and then the rest but that need to save the order of the pinned agents
   // order of pinned agents should be saved
 
-  const [selectionRect, setSelectionRect] = useState<any>(null);
-  const [selectionText, setSelectionText] = useState('');
-  const textRef = useRef(null);
-  const [curAudioBase64, setCurAudioBase64] = useState('');
   const [expandedAccordions, setExpandedAccordions] = useState<{
     archived: boolean;
     templates: boolean;
@@ -164,79 +149,20 @@ export const AllAgentsPage = () => {
       }));
     };
 
-  useEffect(() => {
-    const isIPad = /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
+  const handleSubmitToAgent = useCallback(
+    (agentIndex: number, text: string) => {
+      const selectedAgent = sortedAgents[agentIndex];
+      if (!selectedAgent) return;
 
-    if (isIPad) return;
-
-    document.addEventListener('selectionchange', handleSelectionChange);
-    return () => {
-      document.removeEventListener('selectionchange', handleSelectionChange);
-    };
-  }, []);
-
-  const handleSelectionChange = () => {
-    const selection = window.getSelection();
-    if (!selection?.rangeCount) return;
-
-    const range = selection.getRangeAt(0);
-    // get text from selection
-    const text = selection.toString();
-
-    if (
-      range &&
-      !selection.isCollapsed &&
-      !!range.commonAncestorContainer.parentElement?.closest('.response-body') &&
-      text.length < 200 // limit to 200 characters
-    ) {
-      const containerRect = (textRef.current as any).getBoundingClientRect();
-
-      const rect = range.getBoundingClientRect();
-      setSelectionRect({
-        top: rect.top - containerRect.top,
-        left: rect.left - containerRect.left,
-        width: rect.width,
-        height: rect.height,
-      });
-
-      setSelectionText(text);
-    } else {
-      setTimeout(() => {
-        setSelectionRect(null);
-        setSelectionText('');
-      }, 100);
-      setCurAudioBase64('');
-      audioRef.current?.pause();
-    }
-  };
-
-  const handleSelectedAgentChange = useCallback(
-    (event: any, newValue: string | null) => {
-      if (!newValue) {
-        return;
-      }
-      const selectedAgentIndex = Number(newValue) || 0;
-      const selectedAgent = sortedAgents[selectedAgentIndex];
-      if (!selectedAgent) {
-        return;
-      }
-
-      setFocusedAgentIndex(selectedAgentIndex);
+      setFocusedAgentIndex(agentIndex);
 
       const agentRef = agentsRef.current[selectedAgent._id];
       if (!agentRef) return;
 
-      agentRef.setNewMessage(selectionText);
+      agentRef.setNewMessage(text);
     },
-    [sortedAgents, selectionText, setFocusedAgentIndex],
+    [sortedAgents, setFocusedAgentIndex],
   );
-
-  const handleSetNewMessage = useCallback(() => {
-    const agentRef = agentsRef.current[focusedAgentId];
-    if (!agentRef) return;
-
-    agentRef.setNewMessage(selectionText);
-  }, [agentsRef, focusedAgentId, selectionText]);
 
   const handleFocusAgent = useCallback(
     (index: number) => {
@@ -244,21 +170,6 @@ export const AllAgentsPage = () => {
     },
     [focusAgent],
   );
-
-  const handleSpeak = useCallback(async () => {
-    const language = sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode;
-    speak(selectionText, language, (audioUrl) => {
-      if (audioRef.current) {
-        audioRef.current.src = audioUrl;
-        audioRef.current.play();
-
-        // Cleanup
-        audioRef.current.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-        };
-      }
-    });
-  }, [selectionText, sortedAgents, focusedAgentId, languageCode]);
 
   if (!query.data) {
     return <div>Loading...</div>;
@@ -296,56 +207,14 @@ export const AllAgentsPage = () => {
 
         <AgentForm />
 
-        <div style={{ position: 'relative', padding: '20px' }} ref={textRef}>
-          {selectionRect && (
-            <div
-              className={css.agentsMenu}
-              style={{
-                top: selectionRect.top + selectionRect.height + 10, // TODO: Adjust as needed
-                left: selectionRect.left,
-              }}
-            >
-              <div className={css.agentsMenuItem}>
-                <OwnButton onClick={handleSpeak}>Speak</OwnButton>
-                <div
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                  }}
-                >
-                  <LanguageSelector
-                    languageCode={sortedAgents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode}
-                    sx={{ minWidth: '20px' }}
-                    handleLanguageChange={handleReadLanguageChange}
-                  />
-                </div>
-              </div>
-              <div className={css.agentsMenuItem}>
-                <OwnButton onClick={handleSetNewMessage}>Submit</OwnButton>
-                <Select
-                  value={String(selectedAgentIndex)}
-                  onChange={handleSelectedAgentChange}
-                  sx={{ minWidth: 120, minHeight: '1.75rem' }}
-                >
-                  {sortedAgents.map((agent, i) => {
-                    return <Option value={String(i)}>{agent.name}</Option>;
-                  })}
-                </Select>
-              </div>
-
-              {/* <button
-                onClick={() => {
-                  audioRef.current?.pause();
-                }}
-              >
-                Stop
-              </button> */}
-              <audio ref={audioRef}>
-                <source type="audio/mpeg" />
-              </audio>
-            </div>
-          )}
-        </div>
+        <SelectionContextMenu
+          agents={sortedAgents}
+          focusedAgentId={focusedAgentId}
+          languageCode={languageCode}
+          onReadLanguageChange={handleReadLanguageChange}
+          onSubmitToAgent={handleSubmitToAgent}
+          selectedAgentIndex={focusedAgentIndex}
+        />
 
         <br />
         <Accordion expanded={expandedAccordions.archived} onChange={handleAccordionChange('archived')}>
