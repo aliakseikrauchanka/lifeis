@@ -21,7 +21,7 @@ interface ILogFormProps {
 export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormProps) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
-  const [message, setMessage] = React.useState(editLog?.message ?? '');
+  const [message, setMessage] = useState(editLog?.message ?? '');
   const [selectedBasketId, setSelectedBasketId] = useState<string | null>(null);
   const [isCaptionsNeedClear, setIsCaptionsNeedClear] = useState(false);
   const [isListeningFired, setIsListeningFired] = useState(false);
@@ -48,9 +48,9 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only sync when log id changes, not on expand/shrink
   }, [editLogId, baskets]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(event.target.value);
-  };
+  }, []);
 
   const handleCapture = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,17 +84,15 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
         setIsCaptionsNeedClear(true);
         if (editLog) {
           await updateLog(editLog.id, message, selectedBasketId ?? undefined);
-          setMessage('');
-          setSelectedBasketId(null);
         } else {
-          setMessage('');
-          setSelectedBasketId(null);
           await createLog(message, selectedBasketId ?? undefined);
         }
+        setMessage('');
+        setSelectedBasketId(null);
         setImageBuffer(null);
         onSubmit();
       } catch {
-        console.log('error happened during fetch');
+        console.error('error happened during fetch');
       }
     },
     [message, editLog, selectedBasketId, onSubmit],
@@ -124,10 +122,8 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
     [handleSubmit],
   );
 
-  // Add document-level event listener
   useEffect(() => {
     const handleDocumentKeyDown = (e: globalThis.KeyboardEvent) => {
-      // Convert native KeyboardEvent to React KeyboardEvent-like object
       const reactEvent = {
         key: e.key,
         code: e.code,
@@ -143,7 +139,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
     return () => {
       document.removeEventListener('keydown', handleDocumentKeyDown);
     };
-  }, [message, onSubmit, handleKeyDown]); // Include dependencies that handleKeyDown uses
+  }, [handleKeyDown]);
 
   const actionButtons = (
     <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap" useFlexGap className={css.actionButtons}>
@@ -253,7 +249,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
         <IconButton
           size="small"
           className={css.expandButton}
-          onClick={() => setIsExpanded((v: boolean) => !v)}
+          onClick={() => setIsExpanded((v) => !v)}
           aria-expanded={isExpanded}
           aria-controls="log-form-details"
           aria-label={isExpanded ? 'Shrink form' : 'Expand form'}
