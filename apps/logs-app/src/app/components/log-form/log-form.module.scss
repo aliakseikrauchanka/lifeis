@@ -85,6 +85,21 @@
   width: 100%;
 }
 
+.expand-button-row {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.expand-button {
+  min-width: 40px ;
+  min-height: 40px;
+
+  svg {
+    font-size: 1.25rem;
+  }
+}
+
 .file-input {
   display: none;
 }

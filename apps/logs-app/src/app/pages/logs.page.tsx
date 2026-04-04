@@ -6,8 +6,7 @@ import { LogsPeriodControls, type PeriodType } from '../components/logs-period-c
 import { deleteLog, getAllLogs } from '../api/logs/logs.api';
 import { useBaskets } from '../hooks/use-baskets';
 import { getLogsPeriodDates } from '../utils/logs-period.utils';
-import { Box, Chip, IconButton } from '@mui/material';
-import { ExpandLess, ExpandMore } from '@mui/icons-material';
+import { Box, Chip } from '@mui/material';
 import { isToday, isYesterday, format } from 'date-fns';
 import css from './logs.page.module.scss';
 
@@ -20,20 +19,6 @@ const getDateLabel = (date: Date) => {
 export const LogsPage = () => {
   const { baskets } = useBaskets();
   const [editLogId, setEditLogId] = useState<string | null>(null);
-  const [isFormExpanded, setIsFormExpanded] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const stored = localStorage.getItem('logs-form-expanded');
-      return stored !== null ? JSON.parse(stored) : false;
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    localStorage.setItem('logs-form-expanded', JSON.stringify(isFormExpanded));
-  }, [isFormExpanded]);
-
   const [period, setPeriod] = useState<PeriodType>('today');
   const [dateRange, setDateRange] = useState<{ from: Date | null; to: Date | null }>({ from: null, to: null });
   const [selectedBasketId, setSelectedBasketId] = useState<string | ''>('');
@@ -121,19 +106,7 @@ export const LogsPage = () => {
           editLog={editLog}
           onEditCancel={() => setEditLogId(null)}
           baskets={baskets}
-          compact={!isFormExpanded}
         />
-      </div>
-      <div className={css.controlsRow}>
-        <IconButton
-          size="small"
-          className={css.expandButton}
-          onClick={() => setIsFormExpanded((v: boolean) => !v)}
-          aria-label={isFormExpanded ? 'Shrink form' : 'Expand form'}
-          title={isFormExpanded ? 'Shrink form to show more logs' : 'Expand form'}
-        >
-          {isFormExpanded ? <ExpandLess /> : <ExpandMore />}
-        </IconButton>
       </div>
       <Box className={css.logsContainer}>
         <div className={css.basketFilterRow}>
