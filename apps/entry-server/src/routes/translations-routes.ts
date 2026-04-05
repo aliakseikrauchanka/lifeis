@@ -186,5 +186,38 @@ No extra fields.`,
     }
   });
 
+  router.post('/examples', verifyAccessToken, async (req, res) => {
+    const { word, language } = req.body;
+    if (typeof word !== 'string' || word.trim().length === 0) {
+      return res.status(400).json({ message: 'word must be a non-empty string' });
+    }
+    if (word.length > MAX_TEXT_LENGTH) {
+      return res.status(400).json({ message: `word must be at most ${MAX_TEXT_LENGTH} characters` });
+    }
+    if (typeof language !== 'string' || !ALLOWED_LANGUAGE_CODES.has(language)) {
+      return res.status(400).json({ message: 'Invalid language code' });
+    }
+
+    try {
+      const completion = await openAiModel.chat.completions.create({
+        model: 'gpt-4o-mini',
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `Return a JSON object with "examples": an array of exactly 3 short example sentences using a given word in ${language}. No extra fields.`,
+          },
+          { role: 'user', content: word },
+        ],
+      });
+      const raw = completion.choices[0].message.content ?? '{}';
+      const parsed = JSON.parse(raw);
+      res.json({ examples: (parsed.examples ?? []).slice(0, 3) });
+    } catch (error) {
+      console.error('Error generating examples:', error);
+      res.status(500).json({ message: 'Error generating examples' });
+    }
+  });
+
   return router;
 };

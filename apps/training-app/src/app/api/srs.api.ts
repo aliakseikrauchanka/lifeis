@@ -53,6 +53,17 @@ export const unenrollTranslation = async (translationId: string): Promise<void> 
   if (!res.ok) throw new Error('Failed to unenroll translation');
 };
 
+export const fetchExamples = async (word: string, language: string): Promise<string[]> => {
+  const res = await utilFetch('/translations/examples', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ word, language }),
+  });
+  if (!res.ok) throw new Error('Failed to fetch examples');
+  const { examples } = await res.json();
+  return examples;
+};
+
 export const fetchTranslations = async (): Promise<TranslationData[]> => {
   const res = await utilFetch('/translations');
   if (!res.ok) throw new Error('Failed to fetch translations');

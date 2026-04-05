@@ -25,6 +25,7 @@ export const createGeminiRoutes = (geminiModel: GenerativeModel) => {
   const ALLOWED_TTS_LANGUAGE_CODES = new Set([
     'ru-RU', 'en-US', 'en-GB', 'lt-LT', 'pl-PL', 'de-DE', 'fr-FR', 'es-ES',
     'uk-UA', 'zh-CN', 'ja-JP', 'ko-KR', 'it-IT', 'pt-BR', 'pt-PT', 'nl-NL',
+    'pl', 'fi', 'es', 'sr-RS',
   ]);
 
   routes.post('/text-to-speech', verifyAccessToken, async (req, res) => {

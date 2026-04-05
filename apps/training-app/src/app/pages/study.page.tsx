@@ -1,17 +1,18 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { fetchDueCards, reviewCard, Rating, SrsCard } from '../api/srs.api';
+import { fetchDueCards, fetchExamples, reviewCard, Rating, SrsCard } from '../api/srs.api';
 import { speak } from '../api/tts.api';
-import { BookOpen, Check } from 'lucide-react';
+import { BookOpen, Check, Volume2 } from 'lucide-react';
 
 export function StudyPage() {
   const [queue, setQueue] = useState<SrsCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
   const [grading, setGrading] = useState(false);
-  const lastSpokenId = useRef<string>('');
+  const [examples, setExamples] = useState<string[]>([]);
+  const [loadingExamples, setLoadingExamples] = useState(false);
 
   const current = queue[0];
 
@@ -31,13 +32,23 @@ export function StudyPage() {
     loadCards();
   }, [loadCards]);
 
-  // Auto-pronounce when a new card appears
-  useEffect(() => {
+  const handleReveal = async () => {
+    setRevealed(true);
     if (!current) return;
-    if (lastSpokenId.current === current._id) return;
-    lastSpokenId.current = current._id;
-    speak(current.translation.original, current.translation.originalLanguage);
-  }, [current]);
+    setLoadingExamples(true);
+    try {
+      const ex = await fetchExamples(
+        current.translation.translation,
+        current.translation.translationLanguage,
+      );
+      setExamples(ex);
+    } catch (err) {
+      console.error('Failed to load examples:', err);
+      setExamples([]);
+    } finally {
+      setLoadingExamples(false);
+    }
+  };
 
   const handleGrade = async (rating: Rating) => {
     if (!current || grading) return;
@@ -49,7 +60,6 @@ export function StudyPage() {
     }
 
     const rest = queue.slice(1);
-    // On "again", re-append the card so user sees it again this session
     if (rating === 'again') {
       rest.push(current);
     }
@@ -60,6 +70,7 @@ export function StudyPage() {
       setQueue(rest);
     }
     setRevealed(false);
+    setExamples([]);
     setGrading(false);
   };
 
@@ -97,19 +108,68 @@ export function StudyPage() {
           <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
             {current.translation.originalLanguage}
           </div>
-          <CardTitle className="text-3xl">{current.translation.original}</CardTitle>
+          <div className="flex items-center justify-center gap-2">
+            <CardTitle className="text-3xl">{current.translation.original}</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 rounded-full"
+              onClick={() => speak(current.translation.original, current.translation.originalLanguage)}
+            >
+              <Volume2 className="h-4 w-4" />
+            </Button>
+          </div>
         </CardHeader>
 
-        <CardContent className="text-center min-h-[80px] flex items-center justify-center">
+        <CardContent className="text-center min-h-[80px] flex flex-col items-center justify-center gap-4">
           {revealed ? (
-            <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                {current.translation.translationLanguage}
+            <>
+              <div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                  {current.translation.translationLanguage}
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <p className="text-2xl font-medium text-primary">{current.translation.translation}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 rounded-full"
+                    onClick={() => speak(current.translation.translation, current.translation.translationLanguage)}
+                  >
+                    <Volume2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-              <p className="text-2xl font-medium text-primary">{current.translation.translation}</p>
-            </div>
+
+              <div className="w-full border-t pt-3">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                  Examples
+                </div>
+                {loadingExamples ? (
+                  <div className="flex justify-center">
+                    <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+                  </div>
+                ) : examples.length > 0 ? (
+                  <div className="space-y-2">
+                    {examples.map((ex, i) => (
+                      <div key={i} className="flex items-center gap-2 text-left">
+                        <span className="text-sm text-muted-foreground">{ex}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0 rounded-full shrink-0"
+                          onClick={() => speak(ex, current.translation.translationLanguage)}
+                        >
+                          <Volume2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </>
           ) : (
-            <Button variant="secondary" onClick={() => setRevealed(true)} className="text-lg px-8 py-6">
+            <Button variant="secondary" onClick={handleReveal} className="text-lg px-8 py-6">
               Show Answer
             </Button>
           )}
