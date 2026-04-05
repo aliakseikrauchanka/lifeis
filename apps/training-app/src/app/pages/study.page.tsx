@@ -48,21 +48,35 @@ export function StudyPage() {
     if (autoSpeak) {
       speak(current.translation.original, current.translation.originalLanguage);
     }
-    // Fetch examples when card changes
+    const ac = new AbortController();
+
     setLoadingExamples(true);
     setExamples([]);
     fetchExamples(
       current.translation.original,
       current.translation.originalLanguage,
       current.translation.translationLanguage,
+      { signal: ac.signal },
     )
       .then((ex) => setExamples(ex))
       .catch((err) => {
+        if ((err as Error).name === 'AbortError') return;
         console.error('Failed to load examples:', err);
         setExamples([]);
       })
-      .finally(() => setLoadingExamples(false));
-  }, [current?.translation._id, autoSpeak, loading]);
+      .finally(() => {
+        if (!ac.signal.aborted) setLoadingExamples(false);
+      });
+
+    return () => ac.abort();
+  }, [
+    current?.translation._id,
+    current?.translation.original,
+    current?.translation.originalLanguage,
+    current?.translation.translationLanguage,
+    autoSpeak,
+    loading,
+  ]);
 
   const handleReveal = () => {
     setRevealed(true);

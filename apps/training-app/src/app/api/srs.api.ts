@@ -75,11 +75,17 @@ export interface Example {
   translated: string;
 }
 
-export const fetchExamples = async (word: string, language: string, translationLanguage: string): Promise<Example[]> => {
+export const fetchExamples = async (
+  word: string,
+  language: string,
+  translationLanguage: string,
+  options?: { signal?: AbortSignal },
+): Promise<Example[]> => {
   const res = await utilFetch('/translations/examples', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ word, language, translationLanguage }),
+    signal: options?.signal,
   });
   if (!res.ok) throw new Error('Failed to fetch examples');
   const { examples } = await res.json();
