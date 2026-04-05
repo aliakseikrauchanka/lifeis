@@ -28,6 +28,13 @@ export const fetchDueCards = async (): Promise<SrsCard[]> => {
   return cards;
 };
 
+export const fetchEnrolledCards = async (): Promise<SrsCard[]> => {
+  const res = await utilFetch('/srs/enrolled');
+  if (!res.ok) throw new Error('Failed to fetch enrolled cards');
+  const { cards } = await res.json();
+  return cards;
+};
+
 export const reviewCard = async (translationId: string, rating: Rating): Promise<void> => {
   const res = await utilFetch('/srs/review', {
     method: 'POST',
@@ -46,6 +53,16 @@ export const enrollTranslation = async (translationId: string): Promise<void> =>
   if (!res.ok) throw new Error('Failed to enroll translation');
 };
 
+export const enrollTranslationsBatch = async (translationIds: string[]): Promise<{ enrolled: number; existing: number }> => {
+  const res = await utilFetch('/srs/enroll/batch', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ translationIds }),
+  });
+  if (!res.ok) throw new Error('Failed to batch enroll translations');
+  return res.json();
+};
+
 export const unenrollTranslation = async (translationId: string): Promise<void> => {
   const res = await utilFetch(`/srs/enroll/${translationId}`, {
     method: 'DELETE',
@@ -53,15 +70,37 @@ export const unenrollTranslation = async (translationId: string): Promise<void> 
   if (!res.ok) throw new Error('Failed to unenroll translation');
 };
 
-export const fetchExamples = async (word: string, language: string): Promise<string[]> => {
+export interface Example {
+  original: string;
+  translated: string;
+}
+
+export const fetchExamples = async (word: string, language: string, translationLanguage: string): Promise<Example[]> => {
   const res = await utilFetch('/translations/examples', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ word, language }),
+    body: JSON.stringify({ word, language, translationLanguage }),
   });
   if (!res.ok) throw new Error('Failed to fetch examples');
   const { examples } = await res.json();
   return examples;
+};
+
+export const importTranslations = async (items: unknown[]): Promise<{ inserted: number; skipped: number; total: number }> => {
+  const res = await utilFetch('/translations/import', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items }),
+  });
+  if (!res.ok) throw new Error('Failed to import translations');
+  return res.json();
+};
+
+export const deleteTranslation = async (translationId: string): Promise<void> => {
+  const res = await utilFetch(`/translations/${translationId}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error('Failed to delete translation');
 };
 
 export const fetchTranslations = async (): Promise<TranslationData[]> => {

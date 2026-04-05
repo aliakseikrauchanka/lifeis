@@ -43,6 +43,32 @@ export const getSrsRoutes = (client: MongoClient) => {
     }
   });
 
+  // GET /enrolled — all enrolled cards with SRS state
+  router.get('/enrolled', verifyAccessToken, async (req, res) => {
+    try {
+      const userId = res.locals.userId;
+      const cards = await srsCollection
+        .aggregate([
+          { $match: { owner_id: userId } },
+          {
+            $lookup: {
+              from: 'translations',
+              localField: 'translation_id',
+              foreignField: '_id',
+              as: 'translation',
+            },
+          },
+          { $unwind: '$translation' },
+        ])
+        .toArray();
+
+      res.json({ cards });
+    } catch (error) {
+      console.error('Error fetching enrolled cards:', error);
+      res.status(500).json({ message: 'Error fetching enrolled cards' });
+    }
+  });
+
   // POST /review — grade a card
   router.post('/review', verifyAccessToken, async (req, res) => {
     try {
@@ -147,6 +173,69 @@ export const getSrsRoutes = (client: MongoClient) => {
     } catch (error) {
       console.error('Error enrolling translation:', error);
       res.status(500).json({ message: 'Error enrolling translation' });
+    }
+  });
+
+  // POST /enroll/batch — enroll multiple translations at once
+  router.post('/enroll/batch', verifyAccessToken, async (req, res) => {
+    try {
+      const { translationIds } = req.body;
+      if (!Array.isArray(translationIds) || translationIds.length === 0) {
+        return res.status(400).json({ message: 'translationIds array is required' });
+      }
+      if (translationIds.length > 500) {
+        return res.status(400).json({ message: 'Maximum 500 items per batch' });
+      }
+
+      const userId = res.locals.userId;
+      const objectIds: ObjectId[] = [];
+      for (const id of translationIds) {
+        try {
+          objectIds.push(new ObjectId(id));
+        } catch {
+          // skip invalid ids
+        }
+      }
+
+      if (objectIds.length === 0) {
+        return res.status(400).json({ message: 'No valid translationIds provided' });
+      }
+
+      // Verify translations exist and belong to user
+      const validTranslations = await translationsCollection
+        .find({ _id: { $in: objectIds }, owner_id: userId })
+        .project({ _id: 1 })
+        .toArray();
+
+      const validIds = validTranslations.map((t) => t._id);
+
+      const now = Date.now();
+      const ops = validIds.map((translationId) => ({
+        updateOne: {
+          filter: { owner_id: userId, translation_id: translationId },
+          update: {
+            $setOnInsert: {
+              owner_id: userId,
+              translation_id: translationId,
+              due_at: now,
+              interval_days: 0,
+              ease: 2.5,
+              reps: 0,
+              lapses: 0,
+              created_at: now,
+              updated_at: now,
+            },
+          },
+          upsert: true,
+        },
+      }));
+
+      const result = await srsCollection.bulkWrite(ops);
+
+      res.status(201).json({ enrolled: result.upsertedCount, existing: result.matchedCount });
+    } catch (error) {
+      console.error('Error batch enrolling:', error);
+      res.status(500).json({ message: 'Error batch enrolling' });
     }
   });
 
