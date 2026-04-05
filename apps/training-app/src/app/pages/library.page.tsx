@@ -15,6 +15,11 @@ import {
   SrsCard,
 } from '../api/srs.api';
 import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, ArrowUpDown, Languages, Mic, MicOff, X } from 'lucide-react';
+import {
+  getSpeechRecognitionConstructor,
+  type BrowserSpeechRecognition,
+  type BrowserSpeechRecognitionEvent,
+} from '../../browser-speech';
 
 const LANGUAGE_OPTIONS = [
   { code: 'pl', label: 'Polish' },
@@ -43,7 +48,7 @@ export function LibraryPage() {
   const [translating, setTranslating] = useState(false);
   const [translationOptions, setTranslationOptions] = useState<string[]>([]);
   const [listening, setListening] = useState<'original' | 'translation' | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -134,17 +139,17 @@ export function LibraryPage() {
       recognitionRef.current?.stop();
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
+    const RecognitionCtor = getSpeechRecognitionConstructor();
+    if (!RecognitionCtor) return;
 
-    const recognition = new SpeechRecognition();
+    const recognition = new RecognitionCtor();
     const langCode = field === 'original' ? addForm.originalLanguage : addForm.translationLanguage;
     recognition.lang = STT_LANG_MAP[langCode] || langCode;
     recognition.continuous = true;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event: BrowserSpeechRecognitionEvent) => {
       const transcript = Array.from(event.results as unknown as SpeechRecognitionResult[])
         .map((r: SpeechRecognitionResult) => r[0].transcript)
         .join(' ');
