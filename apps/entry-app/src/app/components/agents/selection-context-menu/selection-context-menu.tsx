@@ -4,6 +4,7 @@ import { Select, Option } from '@mui/joy';
 import { LanguageSelector, OwnButton } from '@lifeis/common-ui';
 import { IAgentResponse } from '../../../domains/agent.domain';
 import { speak } from '../all-agents.helpers';
+import { AddTranslationDialog } from './add-translation-dialog';
 
 interface SelectionContextMenuProps {
   agents: IAgentResponse[];
@@ -25,6 +26,7 @@ export const SelectionContextMenu: React.FC<SelectionContextMenuProps> = ({
   const audioRef = useRef<HTMLAudioElement>(null);
   const [anchorPosition, setAnchorPosition] = useState<{ top: number; left: number } | null>(null);
   const [selectionText, setSelectionText] = useState('');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   useEffect(() => {
     const isIPad = /iPad|Macintosh/.test(navigator.userAgent) && 'ontouchend' in document;
@@ -139,10 +141,18 @@ export const SelectionContextMenu: React.FC<SelectionContextMenuProps> = ({
             ))}
           </Select>
         </div>
+        <OwnButton onClick={() => setAddDialogOpen(true)}>Add</OwnButton>
+
       </Popover>
       <audio ref={audioRef}>
         <source type="audio/mpeg" />
       </audio>
+      <AddTranslationDialog
+        open={addDialogOpen}
+        onClose={() => setAddDialogOpen(false)}
+        selectedText={selectionText}
+        defaultOriginalLanguage={agents.find((a) => a._id === focusedAgentId)?.readLanguageCode || languageCode}
+      />
     </>
   );
 };

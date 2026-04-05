@@ -21,3 +21,13 @@ export interface IBasket {
   name: string;
   owner_id: string;
 }
+
+export interface ITranslation {
+  _id?: string;
+  original: string;
+  translation: string;
+  originalLanguage: string;
+  translationLanguage: string;
+  owner_id: string;
+  timestamp: number;
+}
