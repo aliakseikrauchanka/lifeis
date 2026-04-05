@@ -10,6 +10,7 @@ export const verifyAccessToken = (req, res: Response, next) => {
   }
 
   const app = req.headers['x-app-id'];
+  console.log('app', app);
   const accessToken = req.headers.authorization?.split(' ')[1];
 
   if (!accessToken) {
@@ -30,6 +31,8 @@ export const verifyAccessToken = (req, res: Response, next) => {
           ? process.env.LOGS_CLIENT_ID
           : app === 'insights'
           ? process.env.INSIGHTS_CLIENT_ID
+          : app === 'training'
+          ? process.env.TRAINING_CLIENT_ID
           : process.env.CLIENT_ID;
 
       if (data.audience !== clientId) {

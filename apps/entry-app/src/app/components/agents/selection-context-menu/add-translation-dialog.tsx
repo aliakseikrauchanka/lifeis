@@ -164,26 +164,27 @@ export const AddTranslationDialog: React.FC<AddTranslationDialogProps> = ({
                 if (e.key === 'Enter') handleDetectAndTranslate();
               }}
               endDecorator={
-                <Button size="sm" variant="soft" onClick={handleDetectAndTranslate} disabled={detecting || loading || !originalText}>
+                <Button size="sm" variant="soft" onClick={handleDetectAndTranslate} disabled={detecting || loading || !originalText} sx={{ bgcolor: '#7c3aed', color: 'white', '&:hover': { bgcolor: '#6d28d9' } }}>
                   {detecting ? <CircularProgress size="sm" /> : 'Translate'}
                 </Button>
               }
             />
 
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <Typography level="body-sm" sx={{ minWidth: 60 }}>From</Typography>
-              <LanguageSelector
-                languageCode={originalLanguage}
-                handleLanguageChange={(_, v) => v && setOriginalLanguage(v)}
-              />
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-              <Typography level="body-sm" sx={{ minWidth: 60 }}>To</Typography>
-              <LanguageSelector
-                languageCode={translationLanguage}
-                handleLanguageChange={(_, v) => v && setTranslationLanguage(v)}
-              />
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1 }}>
+                <Typography level="body-sm">From</Typography>
+                <LanguageSelector
+                  languageCode={originalLanguage}
+                  handleLanguageChange={(_, v) => v && setOriginalLanguage(v)}
+                />
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flex: 1 }}>
+                <Typography level="body-sm">To</Typography>
+                <LanguageSelector
+                  languageCode={translationLanguage}
+                  handleLanguageChange={(_, v) => v && setTranslationLanguage(v)}
+                />
+              </Box>
             </Box>
 
             {loading ? (

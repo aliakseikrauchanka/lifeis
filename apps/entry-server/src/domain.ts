@@ -31,3 +31,16 @@ export interface ITranslation {
   owner_id: string;
   timestamp: number;
 }
+
+export interface ISrsCard {
+  _id?: string;
+  owner_id: string;
+  translation_id: ObjectId;
+  due_at: number;
+  interval_days: number;
+  ease: number;
+  reps: number;
+  lapses: number;
+  created_at: number;
+  updated_at: number;
+}

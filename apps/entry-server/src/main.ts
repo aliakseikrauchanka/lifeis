@@ -20,6 +20,7 @@ import telegramRoutes from './routes/telegram-routes';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { getBasketRoutes } from './routes/baskets-routes';
 import { getTranslationRoutes } from './routes/translations-routes';
+import { getSrsRoutes } from './routes/srs-routes';
 import OpenAI from 'openai';
 
 // create mongo db client
@@ -72,6 +73,7 @@ app.use('/api/deepgram', deepgramRoutes);
 app.use('/api/elevenlabs', elevenLabsRoutes);
 app.use('/api/baskets', getBasketRoutes(client));
 app.use('/api/translations', getTranslationRoutes(client, openAiModel));
+app.use('/api/srs', getSrsRoutes(client));
 app.use('/api/telegram', telegramRoutes);
 
 app.get('/api/ping', verifyAccessToken, (req, res) => {

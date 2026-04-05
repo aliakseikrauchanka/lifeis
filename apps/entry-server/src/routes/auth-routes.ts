@@ -24,6 +24,11 @@ router.post('/google', async (req, res) => {
     clientId = process.env.INSIGHTS_CLIENT_ID;
     clientSecret = process.env.INSIGHTS_CLIENT_SECRET;
     redirectUri = process.env.INSIGHTS_REDIRECT_URL;
+  } else if (app === 'training') {
+    clientId = process.env.TRAINING_CLIENT_ID;
+    clientSecret = process.env.TRAINING_CLIENT_SECRET;
+    redirectUri = process.env.TRAINING_REDIRECT_URL;
+    console.log('redirectUri', redirectUri, 'clientId', clientId, 'clientSecret', clientSecret);
   } else {
     clientId = process.env.CLIENT_ID;
     clientSecret = process.env.CLIENT_SECRET;
@@ -76,6 +81,10 @@ router.post('/google/refresh', async (req, res) => {
     clientId = process.env.INSIGHTS_CLIENT_ID;
     clientSecret = process.env.INSIGHTS_CLIENT_SECRET;
     redirectUri = process.env.INSIGHTS_REDIRECT_URL;
+  } else if (app === 'training') {
+    clientId = process.env.TRAINING_CLIENT_ID;
+    clientSecret = process.env.TRAINING_CLIENT_SECRET;
+    redirectUri = process.env.TRAINING_REDIRECT_URL;
   } else {
     clientId = process.env.CLIENT_ID;
     clientSecret = process.env.CLIENT_SECRET;

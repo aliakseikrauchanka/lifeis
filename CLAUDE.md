@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 nx serve entry-app       # Frontend AI agents app (port 4201)
 nx serve entry-server    # Backend API server (port 4202)
 nx serve logs-app        # Logs/tracking frontend (port 4203)
+nx serve training-app    # SRS training frontend (port 4204)
 nx serve telegram-bot    # Telegram bot (voice → transcription)
 ```
 
@@ -17,6 +18,7 @@ nx serve telegram-bot    # Telegram bot (voice → transcription)
 nx build entry-app
 nx build entry-server
 nx build logs-app
+nx build training-app
 nx build common-ui
 npm run build            # Production build of entry-server only
 ```
@@ -42,17 +44,19 @@ Set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_BOT_API_KEY` in `.env` for the bot.
 
 ## Architecture
 
-This is an **Nx monorepo** with three apps and two shared libraries.
+This is an **Nx monorepo** with four apps and two shared libraries.
 
 ### Apps
 
 **entry-app** — React/Vite frontend for AI agent interactions. Supports voice input/output via Deepgram (STT) and ElevenLabs (TTS). Uses Flagsmith for feature flags and Sentry for error tracking. Pages: Agents view, Experiments.
 
-**entry-server** — Express.js backend. Connects to MongoDB. Integrates Google Gemini, OpenAI, Deepgram, ElevenLabs, and Google Cloud TTS. Key route groups: `/api/agents`, `/api/logs`, `/api/baskets`, `/api/insights`, `/api/auth`, `/api/gemini`, `/api/openai`, `/api/deepgram`, `/api/elevenlabs`, `/api/telegram`. Rate-limited to 150 req/min.
+**entry-server** — Express.js backend. Connects to MongoDB. Integrates Google Gemini, OpenAI, Deepgram, ElevenLabs, and Google Cloud TTS. Key route groups: `/api/agents`, `/api/logs`, `/api/baskets`, `/api/translations`, `/api/srs`, `/api/insights`, `/api/auth`, `/api/gemini`, `/api/openai`, `/api/deepgram`, `/api/elevenlabs`, `/api/telegram`. Rate-limited to 150 req/min.
 
 **telegram-bot** — Telegram bot that transcribes voice messages. Listens for voice/audio, calls `POST /api/telegram/transcribe` (auth: `TELEGRAM_BOT_API_KEY`), replies with transcript. **Setup**: Get `TELEGRAM_BOT_TOKEN` from @BotFather (see [apps/telegram-bot/SETUP.md](apps/telegram-bot/SETUP.md)), generate `TELEGRAM_BOT_API_KEY` with `openssl rand -hex 32`.
 
 **logs-app** — React/Vite frontend for activity/log tracking. Pages: Logs, Chat, Baskets. Uses MUI DatePickers for date range filtering.
+
+**training-app** — React/Vite frontend for spaced repetition training. Study flashcards from enrolled translations using SM-2 scheduling. Uses shadcn/ui + Tailwind CSS. Pages: Study, Library.
 
 ### Shared Libraries
 
