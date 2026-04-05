@@ -19,15 +19,39 @@ export const createGeminiRoutes = (geminiModel: GenerativeModel) => {
     res.send({ translation });
   });
 
+  // SECURITY FIX: Allowlist for BCP-47 language codes accepted by the TTS endpoint.
+  // Without this, an attacker could inject an arbitrary string into the Google TTS
+  // API request body via the ?l= query parameter.
+  const ALLOWED_TTS_LANGUAGE_CODES = new Set([
+    'ru-RU', 'en-US', 'en-GB', 'lt-LT', 'pl-PL', 'de-DE', 'fr-FR', 'es-ES',
+    'uk-UA', 'zh-CN', 'ja-JP', 'ko-KR', 'it-IT', 'pt-BR', 'pt-PT', 'nl-NL',
+  ]);
+
   routes.post('/text-to-speech', verifyAccessToken, async (req, res) => {
-    const languageCode = req.query.l || 'ru-RU';
+    const rawLang = (req.query.l as string) || 'ru-RU';
+
+    // SECURITY FIX: Validate language code against an allowlist before use.
+    if (!ALLOWED_TTS_LANGUAGE_CODES.has(rawLang)) {
+      return res.status(400).json({ error: 'Unsupported language code' });
+    }
+    const languageCode = rawLang;
+
+    // SECURITY FIX: Validate message is a non-empty string and cap its length to
+    // prevent token-stuffing / cost abuse on the Google TTS API.
+    const message = req.body.message;
+    if (typeof message !== 'string' || message.trim().length === 0) {
+      return res.status(400).json({ error: 'message must be a non-empty string' });
+    }
+    if (message.length > 2000) {
+      return res.status(400).json({ error: 'message exceeds maximum length of 2000 characters' });
+    }
 
     const raw = JSON.stringify({
       input: {
-        text: req.body.message,
+        text: message,
       },
       voice: {
-        languageCode: languageCode === 'lt-LT"' ? `${languageCode}-Wavenet-A` : languageCode,
+        languageCode: languageCode === 'lt-LT' ? `${languageCode}-Wavenet-A` : languageCode,
         // ssmlGender: 'NEUTRAL',
       },
       audioConfig: {

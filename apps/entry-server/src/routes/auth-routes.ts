@@ -12,9 +12,9 @@ router.post('/google', async (req, res) => {
   const { code } = req.body;
   const app = req.headers['x-app-id'];
 
-  let clientId;
-  let clientSecret;
-  let redirectUri;
+  let clientId: string | undefined;
+  let clientSecret: string | undefined;
+  let redirectUri: string | undefined;
   // TODO: we use auth for couple of applications which seems not good idea
   if (app === 'logs') {
     clientId = process.env.LOGS_CLIENT_ID;
@@ -28,7 +28,6 @@ router.post('/google', async (req, res) => {
     clientId = process.env.TRAINING_CLIENT_ID;
     clientSecret = process.env.TRAINING_CLIENT_SECRET;
     redirectUri = process.env.TRAINING_REDIRECT_URL;
-    console.log('redirectUri', redirectUri, 'clientId', clientId, 'clientSecret', clientSecret);
   } else {
     clientId = process.env.CLIENT_ID;
     clientSecret = process.env.CLIENT_SECRET;
@@ -69,9 +68,9 @@ router.post('/google', async (req, res) => {
 router.post('/google/refresh', async (req, res) => {
   const { refreshToken } = req.body;
   const app = req.headers['x-app-id'];
-  let clientId;
-  let clientSecret;
-  let redirectUri;
+  let clientId: string | undefined;
+  let clientSecret: string | undefined;
+  let redirectUri: string | undefined;
   // TODO: we use auth for couple of applications which seems not good idea
   if (app === 'logs') {
     clientId = process.env.LOGS_CLIENT_ID;

@@ -47,15 +47,22 @@ const limiter = RateLimit({
 });
 app.use(limiter);
 app.use(compression());
+// SECURITY FIX: Added training-app production origin to allowlist so the new
+// training-app service is not blocked in production. Devtunnel origin moved to
+// env-var opt-in to avoid permanently opening a dev tunnel in the prod allowlist.
+const corsAllowlist: string[] = [
+  'https://lifeis-agents.vercel.app',
+  'https://lifeis-logs.vercel.app',
+  'https://lifeis-training.vercel.app',
+  'http://localhost:4203',
+  'http://localhost:4204',
+];
+if (process.env.DEV_TUNNEL_ORIGIN) {
+  corsAllowlist.push(process.env.DEV_TUNNEL_ORIGIN);
+}
 app.use(
   cors({
-    origin: [
-      'https://lifeis-agents.vercel.app',
-      'https://lifeis-logs.vercel.app',
-      'http://localhost:4203',
-      'http://localhost:4204',
-      'https://qsl13trb-80.euw.devtunnels.ms',
-    ],
+    origin: corsAllowlist,
     optionsSuccessStatus: 200,
   }),
 );
@@ -76,7 +83,7 @@ app.use('/api/translations', getTranslationRoutes(client, openAiModel));
 app.use('/api/srs', getSrsRoutes(client));
 app.use('/api/telegram', telegramRoutes);
 
-app.get('/api/ping', verifyAccessToken, (req, res) => {
+app.get('/api/ping', verifyAccessToken, (_req, res) => {
   res.send({ message: 'pong' });
 });
 

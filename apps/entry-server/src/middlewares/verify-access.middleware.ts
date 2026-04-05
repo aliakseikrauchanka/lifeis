@@ -10,7 +10,7 @@ export const verifyAccessToken = (req, res: Response, next) => {
   }
 
   const app = req.headers['x-app-id'];
-  console.log('app', app);
+
   const accessToken = req.headers.authorization?.split(' ')[1];
 
   if (!accessToken) {
