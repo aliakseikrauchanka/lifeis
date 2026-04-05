@@ -103,6 +103,30 @@ export const deleteTranslation = async (translationId: string): Promise<void> =>
   if (!res.ok) throw new Error('Failed to delete translation');
 };
 
+export const translateText = async (text: string, targetLanguage: string, originalLanguage?: string): Promise<{ translations: string[] }> => {
+  const res = await utilFetch('/translations/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, targetLanguage, originalLanguage }),
+  });
+  if (!res.ok) throw new Error('Failed to translate');
+  return res.json();
+};
+
+export const createTranslation = async (data: {
+  original: string;
+  translation: string;
+  originalLanguage: string;
+  translationLanguage: string;
+}): Promise<void> => {
+  const res = await utilFetch('/translations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to create translation');
+};
+
 export const fetchTranslations = async (): Promise<TranslationData[]> => {
   const res = await utilFetch('/translations');
   if (!res.ok) throw new Error('Failed to fetch translations');

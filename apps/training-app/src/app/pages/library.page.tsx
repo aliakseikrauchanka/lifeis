@@ -9,10 +9,23 @@ import {
   unenrollTranslation,
   importTranslations,
   deleteTranslation,
+  createTranslation,
+  translateText,
   TranslationData,
   SrsCard,
 } from '../api/srs.api';
-import { BookPlus, BookX, Clock, Upload, Trash2, Search } from 'lucide-react';
+import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, ArrowUpDown, Languages, Mic, MicOff, X } from 'lucide-react';
+
+const LANGUAGE_OPTIONS = [
+  { code: 'pl', label: 'Polish' },
+  { code: 'ru-RU', label: 'Russian' },
+  { code: 'en-US', label: 'English' },
+  { code: 'de-DE', label: 'German' },
+  { code: 'fr-FR', label: 'French' },
+  { code: 'sr-RS', label: 'Serbian' },
+  { code: 'fi', label: 'Finnish' },
+  { code: 'es', label: 'Spanish' },
+];
 
 export function LibraryPage() {
   const [translations, setTranslations] = useState<TranslationData[]>([]);
@@ -24,6 +37,13 @@ export function LibraryPage() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addForm, setAddForm] = useState({ original: '', translation: '', originalLanguage: 'pl', translationLanguage: 'en-US' });
+  const [adding, setAdding] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [translationOptions, setTranslationOptions] = useState<string[]>([]);
+  const [listening, setListening] = useState<'original' | 'translation' | null>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
@@ -81,6 +101,83 @@ export function LibraryPage() {
       console.error('Delete failed:', err);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleAdd = async () => {
+    if (!addForm.original.trim() || !addForm.translation.trim()) return;
+    setAdding(true);
+    try {
+      await createTranslation(addForm);
+      setAddForm((prev) => ({ ...prev, original: '', translation: '' }));
+      setShowAddForm(false);
+      await load();
+    } catch (err) {
+      console.error('Failed to add translation:', err);
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const STT_LANG_MAP: Record<string, string> = {
+    'pl': 'pl-PL', 'ru-RU': 'ru-RU', 'en-US': 'en-US', 'de-DE': 'de-DE',
+    'fr-FR': 'fr-FR', 'sr-RS': 'sr-RS', 'fi': 'fi-FI', 'es': 'es-ES',
+  };
+
+  const toggleListening = (field: 'original' | 'translation') => {
+    if (listening === field) {
+      recognitionRef.current?.stop();
+      setListening(null);
+      return;
+    }
+    if (listening) {
+      recognitionRef.current?.stop();
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    const langCode = field === 'original' ? addForm.originalLanguage : addForm.translationLanguage;
+    recognition.lang = STT_LANG_MAP[langCode] || langCode;
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = Array.from(event.results as unknown as SpeechRecognitionResult[])
+        .map((r: SpeechRecognitionResult) => r[0].transcript)
+        .join(' ');
+      setAddForm((prev) => ({ ...prev, [field]: transcript }));
+    };
+    recognition.onend = () => setListening(null);
+    recognition.onerror = () => setListening(null);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setListening(field);
+
+    setTimeout(() => {
+      if (recognitionRef.current === recognition) {
+        recognition.stop();
+        setListening(null);
+      }
+    }, 120_000);
+  };
+
+  const handleTranslate = async () => {
+    if (!addForm.original.trim()) return;
+    setTranslating(true);
+    setTranslationOptions([]);
+    try {
+      const result = await translateText(addForm.original, addForm.translationLanguage, addForm.originalLanguage);
+      if (result.translations?.length > 0) {
+        setTranslationOptions(result.translations);
+      }
+    } catch (err) {
+      console.error('Translation failed:', err);
+    } finally {
+      setTranslating(false);
     }
   };
 
@@ -178,6 +275,124 @@ export function LibraryPage() {
           className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-input bg-background"
         />
       </div>
+      {showAddForm && (
+        <Card className="mb-2">
+          <CardContent className="p-4 flex flex-col gap-2">
+            <div className="flex gap-2">
+              <div className="flex flex-1 gap-1">
+                <input
+                  type="text"
+                  placeholder="Original word..."
+                  value={addForm.original}
+                  onChange={(e) => setAddForm((prev) => ({ ...prev, original: e.target.value }))}
+                  className="flex-1 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                />
+                {addForm.original && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="shrink-0 px-2"
+                    onClick={() => setAddForm((prev) => ({ ...prev, original: '' }))}
+                    title="Clear"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  variant={listening === 'original' ? 'destructive' : 'outline'}
+                  size="sm"
+                  className="shrink-0 px-2"
+                  onClick={() => toggleListening('original')}
+                  title="Voice input"
+                >
+                  {listening === 'original' ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
+              </div>
+              <select
+                value={addForm.originalLanguage}
+                onChange={(e) => setAddForm((prev) => ({ ...prev, originalLanguage: e.target.value }))}
+                className="px-2 py-2 text-sm rounded-md border border-input bg-background"
+              >
+                {LANGUAGE_OPTIONS.map((l) => (
+                  <option key={l.code} value={l.code}>{l.label}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 rounded-full"
+                onClick={() => setAddForm((prev) => ({
+                  original: prev.translation,
+                  translation: prev.original,
+                  originalLanguage: prev.translationLanguage,
+                  translationLanguage: prev.originalLanguage,
+                }))}
+                title="Swap languages"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex flex-1 gap-1">
+                <input
+                  type="text"
+                  placeholder="Translation..."
+                  value={addForm.translation}
+                  onChange={(e) => setAddForm((prev) => ({ ...prev, translation: e.target.value }))}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleAdd(); }}
+                  className="flex-1 px-3 py-2 text-sm rounded-md border border-input bg-background"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 px-2"
+                  onClick={handleTranslate}
+                  disabled={translating || !addForm.original.trim()}
+                  title="Auto-translate"
+                >
+                  <Languages className="h-4 w-4" />
+                </Button>
+              </div>
+              <select
+                value={addForm.translationLanguage}
+                onChange={(e) => setAddForm((prev) => ({ ...prev, translationLanguage: e.target.value }))}
+                className="px-2 py-2 text-sm rounded-md border border-input bg-background"
+              >
+                {LANGUAGE_OPTIONS.map((l) => (
+                  <option key={l.code} value={l.code}>{l.label}</option>
+                ))}
+              </select>
+            </div>
+            {translating && (
+              <div className="flex justify-center py-1">
+                <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+              </div>
+            )}
+            {translationOptions.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {translationOptions.map((opt, i) => (
+                  <Button
+                    key={i}
+                    variant={addForm.translation === opt ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setAddForm((prev) => ({ ...prev, translation: opt }))}
+                  >
+                    {opt}
+                  </Button>
+                ))}
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button size="sm" variant="ghost" onClick={() => { setShowAddForm(false); setTranslationOptions([]); }}>Cancel</Button>
+              <Button size="sm" onClick={handleAdd} disabled={adding || !addForm.original.trim() || !addForm.translation.trim()}>
+                {adding ? 'Adding...' : 'Add'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       <div className="flex items-center justify-between mb-2">
         <h2 className="text-lg font-semibold">
           {search ? `${filteredTranslations.length} of ${translations.length}` : translations.length} Translations
@@ -190,6 +405,15 @@ export function LibraryPage() {
             className="hidden"
             onChange={handleFileUpload}
           />
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowAddForm((v) => !v)}
+            className="gap-1"
+          >
+            <Plus className="h-4 w-4" />
+            Add
+          </Button>
           <Button
             size="sm"
             variant="outline"
