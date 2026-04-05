@@ -170,7 +170,7 @@ export function StudyPage() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full p-4">
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-4">
         <Button variant="ghost" size="sm" onClick={goToPrev} className="gap-1">
           <ChevronLeft className="h-4 w-4" />
           <kbd className="text-xs px-1.5 py-0.5 rounded bg-muted border">←</kbd>
@@ -194,13 +194,13 @@ export function StudyPage() {
         </Button>
       </div>
 
-      <Card className="w-full max-w-md max-h-[calc(100vh-8rem)] overflow-y-auto">
-        <CardHeader className="text-center">
-          <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+      <Card className="w-full max-w-md h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
+        <CardHeader className="text-center shrink-0 py-3">
+          <div className="text-xs text-muted-foreground uppercase tracking-wide">
             {current.translation.originalLanguage}
           </div>
           <div className="flex items-center justify-center gap-2">
-            <CardTitle className="text-3xl">{current.translation.original}</CardTitle>
+            <CardTitle className="text-2xl sm:text-3xl">{current.translation.original}</CardTitle>
             <Button
               variant="ghost"
               size="sm"
@@ -213,7 +213,7 @@ export function StudyPage() {
         </CardHeader>
 
         <CardContent
-          className={`text-center min-h-[80px] flex flex-col items-center justify-center gap-4 ${!revealed ? 'cursor-pointer' : ''}`}
+          className={`text-center flex flex-col items-center gap-4 flex-1 min-h-0 overflow-y-auto ${!revealed ? 'cursor-pointer' : ''}`}
           onClick={!revealed ? handleReveal : undefined}
         >
           <div className={`transition-all duration-300 ${!revealed ? 'blur-md select-none' : ''}`}>
@@ -233,7 +233,7 @@ export function StudyPage() {
             </div>
           </div>
 
-          <div className={`w-full border-t pt-3 h-[360px] overflow-y-auto transition-all duration-300 ${!revealed ? 'blur-md select-none' : ''}`}>
+          <div className={`w-full border-t pt-3 transition-all duration-300 ${!revealed ? 'blur-md select-none' : ''}`}>
             <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
               Examples
             </div>
@@ -277,7 +277,7 @@ export function StudyPage() {
           </div>
         </CardContent>
 
-        <CardFooter className={`flex justify-center gap-2 transition-opacity duration-300 ${revealed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        <CardFooter className={`flex justify-center gap-2 shrink-0 transition-opacity duration-300 ${revealed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
             <Button
               variant="destructive"
               size="sm"
