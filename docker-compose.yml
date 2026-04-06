@@ -46,6 +46,9 @@ services:
       - TRAINING_CLIENT_SECRET=${TRAINING_CLIENT_SECRET}
       - TRAINING_REDIRECT_URL=${TRAINING_REDIRECT_URL}
 
+      - EXTENSION_ORIGIN=${EXTENSION_ORIGIN}
+      - EXTENSION_CLIENT_ID=${EXTENSION_CLIENT_ID}
+
   logs-app:
     extends:
       file: docker-compose.base.yml

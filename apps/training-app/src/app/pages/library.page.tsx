@@ -223,9 +223,21 @@ export function LibraryPage() {
     setImporting(true);
     setImportResult(null);
     try {
+      // SECURITY FIX: Enforce a client-side file size limit before parsing.
+      // JSON.parse on a very large file can crash or hang the browser tab (client-side DoS).
+      const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+      if (file.size > MAX_FILE_SIZE_BYTES) throw new Error('File too large (max 5 MB)');
+
       const text = await file.text();
       const items = JSON.parse(text);
       if (!Array.isArray(items)) throw new Error('File must contain a JSON array');
+
+      // SECURITY FIX: Enforce item count limit client-side to avoid sending a huge
+      // request body. The backend also enforces 500, but trimming here prevents an
+      // unnecessarily large network request.
+      const MAX_ITEMS = 500;
+      if (items.length > MAX_ITEMS) throw new Error(`Too many items (max ${MAX_ITEMS})`);
+
       const result = await importTranslations(items);
       setImportResult(`Imported ${result.inserted} words (${result.skipped} skipped)`);
       await load();

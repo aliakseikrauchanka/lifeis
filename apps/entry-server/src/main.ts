@@ -47,9 +47,6 @@ const limiter = RateLimit({
 });
 app.use(limiter);
 app.use(compression());
-// SECURITY FIX: Added training-app production origin to allowlist so the new
-// training-app service is not blocked in production. Devtunnel origin moved to
-// env-var opt-in to avoid permanently opening a dev tunnel in the prod allowlist.
 const corsAllowlist: string[] = [
   'https://lifeis-agents.vercel.app',
   'https://lifeis-logs.vercel.app',
@@ -59,6 +56,9 @@ const corsAllowlist: string[] = [
 ];
 if (process.env.DEV_TUNNEL_ORIGIN) {
   corsAllowlist.push(process.env.DEV_TUNNEL_ORIGIN);
+}
+if (process.env.EXTENSION_ORIGIN) {
+  corsAllowlist.push(process.env.EXTENSION_ORIGIN);
 }
 app.use(
   cors({

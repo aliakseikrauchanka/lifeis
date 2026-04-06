@@ -23,14 +23,14 @@ export function App() {
     isInitialized && (
       <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
         <div className="flex flex-col h-full">
-          <header className="flex items-center gap-4 bg-gradient-to-r from-violet-50 to-purple-50 px-4 py-2 border-b border-black/5 shadow-sm">
+          <header className="flex items-center gap-2 bg-gradient-to-r from-violet-50 to-purple-50 px-3 py-1 border-b border-black/5 shadow-sm">
             {isLoggedIn && (
-              <nav className="flex items-center gap-2">
+              <nav className="flex items-center gap-1">
                 <NavLink
                   to="/"
                   end
                   className={({ isActive }) =>
-                    `px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    `px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
                       isActive
                         ? 'text-violet-900 bg-violet-500/12'
                         : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
@@ -42,7 +42,7 @@ export function App() {
                 <NavLink
                   to="/library"
                   className={({ isActive }) =>
-                    `px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    `px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
                       isActive
                         ? 'text-violet-900 bg-violet-500/12'
                         : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'

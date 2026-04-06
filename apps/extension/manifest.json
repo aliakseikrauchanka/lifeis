@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "Lifeis Dictionary",
+  "version": "1.0.0",
+  "description": "Add words to your Lifeis translation library",
+  "permissions": ["identity", "storage", "contextMenus", "activeTab"],
+  "oauth2": {
+    "client_id": "862132367133-bdv56r2bn1e10d8smlb308hsc6isi1kt.apps.googleusercontent.com",
+    "scopes": ["openid", "email", "profile"]
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Lifeis Dictionary"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

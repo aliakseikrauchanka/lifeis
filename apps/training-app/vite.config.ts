@@ -26,6 +26,9 @@ export default defineConfig({
     },
   },
   css: {
+    modules: {
+      localsConvention: 'camelCaseOnly',
+    },
     postcss: {
       plugins: [
         tailwindcss(path.join(__dirname, 'tailwind.config.js')) as any,

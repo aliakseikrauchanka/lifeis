@@ -1,8 +1,6 @@
 import { Response } from 'express';
 
 export const verifyAccessToken = (req, res: Response, next) => {
-  // SECURITY FIX: Offline bypass is now additionally gated on NODE_ENV !== 'production'.
-  // This prevents accidental authentication bypass if MODE=offline leaks into production config.
   if (process.env.MODE === 'offline' && process.env.NODE_ENV !== 'production') {
     res.locals.userId = 'local_user';
     next();
@@ -33,9 +31,19 @@ export const verifyAccessToken = (req, res: Response, next) => {
           ? process.env.INSIGHTS_CLIENT_ID
           : app === 'training'
           ? process.env.TRAINING_CLIENT_ID
+          : app === 'extension'
+          ? process.env.EXTENSION_CLIENT_ID
           : process.env.CLIENT_ID;
 
+      if (!clientId) {
+        console.error(`verifyAccessToken: clientId env var not configured for app="${app}"`);
+        return res.status(500).json({ error: 'Server authentication is not configured' });
+      }
+
       if (data.audience !== clientId) {
+        // SECURITY FIX: Removed console.log('data.audience', data.audience).
+        // Logging the token's audience on mismatch leaks OAuth client ID information
+        // to anyone with log access, aiding attacker enumeration.
         return res.status(401).json({ error: 'Token not issued for this application' });
       }
 

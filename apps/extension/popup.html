@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lifeis Dictionary</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      width: 430px;
+      min-height: 120px;
+      background: #faf5ff;
+      color: #1e1b4b;
+    }
+
+    .header {
+      background: linear-gradient(to right, #ede9fe, #f3e8ff);
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      font-size: 13px;
+      font-weight: 600;
+      color: #5b21b6;
+    }
+
+    .content {
+      padding: 16px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot.green { background: #22c55e; }
+    .dot.red { background: #ef4444; }
+
+    .selected-text {
+      font-size: 12px;
+      color: #6b7280;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-style: italic;
+      max-height: 60px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+    }
+
+    button {
+      border: none;
+      border-radius: 6px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .btn-primary {
+      background: #7c3aed;
+      color: white;
+      width: 100%;
+    }
+    .btn-primary:hover { background: #6d28d9; }
+    .btn-primary:disabled { background: #c4b5fd; cursor: not-allowed; }
+
+    .btn-ghost {
+      background: transparent;
+      color: #6b7280;
+      font-size: 12px;
+      padding: 4px 0;
+    }
+    .btn-ghost:hover { color: #374151; }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid #e5e7eb;
+      border-top-color: #7c3aed;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #error {
+      font-size: 12px;
+      color: #ef4444;
+      display: none;
+    }
+
+    .translate-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .lang-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .lang-row select {
+      flex: 1;
+      padding: 4px 6px;
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      font-size: 12px;
+      background: #fff;
+    }
+
+    .lang-swap {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+    .lang-swap:hover { background: #f3e8ff; }
+
+    .word-input {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+    .word-input:focus { border-color: #7c3aed; }
+
+    .translation-options {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .option-btn {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 12px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .option-btn:hover { border-color: #7c3aed; background: #faf5ff; }
+    .option-btn.selected { border-color: #7c3aed; background: #ede9fe; }
+
+    .translation-input {
+      width: 100%;
+      padding: 6px 8px;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+    .translation-input:focus { border-color: #7c3aed; }
+
+    .btn-sm {
+      background: #7c3aed;
+      color: white;
+      font-size: 12px;
+      padding: 6px 10px;
+    }
+    .btn-sm:hover { background: #6d28d9; }
+    .btn-sm:disabled { background: #c4b5fd; cursor: not-allowed; }
+
+    .success-msg {
+      font-size: 12px;
+      color: #22c55e;
+      font-weight: 500;
+    }
+
+    .error-msg {
+      font-size: 12px;
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">📚 Lifeis Dictionary</div>
+  <div class="content" id="content">
+    <div style="display:flex;justify-content:center;padding:8px 0">
+      <div class="spinner"></div>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

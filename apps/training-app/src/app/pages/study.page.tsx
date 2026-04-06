@@ -209,12 +209,12 @@ export function StudyPage() {
       </div>
 
       <Card className="w-full max-w-md h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
-        <CardHeader className="text-center shrink-0 py-3">
+        <CardHeader className="text-center shrink-0 !p-3 !pb-1 !space-y-0.5">
           <div className="text-xs text-muted-foreground uppercase tracking-wide">
             {current.translation.originalLanguage}
           </div>
-          <div className="flex items-center justify-center gap-2">
-            <CardTitle className="text-2xl sm:text-3xl">{current.translation.original}</CardTitle>
+          <div className="flex items-center justify-center gap-1">
+            <CardTitle className="text-xl sm:text-2xl">{current.translation.original}</CardTitle>
             <Button
               variant="ghost"
               size="sm"

@@ -28,6 +28,10 @@ router.post('/google', async (req, res) => {
     clientId = process.env.TRAINING_CLIENT_ID;
     clientSecret = process.env.TRAINING_CLIENT_SECRET;
     redirectUri = process.env.TRAINING_REDIRECT_URL;
+  } else if (app === 'extension') {
+    clientId = process.env.EXTENSION_CLIENT_ID;
+    clientSecret = process.env.EXTENSION_CLIENT_SECRET;
+    redirectUri = process.env.EXTENSION_REDIRECT_URL;
   } else {
     clientId = process.env.CLIENT_ID;
     clientSecret = process.env.CLIENT_SECRET;
@@ -84,6 +88,10 @@ router.post('/google/refresh', async (req, res) => {
     clientId = process.env.TRAINING_CLIENT_ID;
     clientSecret = process.env.TRAINING_CLIENT_SECRET;
     redirectUri = process.env.TRAINING_REDIRECT_URL;
+  } else if (app === 'extension') {
+    clientId = process.env.EXTENSION_CLIENT_ID;
+    clientSecret = process.env.EXTENSION_CLIENT_SECRET;
+    redirectUri = process.env.EXTENSION_REDIRECT_URL;
   } else {
     clientId = process.env.CLIENT_ID;
     clientSecret = process.env.CLIENT_SECRET;
@@ -118,8 +126,6 @@ router.post('/google/refresh', async (req, res) => {
     });
   } catch {
     console.error('Token exchange error');
-    // SECURITY FIX: Previously `res.status(500)` was called without `.json()`, leaving
-    // the connection open and hanging forever. Added response body to terminate properly.
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });

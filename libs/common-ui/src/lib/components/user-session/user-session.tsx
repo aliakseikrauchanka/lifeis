@@ -7,6 +7,7 @@ import OwnButton from '../button/button';
 import { Logout } from '@mui/icons-material';
 
 interface IUserSessionProps {
+  className?: string;
   isFullScreen?: boolean;
   isLoggedIn: boolean;
   isOfflineMode?: boolean;
@@ -15,6 +16,7 @@ interface IUserSessionProps {
 }
 
 export const UserSession = ({
+  className,
   isFullScreen,
   isLoggedIn,
   isOfflineMode,
@@ -31,7 +33,7 @@ export const UserSession = ({
   };
 
   return (
-    <div className={css.userSession}>
+    <div className={[css.userSession, className].filter(Boolean).join(' ')}>
       {isLoggedIn ? (
         <div className={css.userSessionContent}>
           {!isFullScreen && (
