@@ -358,7 +358,7 @@ No extra fields.`,
   });
 
   router.post('/examples', verifyAccessToken, async (req, res) => {
-    const { word, language, translationLanguage } = req.body;
+    const { word, language, translationLanguage, translation } = req.body;
     if (typeof word !== 'string' || word.trim().length === 0) {
       return res.status(400).json({ message: 'word must be a non-empty string' });
     }
@@ -371,10 +371,14 @@ No extra fields.`,
     if (translationLanguage !== undefined && (typeof translationLanguage !== 'string' || !ALLOWED_LANGUAGE_CODES.has(translationLanguage))) {
       return res.status(400).json({ message: 'Invalid translationLanguage code' });
     }
+    if (translation !== undefined && (typeof translation !== 'string' || translation.length > MAX_TRANSLATION_LENGTH)) {
+      return res.status(400).json({ message: `translation must be a string of at most ${MAX_TRANSLATION_LENGTH} characters` });
+    }
 
     try {
+      const translationHint = translation ? ` The word means "${translation}" in ${translationLanguage}.` : '';
       const prompt = translationLanguage
-        ? `Return a JSON object with "examples": an array of exactly 3 objects, each with "original" (a short example sentence using the given word in ${language}) and "translated" (its translation in ${translationLanguage}). No extra fields.`
+        ? `Return a JSON object with "examples": an array of exactly 3 objects, each with "original" (a short example sentence using the given word in ${language}) and "translated" (its translation in ${translationLanguage}).${translationHint} Use the word in the specific meaning matching the translation. No extra fields.`
         : `Return a JSON object with "examples": an array of exactly 3 short example sentences using a given word in ${language}. No extra fields.`;
 
       const completion = await openAiModel.chat.completions.create({

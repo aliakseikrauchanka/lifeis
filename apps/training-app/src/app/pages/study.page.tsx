@@ -56,7 +56,7 @@ export function StudyPage() {
       current.translation.original,
       current.translation.originalLanguage,
       current.translation.translationLanguage,
-      { signal: ac.signal },
+      { signal: ac.signal, translation: current.translation.translation },
     )
       .then((ex) => setExamples(ex))
       .catch((err) => {

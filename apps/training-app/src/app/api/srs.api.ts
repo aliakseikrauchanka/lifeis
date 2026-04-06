@@ -79,12 +79,12 @@ export const fetchExamples = async (
   word: string,
   language: string,
   translationLanguage: string,
-  options?: { signal?: AbortSignal },
+  options?: { signal?: AbortSignal; translation?: string },
 ): Promise<Example[]> => {
   const res = await utilFetch('/translations/examples', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ word, language, translationLanguage }),
+    body: JSON.stringify({ word, language, translationLanguage, translation: options?.translation }),
     signal: options?.signal,
   });
   if (!res.ok) throw new Error('Failed to fetch examples');
