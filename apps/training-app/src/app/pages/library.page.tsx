@@ -9,12 +9,13 @@ import {
   unenrollTranslation,
   importTranslations,
   deleteTranslation,
+  updateTranslation,
   createTranslation,
   translateText,
   TranslationData,
   SrsCard,
 } from '../api/srs.api';
-import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, ArrowUpDown, Languages, Mic, MicOff, X } from 'lucide-react';
+import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, ArrowUpDown, Languages, Mic, MicOff, X, Pencil, Check } from 'lucide-react';
 import {
   getSpeechRecognitionConstructor,
   type BrowserSpeechRecognition,
@@ -38,6 +39,8 @@ export function LibraryPage() {
   const [loading, setLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({ original: '', translation: '' });
   const [enrollingAll, setEnrollingAll] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
@@ -111,6 +114,24 @@ export function LibraryPage() {
       console.error('Delete failed:', err);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const startEditing = (t: TranslationData) => {
+    setEditingId(t._id);
+    setEditForm({ original: t.original, translation: t.translation });
+  };
+
+  const handleEditSave = async (id: string) => {
+    if (!editForm.original.trim() || !editForm.translation.trim()) return;
+    try {
+      await updateTranslation(id, { original: editForm.original.trim(), translation: editForm.translation.trim() });
+      setTranslations((prev) =>
+        prev.map((t) => t._id === id ? { ...t, original: editForm.original.trim(), translation: editForm.translation.trim() } : t)
+      );
+      setEditingId(null);
+    } catch (err) {
+      console.error('Failed to update translation:', err);
     }
   };
 
@@ -474,45 +495,101 @@ export function LibraryPage() {
           <Card key={t._id} className={enrolled ? 'border-primary/30 bg-primary/5' : ''}>
             <CardContent className="flex items-center gap-4 p-4">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium truncate">{t.original}</span>
-                  {isDue && (
-                    <span className="inline-flex items-center gap-1 text-xs text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded-full shrink-0">
-                      <Clock className="h-3 w-3" /> Due
-                    </span>
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground truncate">{t.translation}</div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {t.originalLanguage} → {t.translationLanguage}
-                </div>
+                {editingId === t._id ? (
+                  <div className="flex flex-col gap-1">
+                    <input
+                      type="text"
+                      value={editForm.original}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, original: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleEditSave(t._id); if (e.key === 'Escape') setEditingId(null); }}
+                      className="px-2 py-1 text-sm rounded-md border border-input bg-background font-medium"
+                      autoFocus
+                    />
+                    <input
+                      type="text"
+                      value={editForm.translation}
+                      onChange={(e) => setEditForm((prev) => ({ ...prev, translation: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleEditSave(t._id); if (e.key === 'Escape') setEditingId(null); }}
+                      className="px-2 py-1 text-sm rounded-md border border-input bg-background"
+                    />
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {t.originalLanguage} → {t.translationLanguage}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">{t.original}</span>
+                      {isDue && (
+                        <span className="inline-flex items-center gap-1 text-xs text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded-full shrink-0">
+                          <Clock className="h-3 w-3" /> Due
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground truncate">{t.translation}</div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {t.originalLanguage} → {t.translationLanguage}
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex gap-1 shrink-0">
-                <Button
-                  variant={enrolled ? 'destructive' : 'default'}
-                  size="sm"
-                  onClick={() => handleToggle(t._id)}
-                  disabled={togglingId === t._id}
-                >
-                  {enrolled ? (
-                    <>
-                      <BookX className="h-4 w-4 mr-1" /> Remove
-                    </>
-                  ) : (
-                    <>
-                      <BookPlus className="h-4 w-4 mr-1" /> Add to Deck
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(t._id)}
-                  disabled={deletingId === t._id}
-                  title="Delete translation"
-                >
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
+                {editingId === t._id ? (
+                  <>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => handleEditSave(t._id)}
+                      title="Save"
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setEditingId(null)}
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant={enrolled ? 'destructive' : 'default'}
+                      size="sm"
+                      onClick={() => handleToggle(t._id)}
+                      disabled={togglingId === t._id}
+                    >
+                      {enrolled ? (
+                        <>
+                          <BookX className="h-4 w-4 mr-1" /> Remove
+                        </>
+                      ) : (
+                        <>
+                          <BookPlus className="h-4 w-4 mr-1" /> Add to Deck
+                        </>
+                      )}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => startEditing(t)}
+                      title="Edit translation"
+                    >
+                      <Pencil className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(t._id)}
+                      disabled={deletingId === t._id}
+                      title="Delete translation"
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>

@@ -102,6 +102,15 @@ export const importTranslations = async (items: unknown[]): Promise<{ inserted: 
   return res.json();
 };
 
+export const updateTranslation = async (translationId: string, data: { original?: string; translation?: string }): Promise<void> => {
+  const res = await utilFetch(`/translations/${translationId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update translation');
+};
+
 export const deleteTranslation = async (translationId: string): Promise<void> => {
   const res = await utilFetch(`/translations/${translationId}`, {
     method: 'DELETE',

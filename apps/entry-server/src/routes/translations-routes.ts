@@ -102,6 +102,52 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI) =
     }
   });
 
+  // PUT /:id — update a translation's original/translation text
+  router.put('/:id', verifyAccessToken, async (req, res) => {
+    try {
+      let objectId: ObjectId;
+      try {
+        objectId = new ObjectId(req.params.id);
+      } catch {
+        return res.status(400).json({ message: 'Invalid translation id' });
+      }
+
+      const { original, translation } = req.body;
+      if (!original && !translation) {
+        return res.status(400).json({ message: 'At least one of original or translation is required' });
+      }
+
+      const update: Record<string, string> = {};
+      if (original) {
+        if (typeof original !== 'string' || original.length > MAX_TEXT_LENGTH) {
+          return res.status(400).json({ message: `original must be a string of at most ${MAX_TEXT_LENGTH} characters` });
+        }
+        update.original = original;
+      }
+      if (translation) {
+        if (typeof translation !== 'string' || translation.length > MAX_TRANSLATION_LENGTH) {
+          return res.status(400).json({ message: `translation must be a string of at most ${MAX_TRANSLATION_LENGTH} characters` });
+        }
+        update.translation = translation;
+      }
+
+      const userId = res.locals.userId;
+      const result = await client
+        .db('lifeis')
+        .collection('translations')
+        .updateOne({ _id: objectId, owner_id: userId }, { $set: update });
+
+      if (result.matchedCount === 0) {
+        return res.status(404).json({ message: 'Translation not found' });
+      }
+
+      res.json({ updated: true });
+    } catch (error) {
+      console.error('Error updating translation:', error);
+      res.status(500).json({ message: 'Error updating translation' });
+    }
+  });
+
   // DELETE /:id — remove a translation and its SRS card
   router.delete('/:id', verifyAccessToken, async (req, res) => {
     try {
