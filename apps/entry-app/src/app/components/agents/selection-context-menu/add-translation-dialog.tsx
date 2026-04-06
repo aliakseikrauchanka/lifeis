@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Box, Button, CircularProgress, IconButton, Input, Modal, ModalDialog, ToggleButtonGroup, Typography } from '@mui/joy';
+import { Box, Button, CircularProgress, IconButton, Input, Modal, ModalDialog, Typography } from '@mui/joy';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import { LanguageSelector } from '@lifeis/common-ui';
 import {
@@ -39,7 +39,7 @@ export const AddTranslationDialog: React.FC<AddTranslationDialogProps> = ({
   const [originalLanguage, setOriginalLanguage] = useState(defaultOriginalLanguage);
   const [translationLanguage, setTranslationLanguage] = useState('');
   const [translations, setTranslations] = useState<string[]>([]);
-  const [selectedTranslations, setSelectedTranslations] = useState<string[]>([]);
+  const [translationInput, setTranslationInput] = useState('');
   const [examples, setExamples] = useState<TranslationExample[]>([]);
   const [detecting, setDetecting] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -76,7 +76,7 @@ export const AddTranslationDialog: React.FC<AddTranslationDialogProps> = ({
     fetchTranslation(originalText, translationLanguage, detectedLang)
       .then(({ translations: ts, examples: ex }) => {
         setTranslations(ts);
-        setSelectedTranslations([]);
+        setTranslationInput('');
         setExamples(ex);
       })
       .finally(() => setLoading(false));
@@ -89,7 +89,7 @@ export const AddTranslationDialog: React.FC<AddTranslationDialogProps> = ({
     setOriginalText(text);
     setTranslationLanguage('');
     setTranslations([]);
-    setSelectedTranslations([]);
+    setTranslationInput('');
     setExamples([]);
 
     setDetecting(true);
@@ -109,7 +109,7 @@ export const AddTranslationDialog: React.FC<AddTranslationDialogProps> = ({
     fetchTranslation(originalText, translationLanguage, originalLanguage)
       .then(({ translations: ts, examples: ex }) => {
         setTranslations(ts);
-        setSelectedTranslations([]);
+        setTranslationInput('');
         setExamples(ex);
       })
       .finally(() => setLoading(false));
@@ -117,14 +117,10 @@ export const AddTranslationDialog: React.FC<AddTranslationDialogProps> = ({
 
 
   const handleSubmit = async () => {
-    if (!selectedTranslations.length || !originalLanguage || !translationLanguage) return;
+    if (!translationInput.trim() || !originalLanguage || !translationLanguage) return;
     setSaving(true);
     try {
-      await Promise.all(
-        selectedTranslations.map((t) =>
-          saveTranslation({ original: originalText, translation: t, originalLanguage, translationLanguage }),
-        ),
-      );
+      await saveTranslation({ original: originalText, translation: translationInput.trim(), originalLanguage, translationLanguage });
       onClose();
     } finally {
       setSaving(false);
@@ -134,10 +130,11 @@ export const AddTranslationDialog: React.FC<AddTranslationDialogProps> = ({
   const handleClose = () => {
     setTranslationLanguage('');
     setTranslations([]);
-    setSelectedTranslations([]);
+    setTranslationInput('');
     setExamples([]);
     onClose();
   };
+
 
   return (
     <>
@@ -192,16 +189,30 @@ export const AddTranslationDialog: React.FC<AddTranslationDialogProps> = ({
             ) : translations.length > 0 && (
               <>
                 <Typography level="body-xs" sx={{ fontWeight: 'bold', textTransform: 'uppercase' }}>
-                  Select translations
+                  Translation
                 </Typography>
-                <ToggleButtonGroup
-                  value={selectedTranslations}
-                  onChange={(_, newValue) => setSelectedTranslations(newValue)}
-                  sx={{ flexWrap: 'wrap', gap: 0.5, '--ButtonGroup-separatorColor': 'transparent' }}
-                >
+                <Input
+                  value={translationInput}
+                  onChange={(e) => setTranslationInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleSubmit(); }}
+                  placeholder="Enter or select translation..."
+                  endDecorator={
+                    translationInput && (
+                      <IconButton size="sm" variant="plain" onClick={() => playText(translationInput, translationLanguage)} sx={{ borderRadius: '50%', minWidth: 20, minHeight: 20, width: 20, height: 20, p: 0 }}>
+                        <PlayArrowIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    )
+                  }
+                />
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {translations.map((t, i) => (
                     <Box key={i} sx={{ display: 'flex', alignItems: 'center' }}>
-                      <Button value={t} size="sm" variant="outlined" sx={{ fontWeight: 'normal', border: 'none', '&:not(:first-of-type)': { border: 'none' } }}>
+                      <Button
+                        size="sm"
+                        variant={translationInput === t ? 'solid' : 'outlined'}
+                        onClick={() => setTranslationInput(t)}
+                        sx={{ fontWeight: 'normal' }}
+                      >
                         {t}
                       </Button>
                       <IconButton size="sm" variant="plain" onClick={() => playText(t, translationLanguage)} sx={{ borderRadius: '50%', minWidth: 20, minHeight: 20, width: 20, height: 20, p: 0 }}>
@@ -209,7 +220,7 @@ export const AddTranslationDialog: React.FC<AddTranslationDialogProps> = ({
                       </IconButton>
                     </Box>
                   ))}
-                </ToggleButtonGroup>
+                </Box>
 
                 {examples.length > 0 && (
                   <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
@@ -246,9 +257,9 @@ export const AddTranslationDialog: React.FC<AddTranslationDialogProps> = ({
             <Button
               onClick={handleSubmit}
               loading={saving}
-              disabled={!selectedTranslations.length || !originalLanguage || !translationLanguage}
+              disabled={!translationInput.trim() || !originalLanguage || !translationLanguage}
             >
-              Save{selectedTranslations.length > 1 ? ` (${selectedTranslations.length})` : ''}
+              Save
             </Button>
           </Box>
         </ModalDialog>
