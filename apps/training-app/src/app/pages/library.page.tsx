@@ -43,7 +43,12 @@ export function LibraryPage() {
   const [importResult, setImportResult] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-  const [addForm, setAddForm] = useState({ original: '', translation: '', originalLanguage: 'pl', translationLanguage: 'en-US' });
+  const [addForm, setAddForm] = useState(() => ({
+    original: '',
+    translation: '',
+    originalLanguage: localStorage.getItem('library-orig-lang') || 'pl',
+    translationLanguage: localStorage.getItem('library-trans-lang') || 'ru-RU',
+  }));
   const [adding, setAdding] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [translationOptions, setTranslationOptions] = useState<string[]>([]);
@@ -315,7 +320,7 @@ export function LibraryPage() {
               </div>
               <select
                 value={addForm.originalLanguage}
-                onChange={(e) => setAddForm((prev) => ({ ...prev, originalLanguage: e.target.value }))}
+                onChange={(e) => { localStorage.setItem('library-orig-lang', e.target.value); setAddForm((prev) => ({ ...prev, originalLanguage: e.target.value })); }}
                 className="px-2 py-2 text-sm rounded-md border border-input bg-background"
               >
                 {LANGUAGE_OPTIONS.map((l) => (
@@ -328,12 +333,16 @@ export function LibraryPage() {
                 variant="ghost"
                 size="sm"
                 className="h-7 w-7 p-0 rounded-full"
-                onClick={() => setAddForm((prev) => ({
-                  original: prev.translation,
-                  translation: prev.original,
-                  originalLanguage: prev.translationLanguage,
-                  translationLanguage: prev.originalLanguage,
-                }))}
+                onClick={() => setAddForm((prev) => {
+                  localStorage.setItem('library-orig-lang', prev.translationLanguage);
+                  localStorage.setItem('library-trans-lang', prev.originalLanguage);
+                  return {
+                    original: prev.translation,
+                    translation: prev.original,
+                    originalLanguage: prev.translationLanguage,
+                    translationLanguage: prev.originalLanguage,
+                  };
+                })}
                 title="Swap languages"
               >
                 <ArrowUpDown className="h-4 w-4" />
@@ -362,7 +371,7 @@ export function LibraryPage() {
               </div>
               <select
                 value={addForm.translationLanguage}
-                onChange={(e) => setAddForm((prev) => ({ ...prev, translationLanguage: e.target.value }))}
+                onChange={(e) => { localStorage.setItem('library-trans-lang', e.target.value); setAddForm((prev) => ({ ...prev, translationLanguage: e.target.value })); }}
                 className="px-2 py-2 text-sm rounded-md border border-input bg-background"
               >
                 {LANGUAGE_OPTIONS.map((l) => (
