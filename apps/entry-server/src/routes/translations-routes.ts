@@ -378,8 +378,8 @@ No extra fields.`,
     try {
       const translationHint = translation ? ` The word means "${translation}" in ${translationLanguage}.` : '';
       const prompt = translationLanguage
-        ? `Return a JSON object with "examples": an array of exactly 3 objects, each with "original" (a short example sentence using the given word in ${language}) and "translated" (its translation in ${translationLanguage}).${translationHint} Use the word in the specific meaning matching the translation. No extra fields.`
-        : `Return a JSON object with "examples": an array of exactly 3 short example sentences using a given word in ${language}. No extra fields.`;
+        ? `Return a JSON object with "examples": an array of exactly 3 objects, each with "original" (a short example sentence using the given word exactly in ${language} language) and "translated" (its translation in ${translationLanguage}).${translationHint} Use the word in the specific meaning matching the translation. No extra fields.`
+        : `Return a JSON object with "examples": an array of exactly 3 short example sentences using a given word in ${language} language. No extra fields.`;
 
       const completion = await openAiModel.chat.completions.create({
         model: 'gpt-4o-mini',
