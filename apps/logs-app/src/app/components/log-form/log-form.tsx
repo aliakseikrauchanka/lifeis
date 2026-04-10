@@ -154,7 +154,6 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
         id="logger"
         isToggledListening={isListeningFired}
         onListeningToggled={() => setIsListeningFired((prev) => !prev)}
-        showPlayButton={false}
         maxRecordingDurationMs={90_000}
       />
       <Box display="flex" alignItems="center" gap={0.5}>

@@ -16,7 +16,6 @@ interface ISpeechToTextProps {
   onCleared?: () => void;
   onListeningToggled?: () => void;
   onHasRecording?: (hasRecording: boolean) => void;
-  showPlayButton?: boolean;
   /** Max recording duration in ms. Default: 30 seconds. */
   maxRecordingDurationMs?: number;
 }
@@ -30,7 +29,6 @@ export const SpeechToText = ({
   onCleared,
   onListeningToggled,
   onHasRecording,
-  showPlayButton = true,
   maxRecordingDurationMs = DEFAULT_MAX_RECORDING_DURATION_MS,
 }: ISpeechToTextProps) => {
   const theme = useTheme();
@@ -135,11 +133,9 @@ export const SpeechToText = ({
         Pause
       </OwnButton>
 
-      {showPlayButton && !isMobile && (
-        <OwnButton type="button" color="success" onClick={handlePlayRecording} disabled={!hasPlayback}>
-          Play
-        </OwnButton>
-      )}
+      <OwnButton type="button" color="success" onClick={handlePlayRecording} disabled={!hasPlayback}>
+        Play
+      </OwnButton>
     </div>
   );
 };

@@ -100,7 +100,6 @@ export const AgentActionBar = ({
           isNeedClear={isCaptionsNeedClear}
           isToggledListening={isListeningFired}
           onListeningToggled={onListeningToggled}
-          showPlayButton={showPlayButton}
         />
       )}
       <OwnButton type="submit" style={{ height: '100%' }} disabled={!message || selectedAiProviders.length === 0}>
