@@ -236,7 +236,6 @@ export const LogsChatPage = () => {
             id="chat"
             isToggledListening={isListeningFired}
             onListeningToggled={() => setIsListeningFired((prev) => !prev)}
-            showPlayButton={false}
           />
           <OwnButton type="submit" disabled={!question.trim() || isLoading}>
             Ask
