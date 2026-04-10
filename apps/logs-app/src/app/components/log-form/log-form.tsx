@@ -154,7 +154,7 @@ export const LogForm = ({ onSubmit, editLog, onEditCancel, baskets }: ILogFormPr
         id="logger"
         isToggledListening={isListeningFired}
         onListeningToggled={() => setIsListeningFired((prev) => !prev)}
-        maxRecordingDurationMs={90_000}
+        maxRecordingDurationMs={180_000}
       />
       <Box display="flex" alignItems="center" gap={0.5}>
         <label htmlFor="log-form-photo" className={css.photoButton}>
