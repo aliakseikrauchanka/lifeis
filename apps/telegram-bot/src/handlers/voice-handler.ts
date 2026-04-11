@@ -84,6 +84,8 @@ export async function handleVoice(ctx: Context) {
 
     const { transcript } = response.data as { transcript?: string };
 
+    console.log({transcript});
+
     await ctx.telegram.editMessageText(
       chatId,
       statusMsg.message_id,
