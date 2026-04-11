@@ -10,12 +10,8 @@ import sharp from 'sharp';
 import OpenAI from 'openai';
 import multer from 'multer';
 import { getGlosbeTranslation } from '../utils/glosbe-scraper';
+import { deepSeek } from '../utils/deepseek';
 const fileManager = new GoogleAIFileManager(process.env.GOOGLE_API_KEY);
-
-const deepSeek = new OpenAI({
-  baseURL: 'https://api.deepseek.com',
-  apiKey: process.env.DEEPSEEK_API_KEY,
-});
 
 const router = Router();
 
