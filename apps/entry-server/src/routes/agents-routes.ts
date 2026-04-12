@@ -309,13 +309,20 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
           console.warn(`Glosbe translation failed: ${responseText}`);
         }
       } else if (aiProvider === 'openai') {
+        const systemMessage = (prefix ? `You are an AI assistant. Follow these instructions: ${prefix}` : 'You are a helpful AI assistant.') + (language ? `\nЯзык оригинального текста: ${language}` : '');
+        const userMessage = req.body.message;
+
         const response = await openAiModel.chat.completions.create(
           {
             model: defaultOpenAiModelName,
             messages: [
               {
+                role: 'system',
+                content: systemMessage,
+              },
+              {
                 role: 'user',
-                content: prompt,
+                content: userMessage,
               },
             ],
           },
@@ -324,14 +331,20 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
           },
         );
 
-        console.log('debug response', response);
         responseText = response.choices[0].message.content;
       } else if (aiProvider === 'deepseek-r1') {
+        const systemMessage = (prefix ? `You are an AI assistant. Follow these instructions: ${prefix}` : 'You are a helpful AI assistant.') + (language ? `\nЯзык оригинального текста: ${language}` : '');
+        const userMessage = req.body.message;
+
         const response = await deepSeek.chat.completions.create({
           messages: [
             {
+              role: 'system',
+              content: systemMessage,
+            },
+            {
               role: 'user',
-              content: prompt,
+              content: userMessage,
             },
           ],
           model: 'deepseek-chat',
