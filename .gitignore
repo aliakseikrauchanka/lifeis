@@ -26,6 +26,7 @@ node_modules
 
 # Claude
 .claude
+.mcp.json
 
 # Opencode
 .opencode

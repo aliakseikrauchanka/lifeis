@@ -6,7 +6,9 @@
     "build": "npx nx run entry-server:build --configuration=production",
     "start": "node ./dist/apps/entry-server/src/main.js",
     "build:telegram-bot": "npx nx run telegram-bot:build --configuration=production",
-    "start:telegram-bot": "node ./dist/apps/telegram-bot/main.js"
+    "start:telegram-bot": "node ./dist/apps/telegram-bot/main.js",
+    "build:logs-mcp-server": "npx nx run logs-mcp-server:build --configuration=production",
+    "start:logs-mcp-server": "node ./dist/apps/logs-mcp-server/main.js"
   },
   "private": true,
   "engines": {
@@ -22,6 +24,7 @@
     "@google-cloud/text-to-speech": "^5.6.0",
     "@google/generative-ai": "^0.15.0",
     "@million/lint": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@mui/icons-material": "^5.16.6",
     "@mui/joy": "^5.0.0-beta.52",
     "@mui/material": "^5.16.6",
@@ -65,7 +68,8 @@
     "tailwind-merge": "^3.5.0",
     "tailwindcss-animate": "^1.0.7",
     "telegraf": "^4.16.3",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@nx/cypress": "22.3.3",
