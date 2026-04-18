@@ -8,6 +8,10 @@ import { LibraryPage } from './pages/library.page';
 import { SentenceTrainingPage } from './pages/sentence-training.page';
 import { SentenceConstructionPage } from './pages/sentence-construction.page';
 import { ProfileMenu } from './components/profile-menu';
+import { HeaderAddButton } from './components/header-add-button';
+import { TranslationAddModal } from './components/translation-add-modal';
+import { SelectionAddButton } from './components/selection-add-button';
+import { TranslationAddProvider } from './contexts/translation-add.context';
 
 export function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
@@ -26,6 +30,7 @@ export function App() {
     isInitialized && (
       <GoogleOAuthProvider clientId={CONFIG.CLIENT_ID}>
         <AudioDevicesProvider>
+          <TranslationAddProvider>
           <div className="flex flex-col h-full">
             <header className="flex items-center gap-2 bg-gradient-to-r from-violet-50 to-purple-50 px-3 py-1 border-b border-black/5 shadow-sm">
               {isLoggedIn && (
@@ -82,6 +87,7 @@ export function App() {
                 </nav>
               )}
               <div className="ml-auto flex items-center gap-1">
+                {isLoggedIn && <HeaderAddButton />}
                 {isLoggedIn && <ProfileMenu />}
                 <UserSession
                   isLoggedIn={isLoggedIn}
@@ -101,6 +107,9 @@ export function App() {
               </main>
             )}
           </div>
+          {isLoggedIn && <TranslationAddModal />}
+          {isLoggedIn && <SelectionAddButton />}
+          </TranslationAddProvider>
         </AudioDevicesProvider>
       </GoogleOAuthProvider>
     )
