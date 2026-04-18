@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useCallback, useRef, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { utilFetch } from '../utils/util-fetch';
 import { SpeechToTextContext } from './speech-to-text.context';
 
@@ -41,6 +41,13 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({
   const [recordedBlobs, setRecordedBlobs] = useState<{ [id: string]: Blob[] }>({});
   const activeIdRef = useRef<string | undefined>(undefined);
   const cancelledRef = useRef(false);
+  // Keep language in a ref so we can pick up updates that happen between
+  // `startListening(id)` and the actual `transcribeBlob` call (e.g. when a parent
+  // sets the language in an `onStart` callback or an effect).
+  const languageRef = useRef(language);
+  useEffect(() => {
+    languageRef.current = language;
+  }, [language]);
 
   const startRecording = useCallback(
     (onStop: (blob: Blob) => void) => {
@@ -132,7 +139,7 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({
         }));
 
         try {
-          const transcript = await transcribeBlob(blob, language);
+          const transcript = await transcribeBlob(blob, languageRef.current);
           if (transcript && !cancelledRef.current) {
             setCaption((prev) => ({
               ...prev,
@@ -147,7 +154,7 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({
         }
       });
     },
-    [startRecording, language],
+    [startRecording],
   );
 
   const stopListening = useCallback(

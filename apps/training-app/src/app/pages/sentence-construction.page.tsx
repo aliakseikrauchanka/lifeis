@@ -9,9 +9,9 @@ import {
   generateSentenceConstruction,
   checkSentenceConstruction,
   SentenceTrainingWord,
-  CefrLevel,
 } from '../api/srs.api';
 import { speak } from '../api/tts.api';
+import { useAppLevel } from '../hooks/use-app-level';
 
 type Phase = 'idle' | 'writing' | 'recording' | 'checking' | 'checked';
 
@@ -30,17 +30,11 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
     const v = Number(localStorage.getItem('sentence-construction-word-count'));
     return Number.isInteger(v) && v >= 1 && v <= 10 ? v : 3;
   });
-  const [level, setLevel] = useState<CefrLevel>(() => {
-    const v = localStorage.getItem('sentence-construction-level') as CefrLevel | null;
-    return v && ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(v) ? v : 'B1';
-  });
+  const [level] = useAppLevel();
 
   useEffect(() => {
     localStorage.setItem('sentence-construction-word-count', String(wordCount));
   }, [wordCount]);
-  useEffect(() => {
-    localStorage.setItem('sentence-construction-level', level);
-  }, [level]);
 
   const [words, setWords] = useState<SentenceTrainingWord[]>([]);
   const [showWordTranslations, setShowWordTranslations] = useState<boolean>(false);
@@ -143,21 +137,15 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
               ))}
             </select>
           </label>
-          <label className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
+          <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
             Level
-            <select
-              className="rounded border border-input bg-background px-2 py-1 text-sm text-foreground"
-              value={level}
-              onChange={(e) => setLevel(e.target.value as CefrLevel)}
-              disabled={loading || phase === 'checking' || phase === 'recording'}
+            <div
+              className="rounded border border-input bg-muted/40 px-2 py-1 text-sm text-foreground"
+              title="Change in Profile"
             >
-              {(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as CefrLevel[]).map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-          </label>
+              {level}
+            </div>
+          </div>
           <Button
             size="sm"
             onClick={() => handleGenerate()}

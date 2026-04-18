@@ -128,6 +128,29 @@ export const translateText = async (text: string, targetLanguage: string, origin
   return res.json();
 };
 
+export type TranslationProvider = 'openai' | 'deepseek' | 'glosbe';
+
+export interface ProviderTranslationResult {
+  translations: string[];
+  examples: Example[];
+  error: string | null;
+}
+
+export const translateTextMulti = async (
+  text: string,
+  targetLanguage: string,
+  originalLanguage?: string,
+): Promise<Record<TranslationProvider, ProviderTranslationResult>> => {
+  const res = await utilFetch('/translations/translate-multi', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, targetLanguage, originalLanguage }),
+  });
+  if (!res.ok) throw new Error('Failed to translate');
+  const { providers } = await res.json();
+  return providers;
+};
+
 export const createTranslation = async (data: {
   original: string;
   translation: string;

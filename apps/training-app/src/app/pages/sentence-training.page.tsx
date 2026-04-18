@@ -10,11 +10,11 @@ import {
   reviewCard,
   Rating,
   SentenceTrainingWord,
-  CefrLevel,
 } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import { GradeButtons } from '../components/grade-buttons';
 import { SpeechInputButton } from '../components/speech-input-button';
+import { useAppLevel } from '../hooks/use-app-level';
 
 type Phase = 'idle' | 'memorize' | 'recall' | 'recording' | 'checking' | 'checked';
 
@@ -37,10 +37,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
     const v = Number(localStorage.getItem('sentence-training-sentence-count'));
     return Number.isInteger(v) && v >= 1 && v <= 3 ? v : 2;
   });
-  const [level, setLevel] = useState<CefrLevel>(() => {
-    const v = localStorage.getItem('sentence-training-level') as CefrLevel | null;
-    return v && ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'].includes(v) ? v : 'B1';
-  });
+  const [level] = useAppLevel();
 
   useEffect(() => {
     localStorage.setItem('sentence-training-word-count', String(wordCount));
@@ -48,10 +45,6 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
   useEffect(() => {
     localStorage.setItem('sentence-training-sentence-count', String(sentenceCount));
   }, [sentenceCount]);
-  useEffect(() => {
-    localStorage.setItem('sentence-training-level', level);
-  }, [level]);
-
   const [words, setWords] = useState<SentenceTrainingWord[]>([]);
   const [story, setStory] = useState<string>('');
   const [storyTranslation, setStoryTranslation] = useState<string>('');
@@ -198,21 +191,15 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
               ))}
             </select>
           </label>
-          <label className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
+          <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
             Level
-            <select
-              className="rounded border border-input bg-background px-2 py-1 text-sm text-foreground"
-              value={level}
-              onChange={(e) => setLevel(e.target.value as CefrLevel)}
-              disabled={loading || phase === 'recording' || phase === 'checking'}
+            <div
+              className="rounded border border-input bg-muted/40 px-2 py-1 text-sm text-foreground"
+              title="Change in Profile"
             >
-              {(['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as CefrLevel[]).map((l) => (
-                <option key={l} value={l}>
-                  {l}
-                </option>
-              ))}
-            </select>
-          </label>
+              {level}
+            </div>
+          </div>
           <Button
             size="sm"
             onClick={() => handleGenerate()}

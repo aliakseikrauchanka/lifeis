@@ -3,6 +3,19 @@ import { MongoClient, ObjectId } from 'mongodb';
 import OpenAI from 'openai';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { ITranslation } from '../domain';
+import { deepSeek } from '../utils/deepseek';
+import { getGlosbeTranslation } from '../utils/glosbe-scraper';
+
+const GLOSBE_LANG_MAP: Record<string, string> = {
+  pl: 'pl',
+  'ru-RU': 'ru',
+  'en-US': 'en',
+  'de-DE': 'de',
+  'fr-FR': 'fr',
+  'sr-RS': 'sr',
+  fi: 'fi',
+  es: 'es',
+};
 
 // SECURITY FIX: Allowlist of accepted language codes.
 // Used to validate user-supplied language fields before they are interpolated into
@@ -355,6 +368,100 @@ No extra fields.`,
       console.error('Error translating text:', error);
       res.status(500).json({ message: 'Error translating text' });
     }
+  });
+
+  router.post('/translate-multi', verifyAccessToken, async (req, res) => {
+    const { text, targetLanguage, originalLanguage } = req.body;
+    if (!text || !targetLanguage) {
+      return res.status(400).json({ message: 'text and targetLanguage are required' });
+    }
+    if (typeof text !== 'string' || text.length > MAX_TEXT_LENGTH) {
+      return res.status(400).json({ message: `text must be a string of at most ${MAX_TEXT_LENGTH} characters` });
+    }
+    if (typeof targetLanguage !== 'string' || !ALLOWED_LANGUAGE_CODES.has(targetLanguage)) {
+      return res.status(400).json({ message: 'Invalid targetLanguage code' });
+    }
+    if (originalLanguage !== undefined) {
+      if (
+        typeof originalLanguage !== 'string' ||
+        originalLanguage.length > MAX_LANG_CODE_LENGTH ||
+        !ALLOWED_LANGUAGE_CODES.has(originalLanguage)
+      ) {
+        return res.status(400).json({ message: 'Invalid originalLanguage code' });
+      }
+    }
+
+    const systemPrompt = `You are a precise translator. Return a JSON object with:
+- "translations": array of exactly 3 distinct translation options for the given text into ${targetLanguage} (vary by formality, style, or synonyms)
+- "examples": array of exactly 3 objects, each with "original" (example sentence in ${originalLanguage ?? 'original'} language) and "translated" (its translation in ${targetLanguage})
+No extra fields.`;
+
+    const callLLM = async (
+      client: OpenAI,
+      model: string,
+    ): Promise<{ translations: string[]; examples: Array<{ original: string; translated: string }> }> => {
+      const completion = await client.chat.completions.create({
+        model,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: text },
+        ],
+      });
+      const raw = completion.choices[0].message.content ?? '{}';
+      const parsed = JSON.parse(raw);
+      return {
+        translations: Array.isArray(parsed.translations)
+          ? parsed.translations.filter((x: unknown): x is string => typeof x === 'string').slice(0, 5)
+          : [],
+        examples: Array.isArray(parsed.examples)
+          ? parsed.examples
+              .filter(
+                (e: unknown): e is { original: string; translated: string } =>
+                  !!e &&
+                  typeof (e as { original?: unknown }).original === 'string' &&
+                  typeof (e as { translated?: unknown }).translated === 'string',
+              )
+              .slice(0, 5)
+          : [],
+      };
+    };
+
+    const [openaiResult, deepseekResult, glosbeResult] = await Promise.allSettled([
+      callLLM(openAiModel, 'gpt-4o-mini'),
+      callLLM(deepSeek, 'deepseek-chat'),
+      (async () => {
+        const from = originalLanguage ? GLOSBE_LANG_MAP[originalLanguage] : undefined;
+        const to = GLOSBE_LANG_MAP[targetLanguage];
+        if (!from || !to) {
+          return { translations: [] as string[] };
+        }
+        const result = await getGlosbeTranslation(text, {
+          fromLang: from,
+          toLang: to,
+          maxRetries: 2,
+          requestDelay: 500,
+        });
+        return { translations: result.translations ?? [] };
+      })(),
+    ]);
+
+    const providers = {
+      openai:
+        openaiResult.status === 'fulfilled'
+          ? { ...openaiResult.value, error: null as string | null }
+          : { translations: [], examples: [], error: (openaiResult.reason as Error)?.message ?? 'failed' },
+      deepseek:
+        deepseekResult.status === 'fulfilled'
+          ? { ...deepseekResult.value, error: null as string | null }
+          : { translations: [], examples: [], error: (deepseekResult.reason as Error)?.message ?? 'failed' },
+      glosbe:
+        glosbeResult.status === 'fulfilled'
+          ? { translations: glosbeResult.value.translations, examples: [], error: null as string | null }
+          : { translations: [], examples: [], error: (glosbeResult.reason as Error)?.message ?? 'failed' },
+    };
+
+    res.json({ providers });
   });
 
   router.post('/examples', verifyAccessToken, async (req, res) => {

@@ -7,8 +7,7 @@ import { StudyPage } from './pages/study.page';
 import { LibraryPage } from './pages/library.page';
 import { SentenceTrainingPage } from './pages/sentence-training.page';
 import { SentenceConstructionPage } from './pages/sentence-construction.page';
-import { MicSelector } from './components/mic-selector';
-import { HeadsetSelector } from './components/headset-selector';
+import { ProfileMenu } from './components/profile-menu';
 
 export function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
@@ -83,8 +82,7 @@ export function App() {
                 </nav>
               )}
               <div className="ml-auto flex items-center gap-1">
-                {isLoggedIn && <MicSelector />}
-                {isLoggedIn && <HeadsetSelector />}
+                {isLoggedIn && <ProfileMenu />}
                 <UserSession
                   isLoggedIn={isLoggedIn}
                   onLoginSuccess={() => setIsLoggedIn(true)}

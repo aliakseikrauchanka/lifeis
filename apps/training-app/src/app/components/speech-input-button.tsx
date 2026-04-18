@@ -49,7 +49,13 @@ export function SpeechInputButton({
   useEffect(() => {
     if (!active && !isRecording) return;
     const parts = caption[id];
-    if (!parts?.length) return;
+    if (!parts?.length) {
+      // Caption was cleared externally (e.g. user cleared the input).
+      // Forget last processed transcript so a re-recording with identical text
+      // is still appended.
+      processedTranscriptRef.current = null;
+      return;
+    }
     const text = parts.join(' ').trim();
     if (!text || processedTranscriptRef.current === text) return;
     processedTranscriptRef.current = text;
@@ -99,8 +105,14 @@ export function SpeechInputButton({
   return (
     <>
       {isRecording ? (
-        <Button variant="destructive" size="sm" onClick={handleStop} className="gap-1">
-          <Square className="h-4 w-4" /> Stop
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleStop}
+          className="shrink-0 px-2"
+          title="Stop recording"
+        >
+          <Square className="h-4 w-4" />
         </Button>
       ) : (
         <Button
@@ -108,9 +120,10 @@ export function SpeechInputButton({
           size="sm"
           onClick={handleStart}
           disabled={!connectionReady || disabled}
-          className="gap-1"
+          className="shrink-0 px-2"
+          title="Record"
         >
-          <Mic className="h-4 w-4" /> Record
+          <Mic className="h-4 w-4" />
         </Button>
       )}
       {hasRecording && !isRecording && (
@@ -119,11 +132,10 @@ export function SpeechInputButton({
           size="sm"
           onClick={handlePlay}
           disabled={disabled}
-          className="gap-1"
+          className="shrink-0 px-2"
           title={isPlaying ? 'Stop playback' : 'Play recording'}
         >
           {isPlaying ? <Square className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          {isPlaying ? 'Stop' : 'Play'}
         </Button>
       )}
     </>
