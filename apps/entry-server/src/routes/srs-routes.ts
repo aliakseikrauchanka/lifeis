@@ -10,6 +10,52 @@ const MAX_TRANSCRIPT_LENGTH = 2000;
 const CEFR_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 const TRAINING_MODEL = 'deepseek-chat';
 
+/**
+ * Builds a MongoDB $match filter constraining translations to those that are
+ * between the user's native and training languages (in either direction).
+ * Returns:
+ *  - null if the caller didn't provide a pair (no filtering),
+ *  - 'invalid' if the provided values are not valid language codes,
+ *  - the $match object otherwise.
+ * If both languages are equal, no filter is applied.
+ */
+function buildLanguagePairFilter(
+  nativeLanguage: unknown,
+  trainingLanguage: unknown,
+): Record<string, unknown> | null | 'invalid' {
+  if (nativeLanguage === undefined && trainingLanguage === undefined) return null;
+  if (typeof nativeLanguage !== 'string' || typeof trainingLanguage !== 'string') return 'invalid';
+  if (!ALLOWED_LANGUAGE_CODES.has(nativeLanguage) || !ALLOWED_LANGUAGE_CODES.has(trainingLanguage)) {
+    return 'invalid';
+  }
+  if (nativeLanguage === trainingLanguage) return null;
+  return {
+    $or: [
+      {
+        'translation.originalLanguage': trainingLanguage,
+        'translation.translationLanguage': nativeLanguage,
+      },
+      {
+        'translation.originalLanguage': nativeLanguage,
+        'translation.translationLanguage': trainingLanguage,
+      },
+    ],
+  };
+}
+
+function formatLanguagePairSuffix(nativeLanguage: unknown, trainingLanguage: unknown): string {
+  if (
+    typeof nativeLanguage === 'string' &&
+    typeof trainingLanguage === 'string' &&
+    ALLOWED_LANGUAGE_CODES.has(nativeLanguage) &&
+    ALLOWED_LANGUAGE_CODES.has(trainingLanguage) &&
+    nativeLanguage !== trainingLanguage
+  ) {
+    return ` for ${trainingLanguage} ↔ ${nativeLanguage}`;
+  }
+  return '';
+}
+
 export const getSrsRoutes = (client: MongoClient) => {
   const router = Router();
   const db = client.db('lifeis');
@@ -332,24 +378,29 @@ export const getSrsRoutes = (client: MongoClient) => {
         if (!Number.isInteger(wordCountRaw) || wordCountRaw < 1 || wordCountRaw > 5) {
           return res.status(400).json({ message: 'wordCount must be an integer between 1 and 5' });
         }
-        const dueCards = await srsCollection
-          .aggregate([
-            { $match: { owner_id: userId, due_at: { $lte: Date.now() } } },
-            { $sample: { size: 50 } },
-            {
-              $lookup: {
-                from: 'translations',
-                localField: 'translation_id',
-                foreignField: '_id',
-                as: 'translation',
-              },
+        const langFilter = buildLanguagePairFilter(req.body?.nativeLanguage, req.body?.trainingLanguage);
+        if (langFilter === 'invalid') {
+          return res.status(400).json({ message: 'Invalid nativeLanguage or trainingLanguage' });
+        }
+        const pairSuffix = formatLanguagePairSuffix(req.body?.nativeLanguage, req.body?.trainingLanguage);
+        const pipeline: Record<string, unknown>[] = [
+          { $match: { owner_id: userId, due_at: { $lte: Date.now() } } },
+          {
+            $lookup: {
+              from: 'translations',
+              localField: 'translation_id',
+              foreignField: '_id',
+              as: 'translation',
             },
-            { $unwind: '$translation' },
-          ])
-          .toArray();
+          },
+          { $unwind: '$translation' },
+        ];
+        if (langFilter) pipeline.push({ $match: langFilter });
+        pipeline.push({ $sample: { size: 50 } });
+        const dueCards = await srsCollection.aggregate(pipeline).toArray();
 
         if (dueCards.length === 0) {
-          return res.status(404).json({ message: 'No due cards available' });
+          return res.status(404).json({ message: `No due enrolled cards available${pairSuffix}` });
         }
 
         originalLanguage = dueCards[0].translation.originalLanguage;
@@ -362,7 +413,7 @@ export const getSrsRoutes = (client: MongoClient) => {
         if (sameLang.length < wordCountRaw) {
           return res
             .status(404)
-            .json({ message: `Need at least ${wordCountRaw} due cards in the same language (have ${sameLang.length})` });
+            .json({ message: `Need at least ${wordCountRaw} due enrolled cards in the same language${pairSuffix} (have ${sameLang.length})` });
         }
         picked = sameLang.slice(0, wordCountRaw) as typeof picked;
       }
@@ -518,23 +569,30 @@ No extra fields.`,
         if (!Number.isInteger(wordCountRaw) || wordCountRaw < 1 || wordCountRaw > 10) {
           return res.status(400).json({ message: 'wordCount must be an integer between 1 and 10' });
         }
-        const sampled = await srsCollection
-          .aggregate([
-            { $match: { owner_id: userId } },
-            { $sample: { size: 100 } },
-            {
-              $lookup: {
-                from: 'translations',
-                localField: 'translation_id',
-                foreignField: '_id',
-                as: 'translation',
-              },
+        const langFilter = buildLanguagePairFilter(req.body?.nativeLanguage, req.body?.trainingLanguage);
+        if (langFilter === 'invalid') {
+          return res.status(400).json({ message: 'Invalid nativeLanguage or trainingLanguage' });
+        }
+        const pairSuffix = formatLanguagePairSuffix(req.body?.nativeLanguage, req.body?.trainingLanguage);
+        // Sentence construction intentionally uses ONLY enrolled cards (not the full library).
+        // We query translation_srs (enrolled cards), join translations for filtering/metadata.
+        const pipeline: Record<string, unknown>[] = [
+          { $match: { owner_id: userId } },
+          {
+            $lookup: {
+              from: 'translations',
+              localField: 'translation_id',
+              foreignField: '_id',
+              as: 'translation',
             },
-            { $unwind: '$translation' },
-          ])
-          .toArray();
+          },
+          { $unwind: '$translation' },
+        ];
+        if (langFilter) pipeline.push({ $match: langFilter });
+        pipeline.push({ $sample: { size: 100 } });
+        const sampled = await srsCollection.aggregate(pipeline).toArray();
         if (sampled.length === 0) {
-          return res.status(404).json({ message: 'No enrolled cards available' });
+          return res.status(404).json({ message: `No enrolled cards available${pairSuffix}` });
         }
         originalLanguage = sampled[0].translation.originalLanguage;
         translationLanguage = sampled[0].translation.translationLanguage;
@@ -546,7 +604,7 @@ No extra fields.`,
         if (sameLang.length < wordCountRaw) {
           return res
             .status(404)
-            .json({ message: `Need at least ${wordCountRaw} enrolled cards in the same language (have ${sameLang.length})` });
+            .json({ message: `Need at least ${wordCountRaw} enrolled cards in the same language${pairSuffix} (have ${sameLang.length})` });
         }
         picked = sameLang.slice(0, wordCountRaw) as typeof picked;
       }

@@ -6,6 +6,8 @@ import { fetchDueCards, fetchExamples, reviewCard, Rating, SrsCard, Example } fr
 import { speak } from '../api/tts.api';
 import { BookOpen, Check, Volume2, ChevronLeft, ChevronRight, Volume1 } from 'lucide-react';
 import { GradeButtons } from '../components/grade-buttons';
+import { useAppLanguages } from '../hooks/use-app-languages';
+import { matchesAppLanguagePair } from '../constants/language-options';
 
 export function StudyPage() {
   const [queue, setQueue] = useState<SrsCard[]>([]);
@@ -16,6 +18,7 @@ export function StudyPage() {
   const [loadingExamples, setLoadingExamples] = useState(false);
   const [cardIndex, setCardIndex] = useState(0);
   const [autoSpeak, setAutoSpeak] = useState(() => localStorage.getItem('srs-auto-speak') === 'true');
+  const { nativeLanguage, trainingLanguage } = useAppLanguages();
 
   const current = queue[cardIndex];
 
@@ -23,14 +26,17 @@ export function StudyPage() {
     setLoading(true);
     try {
       const cards = await fetchDueCards();
-      setQueue(cards);
+      const filtered = cards.filter((c: SrsCard) =>
+        matchesAppLanguagePair(c.translation, nativeLanguage, trainingLanguage),
+      );
+      setQueue(filtered);
       setCardIndex(0);
     } catch (err) {
       console.error('Failed to load cards:', err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [nativeLanguage, trainingLanguage]);
 
   useEffect(() => {
     loadCards();

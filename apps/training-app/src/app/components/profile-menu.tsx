@@ -1,17 +1,24 @@
 import { useEffect } from 'react';
 import { useAudioDevices } from '@lifeis/common-ui';
-import { Check, Headphones, Mic, User, X } from 'lucide-react';
+import { Check, Headphones, Languages, Mic, User, X } from 'lucide-react';
 import { useState } from 'react';
 import { APP_LEVELS, useAppLevel } from '../hooks/use-app-level';
+import { useAppLanguages } from '../hooks/use-app-languages';
+import { LANGUAGE_OPTIONS } from '../constants/language-options';
 import type { CefrLevel } from '../api/srs.api';
 import { Button } from './ui/button';
+
+interface DeviceListItem {
+  deviceId: string;
+  label: string;
+}
 
 function DeviceRadioList({
   devices,
   currentId,
   onSelect,
 }: {
-  devices: MediaDeviceInfo[];
+  devices: DeviceListItem[];
   currentId: string;
   onSelect: (id: string) => void;
 }) {
@@ -60,6 +67,7 @@ export function ProfileMenu() {
     setOutputDeviceId,
   } = useAudioDevices();
   const [level, setLevel] = useAppLevel();
+  const { nativeLanguage, trainingLanguage, setNativeLanguage, setTrainingLanguage } = useAppLanguages();
 
   useEffect(() => {
     if (!open) return;
@@ -100,6 +108,53 @@ export function ProfileMenu() {
               </Button>
             </div>
             <div className="flex flex-col gap-5 p-4 overflow-y-auto flex-1 min-h-0">
+              <section className="flex flex-col gap-2">
+                <h4 className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  <Languages className="h-3.5 w-3.5" /> Languages
+                </h4>
+                <div className="grid grid-cols-[auto_1fr] items-center gap-x-3 gap-y-2">
+                  <label htmlFor="profile-training-lang" className="text-sm text-foreground">
+                    Training
+                  </label>
+                  <select
+                    id="profile-training-lang"
+                    value={trainingLanguage}
+                    onChange={(e) => setTrainingLanguage(e.target.value)}
+                    className="h-9 px-2 text-sm rounded-md border border-input bg-background"
+                  >
+                    {LANGUAGE_OPTIONS.map((l) => (
+                      <option key={l.code} value={l.code}>
+                        {l.label}
+                      </option>
+                    ))}
+                  </select>
+                  <label htmlFor="profile-native-lang" className="text-sm text-foreground">
+                    Native
+                  </label>
+                  <select
+                    id="profile-native-lang"
+                    value={nativeLanguage}
+                    onChange={(e) => setNativeLanguage(e.target.value)}
+                    className="h-9 px-2 text-sm rounded-md border border-input bg-background"
+                  >
+                    {LANGUAGE_OPTIONS.map((l) => (
+                      <option key={l.code} value={l.code}>
+                        {l.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {nativeLanguage === trainingLanguage ? (
+                  <p className="text-xs text-amber-700">
+                    Native and training languages are the same — filtering is disabled.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Only words between these two languages are shown in the library, due queue and trainings.
+                  </p>
+                )}
+              </section>
+
               <section className="flex flex-col gap-2">
                 <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Language level

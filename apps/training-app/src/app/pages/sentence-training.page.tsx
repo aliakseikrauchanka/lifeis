@@ -15,6 +15,7 @@ import { speak } from '../api/tts.api';
 import { GradeButtons } from '../components/grade-buttons';
 import { SpeechInputButton } from '../components/speech-input-button';
 import { useAppLevel } from '../hooks/use-app-level';
+import { useAppLanguages } from '../hooks/use-app-languages';
 
 type Phase = 'idle' | 'memorize' | 'recall' | 'recording' | 'checking' | 'checked';
 
@@ -38,6 +39,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
     return Number.isInteger(v) && v >= 1 && v <= 3 ? v : 2;
   });
   const [level] = useAppLevel();
+  const { nativeLanguage, trainingLanguage } = useAppLanguages();
 
   useEffect(() => {
     localStorage.setItem('sentence-training-word-count', String(wordCount));
@@ -92,7 +94,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
       const data = await generateSentenceTraining(
         translationIds && translationIds.length > 0
           ? { sentenceCount, level, translationIds }
-          : { wordCount, sentenceCount, level },
+          : { wordCount, sentenceCount, level, nativeLanguage, trainingLanguage },
       );
       setWords(data.words);
       setStory(data.story);

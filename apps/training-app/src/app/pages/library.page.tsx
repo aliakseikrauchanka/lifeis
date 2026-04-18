@@ -15,6 +15,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, Pencil, Sparkles, PenLine } from 'lucide-react';
 import { useTranslationAdd } from '../contexts/translation-add.context';
+import { useAppLanguages } from '../hooks/use-app-languages';
+import { matchesAppLanguagePair, getLanguageLabel } from '../constants/language-options';
 
 export function LibraryPage() {
   const [translations, setTranslations] = useState<TranslationData[]>([]);
@@ -29,7 +31,8 @@ export function LibraryPage() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { open: openAddModal, openForEdit, subscribeChanged } = useTranslationAdd();
+  const { open: openAddModal, openForEdit, subscribeChanged, refreshIndex } = useTranslationAdd();
+  const { nativeLanguage, trainingLanguage } = useAppLanguages();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -83,6 +86,7 @@ export function LibraryPage() {
         next.delete(id);
         return next;
       });
+      refreshIndex();
     } catch (err) {
       console.error('Delete failed:', err);
     } finally {
@@ -99,13 +103,17 @@ export function LibraryPage() {
     });
   };
 
+  const languageFiltered = translations.filter((t) =>
+    matchesAppLanguagePair(t, nativeLanguage, trainingLanguage),
+  );
   const searchLower = search.toLowerCase();
   const filteredTranslations = search
-    ? translations.filter((t) =>
+    ? languageFiltered.filter((t) =>
         t.original.toLowerCase().includes(searchLower) ||
         t.translation.toLowerCase().includes(searchLower)
       )
-    : translations;
+    : languageFiltered;
+  const hiddenByLanguageCount = translations.length - languageFiltered.length;
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
@@ -163,6 +171,7 @@ export function LibraryPage() {
       const result = await importTranslations(items);
       setImportResult(`Imported ${result.inserted} words (${result.skipped} skipped)`);
       await load();
+      refreshIndex();
     } catch (err) {
       console.error('Import failed:', err);
       setImportResult('Import failed. Check file format.');
@@ -226,9 +235,16 @@ export function LibraryPage() {
         />
       </div>
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-        <h2 className="text-lg font-semibold whitespace-nowrap">
-          {search ? `${filteredTranslations.length} of ${translations.length}` : translations.length} Translations
-        </h2>
+        <div className="flex flex-col">
+          <h2 className="text-lg font-semibold whitespace-nowrap">
+            {search ? `${filteredTranslations.length} of ${languageFiltered.length}` : languageFiltered.length} Translations
+          </h2>
+          {hiddenByLanguageCount > 0 && (
+            <span className="text-xs text-muted-foreground">
+              {hiddenByLanguageCount} hidden · showing {getLanguageLabel(trainingLanguage)} ↔ {getLanguageLabel(nativeLanguage)}
+            </span>
+          )}
+        </div>
         <div className="flex gap-2 flex-wrap">
           <input
             ref={fileInputRef}

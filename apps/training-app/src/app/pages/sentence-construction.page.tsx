@@ -12,6 +12,7 @@ import {
 } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import { useAppLevel } from '../hooks/use-app-level';
+import { useAppLanguages } from '../hooks/use-app-languages';
 
 type Phase = 'idle' | 'writing' | 'recording' | 'checking' | 'checked';
 
@@ -31,6 +32,7 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
     return Number.isInteger(v) && v >= 1 && v <= 10 ? v : 3;
   });
   const [level] = useAppLevel();
+  const { nativeLanguage, trainingLanguage } = useAppLanguages();
 
   useEffect(() => {
     localStorage.setItem('sentence-construction-word-count', String(wordCount));
@@ -64,7 +66,7 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
       const data = await generateSentenceConstruction(
         translationIds && translationIds.length > 0
           ? { level, translationIds }
-          : { level, wordCount },
+          : { level, wordCount, nativeLanguage, trainingLanguage },
       );
       setWords(data.words);
       setOriginalLanguage(data.originalLanguage);

@@ -16,17 +16,8 @@ import {
   TranslationAddPrefill,
   TranslationAddMode,
 } from '../contexts/translation-add.context';
-
-const LANGUAGE_OPTIONS = [
-  { code: 'pl', label: 'Polish' },
-  { code: 'ru-RU', label: 'Russian' },
-  { code: 'en-US', label: 'English' },
-  { code: 'de-DE', label: 'German' },
-  { code: 'fr-FR', label: 'French' },
-  { code: 'sr-RS', label: 'Serbian' },
-  { code: 'fi', label: 'Finnish' },
-  { code: 'es', label: 'Spanish' },
-];
+import { LANGUAGE_OPTIONS } from '../constants/language-options';
+import { useAppLanguages } from '../hooks/use-app-languages';
 
 const ORIGINAL_REC_ID = 'global-add-original';
 const TRANSLATION_REC_ID = 'global-add-translation';
@@ -43,12 +34,12 @@ interface ModalBodyProps {
 function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageChange }: ModalBodyProps) {
   const isEdit = mode === 'edit';
   const { stopListening } = useSpeechToText();
+  const { nativeLanguage, trainingLanguage } = useAppLanguages();
   const [addForm, setAddForm] = useState(() => ({
     original: prefill?.original ?? '',
     translation: prefill?.translation ?? '',
-    originalLanguage: prefill?.originalLanguage ?? localStorage.getItem('library-orig-lang') ?? 'pl',
-    translationLanguage:
-      prefill?.translationLanguage ?? localStorage.getItem('library-trans-lang') ?? 'ru-RU',
+    originalLanguage: prefill?.originalLanguage ?? trainingLanguage,
+    translationLanguage: prefill?.translationLanguage ?? nativeLanguage,
   }));
   const [saving, setSaving] = useState(false);
   const [translating, setTranslating] = useState(false);
@@ -219,7 +210,6 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
               <select
                 value={addForm.originalLanguage}
                 onChange={(e) => {
-                  localStorage.setItem('library-orig-lang', e.target.value);
                   setAddForm((prev) => ({ ...prev, originalLanguage: e.target.value }));
                 }}
                 className="px-2 py-2 text-sm rounded-md border border-input bg-background"
@@ -235,16 +225,12 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 size="sm"
                 className="shrink-0 px-2"
                 onClick={() =>
-                  setAddForm((prev) => {
-                    localStorage.setItem('library-orig-lang', prev.translationLanguage);
-                    localStorage.setItem('library-trans-lang', prev.originalLanguage);
-                    return {
-                      original: prev.translation,
-                      translation: prev.original,
-                      originalLanguage: prev.translationLanguage,
-                      translationLanguage: prev.originalLanguage,
-                    };
-                  })
+                  setAddForm((prev) => ({
+                    original: prev.translation,
+                    translation: prev.original,
+                    originalLanguage: prev.translationLanguage,
+                    translationLanguage: prev.originalLanguage,
+                  }))
                 }
                 title="Swap languages"
               >
@@ -306,7 +292,6 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
               <select
                 value={addForm.translationLanguage}
                 onChange={(e) => {
-                  localStorage.setItem('library-trans-lang', e.target.value);
                   setAddForm((prev) => ({ ...prev, translationLanguage: e.target.value }));
                 }}
                 className="px-2 py-2 text-sm rounded-md border border-input bg-background"

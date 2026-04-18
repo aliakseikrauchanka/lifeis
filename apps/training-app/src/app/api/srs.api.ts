@@ -186,6 +186,8 @@ export const generateSentenceTraining = async (params: {
   sentenceCount: number;
   level: CefrLevel;
   translationIds?: string[];
+  nativeLanguage?: string;
+  trainingLanguage?: string;
 }): Promise<SentenceTrainingGenerated> => {
   const res = await utilFetch('/srs/sentence-training/generate', {
     method: 'POST',
@@ -231,6 +233,8 @@ export const generateSentenceConstruction = async (params: {
   wordCount?: number;
   level: CefrLevel;
   translationIds?: string[];
+  nativeLanguage?: string;
+  trainingLanguage?: string;
 }): Promise<SentenceConstructionGenerated> => {
   const res = await utilFetch('/srs/sentence-construction/generate', {
     method: 'POST',

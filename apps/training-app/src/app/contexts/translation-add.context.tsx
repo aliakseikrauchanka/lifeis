@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { fetchTranslations, TranslationData } from '../api/srs.api';
+import { matchesAppLanguagePair } from '../constants/language-options';
+import { useAppLanguages } from '../hooks/use-app-languages';
 
 export interface TranslationAddPrefill {
   original?: string;
@@ -19,6 +21,7 @@ interface TranslationAddContextValue {
   openForEdit: (id: string, prefill: TranslationAddPrefill) => void;
   close: () => void;
   notifyChanged: () => void;
+  refreshIndex: () => Promise<void>;
   subscribeChanged: (fn: () => void) => () => void;
   findByOriginal: (text: string) => TranslationData | undefined;
 }
@@ -36,6 +39,11 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
   const [prefill, setPrefill] = useState<TranslationAddPrefill | null>(null);
   const subscribersRef = useRef(new Set<() => void>());
   const indexRef = useRef<Map<string, TranslationData>>(new Map());
+  const { nativeLanguage, trainingLanguage } = useAppLanguages();
+  const languagesRef = useRef({ nativeLanguage, trainingLanguage });
+  useEffect(() => {
+    languagesRef.current = { nativeLanguage, trainingLanguage };
+  }, [nativeLanguage, trainingLanguage]);
 
   const refreshIndex = useCallback(async () => {
     try {
@@ -56,7 +64,10 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
   }, [refreshIndex]);
 
   const findByOriginal = useCallback((text: string): TranslationData | undefined => {
-    return indexRef.current.get(normalize(text));
+    const match = indexRef.current.get(normalize(text));
+    if (!match) return undefined;
+    const { nativeLanguage: n, trainingLanguage: t } = languagesRef.current;
+    return matchesAppLanguagePair(match, n, t) ? match : undefined;
   }, []);
 
   const open = useCallback((p?: TranslationAddPrefill) => {
@@ -108,10 +119,23 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
       openForEdit,
       close,
       notifyChanged,
+      refreshIndex,
       subscribeChanged,
       findByOriginal,
     }),
-    [isOpen, mode, editId, prefill, open, openForEdit, close, notifyChanged, subscribeChanged, findByOriginal],
+    [
+      isOpen,
+      mode,
+      editId,
+      prefill,
+      open,
+      openForEdit,
+      close,
+      notifyChanged,
+      refreshIndex,
+      subscribeChanged,
+      findByOriginal,
+    ],
   );
 
   return <TranslationAddContext.Provider value={value}>{children}</TranslationAddContext.Provider>;
