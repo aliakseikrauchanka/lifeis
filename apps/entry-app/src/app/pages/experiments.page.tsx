@@ -1,6 +1,6 @@
 import React from 'react';
 import { FileInput } from '../components/audio-file/audio-file';
-import { checkPolishGrammar, translateToPolish } from '../api/assistants/assistants.api';
+import { translateToPolish } from '../api/assistants/assistants.api';
 import { OwnButton } from '@lifeis/common-ui';
 import { Link } from 'react-router-dom';
 import { Recording } from '../components/recording/recording';
@@ -12,13 +12,13 @@ export const ExperimentsPage = () => {
   const [openAiTranscript, setOpenAiTranscript] = React.useState<string>('');
   const [deepgramTranscript, setDeepgramTranscript] = React.useState<string>('');
 
-  const handleAssistant = async () => {
-    const input = document.getElementById('assistant-input') as HTMLInputElement;
-    const text = input.value;
+  // const handleAssistant = async () => {
+  //   const input = document.getElementById('assistant-input') as HTMLInputElement;
+  //   const text = input.value;
 
-    const response = await checkPolishGrammar(text);
-    setAssistantResponse(response);
-  };
+  //   const response = await checkPolishGrammar(text);
+  //   setAssistantResponse(response);
+  // };
 
   const handleGeminiAssistant = async () => {
     const input = document.getElementById('gemini-assistant-input') as HTMLInputElement;
@@ -55,11 +55,11 @@ export const ExperimentsPage = () => {
       <FileInput />
       <br />
 
-      <h3>OpenAI Assistant</h3>
+      {/* <h3>OpenAI Assistant</h3>
       <input id="assistant-input" />
       <OwnButton onClick={handleAssistant}>Send</OwnButton>
       <div>OpenAI assistant response:</div>
-      <div>{assistantResponse}</div>
+      <div>{assistantResponse}</div> */}
 
       <br />
 

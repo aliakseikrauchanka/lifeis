@@ -12,7 +12,7 @@
         "platform": "node",
         "outputPath": "dist/apps/logs-mcp-server",
         "format": ["cjs"],
-        "bundle": false,
+        "bundle": true,
         "main": "apps/logs-mcp-server/src/main.ts",
         "tsConfig": "apps/logs-mcp-server/tsconfig.app.json",
         "assets": ["apps/logs-mcp-server/src/assets"],
@@ -25,7 +25,9 @@
         }
       },
       "configurations": {
-        "development": {},
+        "development": {
+          "bundle": false
+        },
         "production": {
           "esbuildOptions": {
             "sourcemap": false,
@@ -33,6 +35,21 @@
               ".js": ".js"
             }
           }
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "options": {
+        "buildTarget": "logs-mcp-server:build"
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "logs-mcp-server:build:development"
+        },
+        "production": {
+          "buildTarget": "logs-mcp-server:build:production"
         }
       }
     }

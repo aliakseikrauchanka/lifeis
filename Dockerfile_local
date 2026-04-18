@@ -4,6 +4,6 @@ WORKDIR /app
 
 RUN apk add --no-cache python3 make g++ ffmpeg
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm install
 COPY . .

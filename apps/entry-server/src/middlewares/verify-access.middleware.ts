@@ -11,6 +11,14 @@ export const verifyAccessToken = (req, res: Response, next) => {
 
   const accessToken = req.headers.authorization?.split(' ')[1];
 
+  // Service API key for server-to-server calls (e.g. MCP server)
+  if (process.env.SERVICE_API_KEY && accessToken === process.env.SERVICE_API_KEY) {
+    res.locals.userId = process.env.SERVICE_USER_ID;
+    console.log('debug', 'res.locals.userId', res.locals.userId);
+    next();
+    return;
+  }
+
   if (!accessToken) {
     return res.status(401).json({ error: 'Access token missing' });
   }
