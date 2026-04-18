@@ -16,7 +16,7 @@ import {
   SrsCard,
 } from '../api/srs.api';
 import { useNavigate } from 'react-router-dom';
-import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, ArrowUpDown, Languages, Mic, MicOff, X, Pencil, Check, Sparkles } from 'lucide-react';
+import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, ArrowUpDown, Languages, Mic, MicOff, X, Pencil, Check, Sparkles, PenLine } from 'lucide-react';
 import {
   getSpeechRecognitionConstructor,
   type BrowserSpeechRecognition,
@@ -235,6 +235,11 @@ export function LibraryPage() {
   const handleTrainWithSelected = () => {
     if (selectedIds.size === 0) return;
     navigate(`/sentence-training?ids=${Array.from(selectedIds).join(',')}`);
+  };
+
+  const handleConstructWithSelected = () => {
+    if (selectedIds.size === 0) return;
+    navigate(`/sentence-construction?ids=${Array.from(selectedIds).join(',')}`);
   };
 
   const unenrolledIds = filteredTranslations
@@ -503,6 +508,12 @@ export function LibraryPage() {
             <Button size="sm" onClick={handleTrainWithSelected} className="gap-1">
               <Sparkles className="h-4 w-4" />
               Train with selected ({selectedIds.size})
+            </Button>
+          )}
+          {selectedIds.size > 0 && (
+            <Button size="sm" variant="outline" onClick={handleConstructWithSelected} className="gap-1">
+              <PenLine className="h-4 w-4" />
+              Construct with selected ({selectedIds.size})
             </Button>
           )}
         </div>

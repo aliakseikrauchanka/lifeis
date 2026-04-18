@@ -198,6 +198,52 @@ export const checkSentenceTraining = async (payload: {
   return res.json();
 };
 
+export interface SentenceConstructionGenerated {
+  words: SentenceTrainingWord[];
+  originalLanguage: string;
+  translationLanguage: string;
+}
+
+export const generateSentenceConstruction = async (params: {
+  wordCount?: number;
+  level: CefrLevel;
+  translationIds?: string[];
+}): Promise<SentenceConstructionGenerated> => {
+  const res = await utilFetch('/srs/sentence-construction/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.message || 'Failed to generate sentence construction');
+  }
+  return res.json();
+};
+
+export interface SentenceConstructionCheckResult {
+  grammarFeedback: string;
+  levelSuggestion: string;
+  improved: string;
+  usedWords: string[];
+  missingWords: string[];
+}
+
+export const checkSentenceConstruction = async (payload: {
+  userText: string;
+  words: SentenceTrainingWord[];
+  level: CefrLevel;
+  originalLanguage: string;
+}): Promise<SentenceConstructionCheckResult> => {
+  const res = await utilFetch('/srs/sentence-construction/check', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error('Failed to check sentence construction');
+  return res.json();
+};
+
 export const fetchTranslations = async (): Promise<TranslationData[]> => {
   const res = await utilFetch('/translations');
   if (!res.ok) throw new Error('Failed to fetch translations');

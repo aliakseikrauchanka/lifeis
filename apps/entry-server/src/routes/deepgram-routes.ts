@@ -76,7 +76,7 @@ routes.post('/transcribe', verifyAccessToken, uploadMiddlewareFactory.single('au
   if (req.headers.mime === 'audio/mp3;') {
     const translation = await transcribeFile(filePath);
     safeUnlink(filePath);
-    res.send(translation);
+    return res.send(translation);
   }
 
   const filePathMp3 = mp3FilePath;

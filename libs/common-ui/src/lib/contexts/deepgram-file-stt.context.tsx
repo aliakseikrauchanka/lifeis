@@ -44,11 +44,26 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({
 
   const startRecording = useCallback(
     (onStop: (blob: Blob) => void) => {
-      const audioConstraints: MediaTrackConstraints = audioInputDeviceId
-        ? { deviceId: { exact: audioInputDeviceId } }
-        : {};
-      navigator.mediaDevices
-        .getUserMedia({ audio: audioConstraints })
+      const getStream = async () => {
+        if (audioInputDeviceId) {
+          try {
+            return await navigator.mediaDevices.getUserMedia({
+              audio: { deviceId: { exact: audioInputDeviceId } },
+            });
+          } catch (err) {
+            if ((err as DOMException)?.name === 'OverconstrainedError') {
+              console.warn(
+                '[DG File STT] Selected microphone is unavailable, falling back to default',
+              );
+              return navigator.mediaDevices.getUserMedia({ audio: true });
+            }
+            throw err;
+          }
+        }
+        return navigator.mediaDevices.getUserMedia({ audio: true });
+      };
+
+      getStream()
         .then((stream) => {
           let options: MediaRecorderOptions | undefined;
           if (MediaRecorder.isTypeSupported('audio/webm; codecs=opus')) {
@@ -72,7 +87,7 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({
             stream.getTracks().forEach((track) => track.stop());
           };
 
-          mediaRecorder.start();
+          mediaRecorder.start(250);
         })
         .catch((err) => {
           console.error('Error while recording:', err);
@@ -82,8 +97,7 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({
   );
 
   const stopRecording = useCallback(() => {
-    if (mediaRecorderRef?.state === 'recording') {
-      mediaRecorderRef.pause();
+    if (mediaRecorderRef && mediaRecorderRef.state !== 'inactive') {
       mediaRecorderRef.stop();
     }
   }, []);
@@ -93,15 +107,28 @@ const DeepgramFileSTTProvider: React.FC<DeepgramFileSTTProviderProps> = ({
       cancelledRef.current = false;
       activeIdRef.current = id;
       setActiveId(id);
+      setRecordedBlobs((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
 
       startRecording(async (blob: Blob) => {
         const idForCaption = activeIdRef.current;
         if (!idForCaption || cancelledRef.current) return;
 
-        // Store blob for playback (even if transcription fails)
+        console.log('[DG File STT] Recorded blob', { size: blob.size, type: blob.type });
+        if (blob.size === 0) {
+          console.warn('[DG File STT] Skipping empty blob');
+          setActiveId(undefined);
+          activeIdRef.current = undefined;
+          return;
+        }
+
+        // Store latest blob only (overwrites previous take for this id)
         setRecordedBlobs((prev) => ({
           ...prev,
-          [idForCaption]: [...(prev[idForCaption] || []), blob],
+          [idForCaption]: [blob],
         }));
 
         try {

@@ -456,5 +456,172 @@ No extra fields.`,
     }
   });
 
+  // POST /sentence-construction/generate — pick words (random or by ids), return just the words
+  router.post('/sentence-construction/generate', verifyAccessToken, async (req, res) => {
+    try {
+      const levelRaw = typeof req.body?.level === 'string' ? req.body.level : '';
+      const translationIdsRaw = req.body?.translationIds;
+      const hasExplicitIds = Array.isArray(translationIdsRaw) && translationIdsRaw.length > 0;
+
+      if (!CEFR_LEVELS.has(levelRaw)) {
+        return res.status(400).json({ message: 'level must be one of A1, A2, B1, B2, C1, C2' });
+      }
+      const userId = res.locals.userId;
+
+      let picked: Array<{ translation: { _id: ObjectId; original: string; translation: string; originalLanguage: string; translationLanguage: string } }>;
+      let originalLanguage: string;
+      let translationLanguage: string;
+
+      if (hasExplicitIds) {
+        if (translationIdsRaw.length > 10) {
+          return res.status(400).json({ message: 'Maximum 10 translationIds' });
+        }
+        const objectIds: ObjectId[] = [];
+        for (const id of translationIdsRaw) {
+          try {
+            objectIds.push(new ObjectId(String(id)));
+          } catch {
+            return res.status(400).json({ message: `Invalid translationId: ${id}` });
+          }
+        }
+        const cards = await srsCollection
+          .aggregate([
+            { $match: { owner_id: userId, translation_id: { $in: objectIds } } },
+            {
+              $lookup: {
+                from: 'translations',
+                localField: 'translation_id',
+                foreignField: '_id',
+                as: 'translation',
+              },
+            },
+            { $unwind: '$translation' },
+          ])
+          .toArray();
+        if (cards.length !== objectIds.length) {
+          return res.status(404).json({ message: 'One or more translations are not enrolled' });
+        }
+        originalLanguage = cards[0].translation.originalLanguage;
+        translationLanguage = cards[0].translation.translationLanguage;
+        const mismatched = cards.some(
+          (c) =>
+            c.translation.originalLanguage !== originalLanguage ||
+            c.translation.translationLanguage !== translationLanguage,
+        );
+        if (mismatched) {
+          return res.status(400).json({ message: 'All selected translations must share the same language pair' });
+        }
+        picked = cards as typeof picked;
+      } else {
+        const wordCountRaw = Number(req.body?.wordCount);
+        if (!Number.isInteger(wordCountRaw) || wordCountRaw < 1 || wordCountRaw > 10) {
+          return res.status(400).json({ message: 'wordCount must be an integer between 1 and 10' });
+        }
+        const sampled = await srsCollection
+          .aggregate([
+            { $match: { owner_id: userId } },
+            { $sample: { size: 100 } },
+            {
+              $lookup: {
+                from: 'translations',
+                localField: 'translation_id',
+                foreignField: '_id',
+                as: 'translation',
+              },
+            },
+            { $unwind: '$translation' },
+          ])
+          .toArray();
+        if (sampled.length === 0) {
+          return res.status(404).json({ message: 'No enrolled cards available' });
+        }
+        originalLanguage = sampled[0].translation.originalLanguage;
+        translationLanguage = sampled[0].translation.translationLanguage;
+        const sameLang = sampled.filter(
+          (c) =>
+            c.translation.originalLanguage === originalLanguage &&
+            c.translation.translationLanguage === translationLanguage,
+        );
+        if (sameLang.length < wordCountRaw) {
+          return res
+            .status(404)
+            .json({ message: `Need at least ${wordCountRaw} enrolled cards in the same language (have ${sameLang.length})` });
+        }
+        picked = sameLang.slice(0, wordCountRaw) as typeof picked;
+      }
+
+      const words = picked.map((c) => ({
+        translationId: c.translation._id.toString(),
+        original: c.translation.original,
+        translation: c.translation.translation,
+      }));
+
+      res.json({ words, originalLanguage, translationLanguage });
+    } catch (error) {
+      console.error('Error generating sentence construction:', error);
+      res.status(500).json({ message: 'Error generating sentence construction' });
+    }
+  });
+
+  // POST /sentence-construction/check — grammar + CEFR-level-appropriate suggestions
+  router.post('/sentence-construction/check', verifyAccessToken, async (req, res) => {
+    try {
+      const { userText, words, level, originalLanguage } = req.body;
+
+      if (typeof userText !== 'string' || userText.length === 0 || userText.length > MAX_TRANSCRIPT_LENGTH) {
+        return res.status(400).json({ message: 'userText must be a non-empty string' });
+      }
+      if (!Array.isArray(words) || words.length === 0 || words.length > 10) {
+        return res.status(400).json({ message: 'words must be a non-empty array (max 10)' });
+      }
+      const wordOriginals: string[] = [];
+      for (const w of words) {
+        if (!w || typeof w.original !== 'string' || w.original.length === 0 || w.original.length > 200) {
+          return res.status(400).json({ message: 'each word must have a non-empty original string' });
+        }
+        wordOriginals.push(w.original);
+      }
+      if (!CEFR_LEVELS.has(level)) {
+        return res.status(400).json({ message: 'level must be one of A1, A2, B1, B2, C1, C2' });
+      }
+      if (!ALLOWED_LANGUAGE_CODES.has(originalLanguage)) {
+        return res.status(400).json({ message: 'Invalid originalLanguage code' });
+      }
+
+      const completion = await openAiModel.chat.completions.create({
+        model: 'gpt-4o-mini',
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `You are a warm, supportive language coach reviewing sentences the user wrote in ${originalLanguage} using a given set of words. Target CEFR level: ${level}. Return JSON with:
+- "grammarFeedback": **MUST be in Russian (Cyrillic). Never Polish, English, or any other language.** Point out every spelling, case, gender, conjugation, agreement, preposition, and word-order mistake with the correct form. Polite, encouraging tone; address the user as "ты". If the text is correct, praise and say there is nothing to fix.
+- "levelSuggestion": **MUST be in Russian (Cyrillic).** Suggest how to rewrite the user's text so it sounds more like CEFR ${level} — richer vocabulary, more idiomatic phrasing, grammar structures typical for ${level}. Explain briefly *why* each suggestion is more ${level}. Kind, supportive tone.
+- "improved": the user's text rewritten in ${originalLanguage} to match CEFR ${level} (grammar-correct, more natural, ${level}-appropriate vocabulary and structures). Preserve meaning and keep using the same target words where possible.
+- "usedWords": array of the original target words (from the given list) that appear in the user's text (case-insensitive, stem-tolerant match).
+- "missingWords": array of the target words NOT found in the user's text.
+No extra fields.`,
+          },
+          {
+            role: 'user',
+            content: `Target words: ${wordOriginals.join(', ')}\n\nUser's text:\n${userText}`,
+          },
+        ],
+      });
+      const raw = completion.choices[0].message.content ?? '{}';
+      const parsed = JSON.parse(raw);
+      const grammarFeedback = typeof parsed.grammarFeedback === 'string' ? parsed.grammarFeedback : '';
+      const levelSuggestion = typeof parsed.levelSuggestion === 'string' ? parsed.levelSuggestion : '';
+      const improved = typeof parsed.improved === 'string' ? parsed.improved : '';
+      const usedWords = Array.isArray(parsed.usedWords) ? parsed.usedWords.filter((x: unknown) => typeof x === 'string') : [];
+      const missingWords = Array.isArray(parsed.missingWords) ? parsed.missingWords.filter((x: unknown) => typeof x === 'string') : [];
+
+      res.json({ grammarFeedback, levelSuggestion, improved, usedWords, missingWords });
+    } catch (error) {
+      console.error('Error checking sentence construction:', error);
+      res.status(500).json({ message: 'Error checking sentence construction' });
+    }
+  });
+
   return router;
 };

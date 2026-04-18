@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { DeepgramFileSTTProvider, useSpeechToText } from '@lifeis/common-ui';
+import { DeepgramFileSTTProvider, useAudioDevices } from '@lifeis/common-ui';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Mic, Square, Volume2 } from 'lucide-react';
+import { Volume2 } from 'lucide-react';
 import {
   generateSentenceTraining,
   checkSentenceTraining,
@@ -14,13 +14,13 @@ import {
 } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import { GradeButtons } from '../components/grade-buttons';
+import { SpeechInputButton } from '../components/speech-input-button';
 
 type Phase = 'idle' | 'memorize' | 'recall' | 'recording' | 'checking' | 'checked';
 
 const RECORDING_ID = 'sentence-training';
 
 function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: string) => void }) {
-  const { startListening, pauseListening, caption, connectionReady } = useSpeechToText();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlIds = (searchParams.get('ids') || '').split(',').map((s) => s.trim()).filter(Boolean);
   const autoTriggeredRef = useRef(false);
@@ -68,8 +68,6 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
   const [grades, setGrades] = useState<Record<string, Rating>>({});
   const [grading, setGrading] = useState<string | null>(null);
 
-  const processedTranscriptRef = useRef<string | null>(null);
-
   useEffect(() => {
     if (autoTriggeredRef.current) return;
     if (urlIds.length === 0) return;
@@ -92,7 +90,6 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
     setCorrected('');
     setGrades({});
     setError(null);
-    processedTranscriptRef.current = null;
   };
 
   const handleGenerate = async (translationIds?: string[]) => {
@@ -125,31 +122,12 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
     setGrammarFeedback('');
     setMatchFeedback('');
     setCorrected('');
-    processedTranscriptRef.current = null;
     setPhase('recall');
   };
 
-  const handleStartRecording = () => {
-    setError(null);
-    processedTranscriptRef.current = null;
-    startListening(RECORDING_ID);
-    setPhase('recording');
-  };
-
-  const handleStopRecording = () => {
-    pauseListening();
-    setPhase('recall');
-  };
-
-  useEffect(() => {
-    if (phase !== 'recall' && phase !== 'recording') return;
-    const parts = caption[RECORDING_ID];
-    if (!parts?.length) return;
-    const text = parts.join(' ').trim();
-    if (!text || processedTranscriptRef.current === text) return;
-    processedTranscriptRef.current = text;
-    setUserText((prev) => (prev ? `${prev} ${text}` : text));
-  }, [phase, caption]);
+  const handleAppendTranscript = useCallback((text: string) => {
+    setUserText(text);
+  }, []);
 
   const handleCheck = async () => {
     const text = userText.trim();
@@ -362,21 +340,17 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
                   placeholder="Type the sentences you remember…"
                 />
                 <div className="flex items-center gap-2">
-                  {phase === 'recording' ? (
-                    <Button variant="destructive" size="sm" onClick={handleStopRecording} className="gap-1">
-                      <Square className="h-4 w-4" /> Stop
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleStartRecording}
-                      disabled={!connectionReady || phase === 'checking'}
-                      className="gap-1"
-                    >
-                      <Mic className="h-4 w-4" /> Record
-                    </Button>
-                  )}
+                  <SpeechInputButton
+                    id={RECORDING_ID}
+                    onAppend={handleAppendTranscript}
+                    disabled={phase === 'checking'}
+                    onStart={() => {
+                      setError(null);
+                      setPhase('recording');
+                    }}
+                    onStop={() => setPhase('recall')}
+                    active={phase === 'recall' || phase === 'recording'}
+                  />
                   <Button
                     size="sm"
                     onClick={handleCheck}
@@ -457,8 +431,13 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
 
 export function SentenceTrainingPage() {
   const [language, setLanguage] = useState<string>('');
+  const { inputDeviceId, outputDeviceId } = useAudioDevices();
   return (
-    <DeepgramFileSTTProvider language={language || undefined}>
+    <DeepgramFileSTTProvider
+      language={language || undefined}
+      audioInputDeviceId={inputDeviceId || undefined}
+      audioOutputDeviceId={outputDeviceId || undefined}
+    >
       <SentenceTrainingBody onLanguageChange={setLanguage} />
     </DeepgramFileSTTProvider>
   );

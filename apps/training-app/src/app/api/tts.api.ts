@@ -1,5 +1,7 @@
 import { utilFetch } from '@lifeis/common-ui';
 
+const OUTPUT_DEVICE_KEY = 'audio-output-device';
+
 export const speak = async (text: string, languageCode: string): Promise<void> => {
   try {
     const res = await utilFetch(`/gemini/text-to-speech?l=${languageCode}`, {
@@ -19,6 +21,16 @@ export const speak = async (text: string, languageCode: string): Promise<void> =
     const url = URL.createObjectURL(blob);
     const audio = new Audio(url);
     audio.onended = () => URL.revokeObjectURL(url);
+
+    const deviceId = typeof window !== 'undefined' ? localStorage.getItem(OUTPUT_DEVICE_KEY) : null;
+    const audioAny = audio as HTMLAudioElement & { setSinkId?: (id: string) => Promise<void> };
+    if (deviceId && typeof audioAny.setSinkId === 'function') {
+      try {
+        await audioAny.setSinkId(deviceId);
+      } catch {
+        // setSinkId may fail if device is unavailable; fall back to default
+      }
+    }
     audio.play();
   } catch (e) {
     console.error('TTS error:', e);

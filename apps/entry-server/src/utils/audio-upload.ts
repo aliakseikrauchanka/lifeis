@@ -7,11 +7,13 @@ const getFileName = (mime: string | string[]) => {
   if (mimeStr === 'audio/mp3;' || mimeStr === 'audio/mpeg') {
     return 'record.mp3';
   }
+  if (mimeStr?.includes('webm')) {
+    return 'record.webm';
+  }
   if (mimeStr === 'audio/ogg' || mimeStr?.includes('opus')) {
     return 'record.ogg';
   }
-  const fileName = mimeStr === 'audio/webm; codecs=opus' ? 'record.webm' : 'record.mp4';
-  return fileName;
+  return 'record.mp4';
 };
 
 const storage = multer.diskStorage({
