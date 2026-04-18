@@ -15,7 +15,7 @@
     "node": ">=v22.12.0"
   },
   "dependencies": {
-    "@clerk/nextjs": "^6.36.5",
+    "@clerk/nextjs": "^6.39.2",
     "@deepgram/sdk": "3.9.0",
     "@elevenlabs/elevenlabs-js": "^2.37.0",
     "@elevenlabs/react": "^0.14.1",
@@ -42,7 +42,7 @@
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "date-fns": "^4.1.0",
-    "dompurify": "^3.1.6",
+    "dompurify": "^3.4.0",
     "dotenv": "^17.3.1",
     "express": "4.22.1",
     "flagsmith": "^5.0.0",
