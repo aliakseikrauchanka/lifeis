@@ -89,10 +89,12 @@ function createMcpServer() {
 const app = express();
 app.use(express.json());
 
-// Auth middleware for MCP endpoint
+// Auth middleware for MCP endpoint — accepts token via Authorization header or ?token= query param
 app.use('/mcp', (req, res, next) => {
-  const auth = req.headers.authorization;
-  if (!auth || auth !== `Bearer ${mcpAuthToken}`) {
+  const headerOk = req.headers.authorization === `Bearer ${mcpAuthToken}`;
+  const queryToken = typeof req.query.token === 'string' ? req.query.token : undefined;
+  const queryOk = queryToken === mcpAuthToken;
+  if (!headerOk && !queryOk) {
     res.status(401).json({ error: 'Unauthorized' });
     return;
   }
