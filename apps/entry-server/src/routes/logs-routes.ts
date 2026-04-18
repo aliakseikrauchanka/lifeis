@@ -12,6 +12,8 @@ import { resolveBasketForMessage } from '../helpers/basket-resolver';
 import multer from 'multer';
 import path from 'path';
 
+const DEFAULT_LIST_LOGS_RANGE_DAYS = 30;
+
 export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeModel) => {
   const router = Router();
 
@@ -55,9 +57,18 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
   router.get('/', verifyAccessToken, async (req, res) => {
     // from, to in query params in ISO format; basket_id for filtering by basket
     const userId = res.locals.userId;
-    const from = req.query.from as string;
-    const to = req.query.to as string;
+    let from = req.query.from as string;
+    let to = req.query.to as string;
     const basketId = req.query.basket_id as string;
+
+    // If neither from nor to is specified, default to the last DEFAULT_LIST_LOGS_RANGE_DAYS days
+    if (!from && !to) {
+      const now = new Date();
+      const rangeStart = new Date(now.getTime() - DEFAULT_LIST_LOGS_RANGE_DAYS * 24 * 60 * 60 * 1000);
+      from = rangeStart.toISOString();
+      to = now.toISOString();
+    }
+
     let filter: Record<string, unknown> = {
       owner_id: userId,
     };
