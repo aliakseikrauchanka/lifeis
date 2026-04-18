@@ -95,19 +95,19 @@ routes.post('/check-polish-grammar', verifyAccessToken, async (req, res) => {
   res.status(200).send({ runId: run.id, threadId: run.thread_id });
 });
 
-routes.get('/thread/run', verifyAccessToken, async (req, res) => {
-  const threadId = req.query.threadId as string;
-  const runId = req.query.runId as string;
-  try {
-    const run = await openai.beta.threads.runs.retrieve(threadId, runId);
-    res.status(200).send(run);
-  } catch (e) {
-    // SECURITY FIX: Previously the catch block only logged and never sent a response,
-    // leaving the connection permanently open (resource leak / DoS amplifier).
-    console.error('Error retrieving thread run:', e);
-    res.status(500).json({ error: 'Failed to retrieve thread run' });
-  }
-});
+// routes.get('/thread/run', verifyAccessToken, async (req, res) => {
+//   const threadId = req.query.threadId as string;
+//   const runId = req.query.runId as string;
+//   try {
+//     const run = await openai.beta.threads.runs.retrieve(threadId, runId);
+//     res.status(200).send(run);
+//   } catch (e) {
+//     // SECURITY FIX: Previously the catch block only logged and never sent a response,
+//     // leaving the connection permanently open (resource leak / DoS amplifier).
+//     console.error('Error retrieving thread run:', e);
+//     res.status(500).json({ error: 'Failed to retrieve thread run' });
+//   }
+// });
 
 routes.get('/thread/messages', verifyAccessToken, async (req, res) => {
   const threadId = req.query.threadId as string;

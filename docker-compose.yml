@@ -48,6 +48,8 @@ services:
 
       - EXTENSION_ORIGIN=${EXTENSION_ORIGIN}
       - EXTENSION_CLIENT_ID=${EXTENSION_CLIENT_ID}
+      - SERVICE_API_KEY=${SERVICE_API_KEY}
+      - SERVICE_USER_ID=${SERVICE_USER_ID}
 
   logs-app:
     extends:
@@ -70,6 +72,21 @@ services:
     environment:
       - VITE_BE=${NGINX_DOMAIN}
       - VITE_CLIENT_ID=${TRAINING_CLIENT_ID}
+
+  logs-mcp-server:
+    extends:
+      file: docker-compose.base.yml
+      service: nx-app-base
+    command: npx nx run logs-mcp-server:serve --host=0.0.0.0
+    ports:
+      - ${MCP_PORT}:3000
+    depends_on:
+      - entry-server
+    environment:
+      - SERVICE_API_KEY=${SERVICE_API_KEY}
+      # ver starnge that it works but ${NGINX_DOMAIN} did not
+      - LIFEIS_BACKEND_URL=http://entry-server:3000
+      - MCP_AUTH_TOKEN=${MCP_AUTH_TOKEN}
 
   # telegram-bot:
   #   extends:

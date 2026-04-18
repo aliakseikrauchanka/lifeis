@@ -1,0 +1,24 @@
+FROM node:22-alpine3.19
+
+WORKDIR /app
+
+# Install dependencies
+COPY package.json package-lock.json ./
+COPY nx.json ./
+RUN npm install --legacy-peer-deps
+
+# Copy source (app + libs + configs)
+COPY apps/logs-mcp-server ./apps/logs-mcp-server
+COPY libs ./libs
+COPY tsconfig.base.json ./
+
+# Build
+RUN npx nx run logs-mcp-server:build --configuration=production --skip-nx-cache
+
+# Install production deps for the built output
+WORKDIR /app/dist/apps/logs-mcp-server
+RUN npm install --legacy-peer-deps --omit=dev
+
+WORKDIR /app
+
+CMD ["node", "./dist/apps/logs-mcp-server/main.js"]
