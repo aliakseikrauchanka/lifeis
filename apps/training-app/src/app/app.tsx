@@ -5,6 +5,7 @@ import { CONFIG } from '../config';
 import { useEffect, useState } from 'react';
 import { StudyPage } from './pages/study.page';
 import { LibraryPage } from './pages/library.page';
+import { SentenceTrainingPage } from './pages/sentence-training.page';
 
 export function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(isUserLoggedIn());
@@ -40,6 +41,18 @@ export function App() {
                   Study
                 </NavLink>
                 <NavLink
+                  to="/sentence-training"
+                  className={({ isActive }) =>
+                    `px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
+                      isActive
+                        ? 'text-violet-900 bg-violet-500/12'
+                        : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
+                    }`
+                  }
+                >
+                  Sentence Training
+                </NavLink>
+                <NavLink
                   to="/library"
                   className={({ isActive }) =>
                     `px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
@@ -66,6 +79,7 @@ export function App() {
               <Routes>
                 <Route path="/" element={<StudyPage />} />
                 <Route path="/library" element={<LibraryPage />} />
+                <Route path="/sentence-training" element={<SentenceTrainingPage />} />
               </Routes>
             </main>
           )}

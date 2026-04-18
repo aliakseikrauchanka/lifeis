@@ -1,11 +1,15 @@
 import { Router } from 'express';
 import { MongoClient, ObjectId } from 'mongodb';
+import OpenAI from 'openai';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { schedule, Rating } from '../helpers/srs-scheduler';
 
 const VALID_RATINGS = new Set<Rating>(['again', 'hard', 'good', 'easy']);
+const ALLOWED_LANGUAGE_CODES = new Set(['pl', 'ru-RU', 'en-US', 'de-DE', 'fr-FR', 'sr-RS', 'fi', 'es']);
+const MAX_TRANSCRIPT_LENGTH = 2000;
+const CEFR_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 
-export const getSrsRoutes = (client: MongoClient) => {
+export const getSrsRoutes = (client: MongoClient, openAiModel: OpenAI) => {
   const router = Router();
   const db = client.db('lifeis');
   const srsCollection = db.collection('translation_srs');
@@ -256,6 +260,199 @@ export const getSrsRoutes = (client: MongoClient) => {
     } catch (error) {
       console.error('Error unenrolling translation:', error);
       res.status(500).json({ message: 'Error unenrolling translation' });
+    }
+  });
+
+  // POST /sentence-training/generate — pick N due words (same language), generate story
+  router.post('/sentence-training/generate', verifyAccessToken, async (req, res) => {
+    try {
+      const sentenceCountRaw = Number(req.body?.sentenceCount);
+      const levelRaw = typeof req.body?.level === 'string' ? req.body.level : '';
+      const translationIdsRaw = req.body?.translationIds;
+      const hasExplicitIds = Array.isArray(translationIdsRaw) && translationIdsRaw.length > 0;
+
+      if (!Number.isInteger(sentenceCountRaw) || sentenceCountRaw < 1 || sentenceCountRaw > 3) {
+        return res.status(400).json({ message: 'sentenceCount must be an integer between 1 and 3' });
+      }
+      if (!CEFR_LEVELS.has(levelRaw)) {
+        return res.status(400).json({ message: 'level must be one of A1, A2, B1, B2, C1, C2' });
+      }
+
+      const sentenceCount = sentenceCountRaw;
+      const level = levelRaw;
+      const userId = res.locals.userId;
+
+      let picked: Array<{ translation: { _id: ObjectId; original: string; translation: string; originalLanguage: string; translationLanguage: string } }>;
+      let originalLanguage: string;
+      let translationLanguage: string;
+
+      if (hasExplicitIds) {
+        if (translationIdsRaw.length > 5) {
+          return res.status(400).json({ message: 'Maximum 5 translationIds' });
+        }
+        const objectIds: ObjectId[] = [];
+        for (const id of translationIdsRaw) {
+          try {
+            objectIds.push(new ObjectId(String(id)));
+          } catch {
+            return res.status(400).json({ message: `Invalid translationId: ${id}` });
+          }
+        }
+        const cards = await srsCollection
+          .aggregate([
+            { $match: { owner_id: userId, translation_id: { $in: objectIds } } },
+            {
+              $lookup: {
+                from: 'translations',
+                localField: 'translation_id',
+                foreignField: '_id',
+                as: 'translation',
+              },
+            },
+            { $unwind: '$translation' },
+          ])
+          .toArray();
+        if (cards.length !== objectIds.length) {
+          return res.status(404).json({ message: 'One or more translations are not enrolled' });
+        }
+        originalLanguage = cards[0].translation.originalLanguage;
+        translationLanguage = cards[0].translation.translationLanguage;
+        const mismatched = cards.some(
+          (c) =>
+            c.translation.originalLanguage !== originalLanguage ||
+            c.translation.translationLanguage !== translationLanguage,
+        );
+        if (mismatched) {
+          return res.status(400).json({ message: 'All selected translations must share the same language pair' });
+        }
+        picked = cards as typeof picked;
+      } else {
+        const wordCountRaw = Number(req.body?.wordCount);
+        if (!Number.isInteger(wordCountRaw) || wordCountRaw < 1 || wordCountRaw > 5) {
+          return res.status(400).json({ message: 'wordCount must be an integer between 1 and 5' });
+        }
+        const dueCards = await srsCollection
+          .aggregate([
+            { $match: { owner_id: userId, due_at: { $lte: Date.now() } } },
+            { $sample: { size: 50 } },
+            {
+              $lookup: {
+                from: 'translations',
+                localField: 'translation_id',
+                foreignField: '_id',
+                as: 'translation',
+              },
+            },
+            { $unwind: '$translation' },
+          ])
+          .toArray();
+
+        if (dueCards.length === 0) {
+          return res.status(404).json({ message: 'No due cards available' });
+        }
+
+        originalLanguage = dueCards[0].translation.originalLanguage;
+        translationLanguage = dueCards[0].translation.translationLanguage;
+        const sameLang = dueCards.filter(
+          (c) =>
+            c.translation.originalLanguage === originalLanguage &&
+            c.translation.translationLanguage === translationLanguage,
+        );
+        if (sameLang.length < wordCountRaw) {
+          return res
+            .status(404)
+            .json({ message: `Need at least ${wordCountRaw} due cards in the same language (have ${sameLang.length})` });
+        }
+        picked = sameLang.slice(0, wordCountRaw) as typeof picked;
+      }
+
+      const words = picked.map((c) => ({
+        translationId: c.translation._id.toString(),
+        original: c.translation.original,
+        translation: c.translation.translation,
+      }));
+
+      const wordList = words.map((w) => w.original).join(', ');
+
+      const sentencesClause =
+        sentenceCount === 1
+          ? 'exactly one short sentence'
+          : `exactly ${sentenceCount} short sentences that read as consecutive lines of a short story (same subject/scene; each sentence directly continues the previous one — no topic jump)`;
+
+      const completion = await openAiModel.chat.completions.create({
+        model: 'gpt-4o-mini',
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `Return a JSON object with:
+- "story": a single string in ${originalLanguage} consisting of ${sentencesClause}. Match CEFR language level ${level} — use vocabulary and grammar typical for a ${level} learner. The story must use all the given words (each at least once). Join sentences with a single space, no numbering or bullets.
+- "translation": the same story translated into ${translationLanguage} as a single natural string (no numbering, no bullets).
+No extra fields.`,
+          },
+          { role: 'user', content: wordList },
+        ],
+      });
+      const raw = completion.choices[0].message.content ?? '{}';
+      const parsed = JSON.parse(raw);
+      const story: string = typeof parsed.story === 'string' ? parsed.story.trim() : '';
+      const translation: string = typeof parsed.translation === 'string' ? parsed.translation.trim() : '';
+
+      res.json({ words, story, translation, originalLanguage, translationLanguage });
+    } catch (error) {
+      console.error('Error generating sentence training:', error);
+      res.status(500).json({ message: 'Error generating sentence training' });
+    }
+  });
+
+  // POST /sentence-training/check — score transcript vs target, return translations
+  router.post('/sentence-training/check', verifyAccessToken, async (req, res) => {
+    try {
+      const { story, transcript, originalLanguage, translationLanguage } = req.body;
+
+      if (typeof story !== 'string' || story.length === 0 || story.length > MAX_TRANSCRIPT_LENGTH) {
+        return res.status(400).json({ message: 'story must be a non-empty string' });
+      }
+      if (typeof transcript !== 'string' || transcript.length === 0 || transcript.length > MAX_TRANSCRIPT_LENGTH) {
+        return res.status(400).json({ message: 'transcript must be a non-empty string' });
+      }
+      if (!ALLOWED_LANGUAGE_CODES.has(originalLanguage)) {
+        return res.status(400).json({ message: 'Invalid originalLanguage code' });
+      }
+      if (!ALLOWED_LANGUAGE_CODES.has(translationLanguage)) {
+        return res.status(400).json({ message: 'Invalid translationLanguage code' });
+      }
+
+      const completion = await openAiModel.chat.completions.create({
+        model: 'gpt-4o-mini',
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `You are a warm, supportive language coach evaluating a recall attempt of a short target story in ${originalLanguage} (the user typed or spoke it from memory — STT errors are possible). Return JSON with:
+- "score": integer 0-10 reflecting how closely the transcript matches the target (content, word order, completeness; ignore minor punctuation/case; STT errors are partial penalties).
+- "grammarFeedback": **MUST be written in Russian (ru-RU) using the Cyrillic alphabet. Never Polish, English, or any other language — only Russian.** Analyse the user's transcript on its own, as standalone ${originalLanguage} text, regardless of whether it matches the target. Point out every spelling, case, gender, conjugation, agreement, preposition, and word-order mistake with the correct form. Use a polite, encouraging tone (e.g. start with a brief positive note, then list corrections kindly; address the user as "ты"). Do not mention the target story here. If the transcript is already fully correct, praise the user and say there is nothing to correct.
+- "matchFeedback": **MUST be written in Russian (ru-RU) using the Cyrillic alphabet.** Briefly and supportively describe how close the attempt is to the target story (what was remembered, what was missed or different). Keep it kind and motivating — never discouraging. 1–2 sentences.
+- "corrected": the user's transcript rewritten in ${originalLanguage} with all spelling and grammar mistakes fixed (preserve the user's intent and wording; only fix errors). Empty string only if the transcript is already fully correct.
+No extra fields.`,
+          },
+          {
+            role: 'user',
+            content: `Target:\n${story}\n\nTranscript:\n${transcript}`,
+          },
+        ],
+      });
+      const raw = completion.choices[0].message.content ?? '{}';
+      const parsed = JSON.parse(raw);
+      const score = Math.max(0, Math.min(10, Math.round(Number(parsed.score) || 0)));
+      const grammarFeedback = typeof parsed.grammarFeedback === 'string' ? parsed.grammarFeedback : '';
+      const matchFeedback = typeof parsed.matchFeedback === 'string' ? parsed.matchFeedback : '';
+      const corrected = typeof parsed.corrected === 'string' ? parsed.corrected : '';
+
+      res.json({ score, grammarFeedback, matchFeedback, corrected });
+    } catch (error) {
+      console.error('Error checking sentence training:', error);
+      res.status(500).json({ message: 'Error checking sentence training' });
     }
   });
 

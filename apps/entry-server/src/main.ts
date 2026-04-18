@@ -80,7 +80,7 @@ app.use('/api/deepgram', deepgramRoutes);
 app.use('/api/elevenlabs', elevenLabsRoutes);
 app.use('/api/baskets', getBasketRoutes(client));
 app.use('/api/translations', getTranslationRoutes(client, openAiModel));
-app.use('/api/srs', getSrsRoutes(client));
+app.use('/api/srs', getSrsRoutes(client, openAiModel));
 app.use('/api/telegram', telegramRoutes);
 
 app.get('/api/ping', verifyAccessToken, (_req, res) => {

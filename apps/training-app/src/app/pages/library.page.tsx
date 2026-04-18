@@ -15,7 +15,8 @@ import {
   TranslationData,
   SrsCard,
 } from '../api/srs.api';
-import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, ArrowUpDown, Languages, Mic, MicOff, X, Pencil, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, ArrowUpDown, Languages, Mic, MicOff, X, Pencil, Check, Sparkles } from 'lucide-react';
 import {
   getSpeechRecognitionConstructor,
   type BrowserSpeechRecognition,
@@ -56,6 +57,8 @@ export function LibraryPage() {
   const [translating, setTranslating] = useState(false);
   const [translationOptions, setTranslationOptions] = useState<string[]>([]);
   const [listening, setListening] = useState<'original' | 'translation' | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
   const recognitionRef = useRef<BrowserSpeechRecognition | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -219,6 +222,20 @@ export function LibraryPage() {
         t.translation.toLowerCase().includes(searchLower)
       )
     : translations;
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleTrainWithSelected = () => {
+    if (selectedIds.size === 0) return;
+    navigate(`/sentence-training?ids=${Array.from(selectedIds).join(',')}`);
+  };
 
   const unenrolledIds = filteredTranslations
     .filter((t) => !enrolledCards.has(t._id))
@@ -440,11 +457,11 @@ export function LibraryPage() {
           </CardContent>
         </Card>
       )}
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-lg font-semibold">
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <h2 className="text-lg font-semibold whitespace-nowrap">
           {search ? `${filteredTranslations.length} of ${translations.length}` : translations.length} Translations
         </h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <input
             ref={fileInputRef}
             type="file"
@@ -482,6 +499,12 @@ export function LibraryPage() {
               {enrollingAll ? 'Enrolling...' : `Enroll All (${unenrolledIds.length})`}
             </Button>
           )}
+          {selectedIds.size > 0 && (
+            <Button size="sm" onClick={handleTrainWithSelected} className="gap-1">
+              <Sparkles className="h-4 w-4" />
+              Train with selected ({selectedIds.size})
+            </Button>
+          )}
         </div>
       </div>
       {importResult && (
@@ -494,6 +517,15 @@ export function LibraryPage() {
         return (
           <Card key={t._id} className={enrolled ? 'border-primary/30 bg-primary/5' : ''}>
             <CardContent className="flex items-center gap-4 p-4">
+              {isDue && (
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 shrink-0"
+                  checked={selectedIds.has(t._id)}
+                  onChange={() => toggleSelected(t._id)}
+                  title="Select for sentence training"
+                />
+              )}
               <div className="flex-1 min-w-0">
                 {editingId === t._id ? (
                   <div className="flex flex-col gap-1">

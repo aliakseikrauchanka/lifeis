@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button';
 import { fetchDueCards, fetchExamples, reviewCard, Rating, SrsCard, Example } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import { BookOpen, Check, Volume2, ChevronLeft, ChevronRight, Volume1 } from 'lucide-react';
+import { GradeButtons } from '../components/grade-buttons';
 
 export function StudyPage() {
   const [queue, setQueue] = useState<SrsCard[]>([]);
@@ -291,48 +292,9 @@ export function StudyPage() {
           </div>
         </CardContent>
 
-        <CardFooter className={`flex justify-center gap-2 shrink-0 transition-opacity duration-300 ${revealed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => handleGrade('again')}
-              disabled={grading}
-              className="gap-1"
-            >
-              Again
-              <kbd className="text-xs px-1 py-0.5 rounded bg-red-800/30 border border-red-400/30">1</kbd>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-orange-300 text-orange-700 hover:bg-orange-50 gap-1"
-              onClick={() => handleGrade('hard')}
-              disabled={grading}
-            >
-              Hard
-              <kbd className="text-xs px-1 py-0.5 rounded bg-orange-100 border border-orange-300">2</kbd>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-green-300 text-green-700 hover:bg-green-50 gap-1"
-              onClick={() => handleGrade('good')}
-              disabled={grading}
-            >
-              Good
-              <kbd className="text-xs px-1 py-0.5 rounded bg-green-100 border border-green-300">3</kbd>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-blue-300 text-blue-700 hover:bg-blue-50 gap-1"
-              onClick={() => handleGrade('easy')}
-              disabled={grading}
-            >
-              Easy
-              <kbd className="text-xs px-1 py-0.5 rounded bg-blue-100 border border-blue-300">4</kbd>
-            </Button>
-          </CardFooter>
+        <CardFooter className={`shrink-0 transition-opacity duration-300 ${revealed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+          <GradeButtons onGrade={handleGrade} disabled={grading} showHotkeys />
+        </CardFooter>
       </Card>
     </div>
   );
