@@ -1,15 +1,16 @@
 import { Router } from 'express';
 import { MongoClient, ObjectId } from 'mongodb';
-import OpenAI from 'openai';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { schedule, Rating } from '../helpers/srs-scheduler';
+import { deepSeek } from '../utils/deepseek';
 
 const VALID_RATINGS = new Set<Rating>(['again', 'hard', 'good', 'easy']);
 const ALLOWED_LANGUAGE_CODES = new Set(['pl', 'ru-RU', 'en-US', 'de-DE', 'fr-FR', 'sr-RS', 'fi', 'es']);
 const MAX_TRANSCRIPT_LENGTH = 2000;
 const CEFR_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
+const TRAINING_MODEL = 'deepseek-chat';
 
-export const getSrsRoutes = (client: MongoClient, openAiModel: OpenAI) => {
+export const getSrsRoutes = (client: MongoClient) => {
   const router = Router();
   const db = client.db('lifeis');
   const srsCollection = db.collection('translation_srs');
@@ -379,8 +380,8 @@ export const getSrsRoutes = (client: MongoClient, openAiModel: OpenAI) => {
           ? 'exactly one short sentence'
           : `exactly ${sentenceCount} short sentences that read as consecutive lines of a short story (same subject/scene; each sentence directly continues the previous one — no topic jump)`;
 
-      const completion = await openAiModel.chat.completions.create({
-        model: 'gpt-4o-mini',
+      const completion = await deepSeek.chat.completions.create({
+        model: TRAINING_MODEL,
         response_format: { type: 'json_object' },
         messages: [
           {
@@ -423,8 +424,8 @@ No extra fields.`,
         return res.status(400).json({ message: 'Invalid translationLanguage code' });
       }
 
-      const completion = await openAiModel.chat.completions.create({
-        model: 'gpt-4o-mini',
+      const completion = await deepSeek.chat.completions.create({
+        model: TRAINING_MODEL,
         response_format: { type: 'json_object' },
         messages: [
           {
@@ -588,8 +589,8 @@ No extra fields.`,
         return res.status(400).json({ message: 'Invalid originalLanguage code' });
       }
 
-      const completion = await openAiModel.chat.completions.create({
-        model: 'gpt-4o-mini',
+      const completion = await deepSeek.chat.completions.create({
+        model: TRAINING_MODEL,
         response_format: { type: 'json_object' },
         messages: [
           {
