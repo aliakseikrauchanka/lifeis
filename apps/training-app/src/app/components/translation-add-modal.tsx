@@ -1,0 +1,453 @@
+import { useCallback, useEffect, useState } from 'react';
+import { DeepgramFileSTTProvider, useAudioDevices, useSpeechToText } from '@lifeis/common-ui';
+import { ArrowUpDown, Languages, Volume2, X } from 'lucide-react';
+import { Button } from './ui/button';
+import { SpeechInputButton } from './speech-input-button';
+import {
+  createTranslation,
+  updateTranslation,
+  translateTextMulti,
+  TranslationProvider,
+  ProviderTranslationResult,
+} from '../api/srs.api';
+import { speak } from '../api/tts.api';
+import {
+  useTranslationAdd,
+  TranslationAddPrefill,
+  TranslationAddMode,
+} from '../contexts/translation-add.context';
+
+const LANGUAGE_OPTIONS = [
+  { code: 'pl', label: 'Polish' },
+  { code: 'ru-RU', label: 'Russian' },
+  { code: 'en-US', label: 'English' },
+  { code: 'de-DE', label: 'German' },
+  { code: 'fr-FR', label: 'French' },
+  { code: 'sr-RS', label: 'Serbian' },
+  { code: 'fi', label: 'Finnish' },
+  { code: 'es', label: 'Spanish' },
+];
+
+const ORIGINAL_REC_ID = 'global-add-original';
+const TRANSLATION_REC_ID = 'global-add-translation';
+
+interface ModalBodyProps {
+  mode: TranslationAddMode;
+  editId: string | null;
+  prefill: TranslationAddPrefill | null;
+  onClose: () => void;
+  onChanged: () => void;
+  onSttLanguageChange: (lang: string | undefined) => void;
+}
+
+function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageChange }: ModalBodyProps) {
+  const isEdit = mode === 'edit';
+  const { stopListening } = useSpeechToText();
+  const [addForm, setAddForm] = useState(() => ({
+    original: prefill?.original ?? '',
+    translation: prefill?.translation ?? '',
+    originalLanguage: prefill?.originalLanguage ?? localStorage.getItem('library-orig-lang') ?? 'pl',
+    translationLanguage:
+      prefill?.translationLanguage ?? localStorage.getItem('library-trans-lang') ?? 'ru-RU',
+  }));
+  const [saving, setSaving] = useState(false);
+  const [translating, setTranslating] = useState(false);
+  const [providerResults, setProviderResults] =
+    useState<Record<TranslationProvider, ProviderTranslationResult> | null>(null);
+  const [activeProvider, setActiveProvider] = useState<TranslationProvider>('openai');
+  const [recordingField, setRecordingField] = useState<'original' | 'translation' | null>(null);
+
+  useEffect(() => {
+    if (recordingField === 'original') onSttLanguageChange(addForm.originalLanguage);
+    else if (recordingField === 'translation') onSttLanguageChange(addForm.translationLanguage);
+    else onSttLanguageChange(undefined);
+  }, [recordingField, addForm.originalLanguage, addForm.translationLanguage, onSttLanguageChange]);
+
+  const handleAppendOriginal = useCallback((text: string) => {
+    setAddForm((prev) => ({ ...prev, original: text }));
+  }, []);
+  const handleAppendTranslation = useCallback((text: string) => {
+    setAddForm((prev) => ({ ...prev, translation: text }));
+  }, []);
+
+  const handleTranslate = async () => {
+    if (!addForm.original.trim()) return;
+    setTranslating(true);
+    setProviderResults(null);
+    try {
+      const providers = await translateTextMulti(
+        addForm.original,
+        addForm.translationLanguage,
+        addForm.originalLanguage,
+      );
+      setProviderResults(providers);
+      const firstWithTranslations = (['openai', 'deepseek', 'glosbe'] as TranslationProvider[]).find(
+        (p) => providers[p]?.translations?.length > 0,
+      );
+      if (firstWithTranslations) setActiveProvider(firstWithTranslations);
+    } catch (err) {
+      console.error('Translation failed:', err);
+    } finally {
+      setTranslating(false);
+    }
+  };
+
+  const handleSave = async () => {
+    if (!addForm.original.trim() || !addForm.translation.trim()) return;
+    setSaving(true);
+    try {
+      if (isEdit && editId) {
+        await updateTranslation(editId, {
+          original: addForm.original.trim(),
+          translation: addForm.translation.trim(),
+        });
+      } else {
+        await createTranslation(addForm);
+      }
+      onChanged();
+      onClose();
+    } catch (err) {
+      console.error('Failed to save translation:', err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
+  useEffect(() => {
+    if (prefill?.original?.trim()) {
+      handleTranslate();
+    }
+    // Run only once per modal mount; prefill is stable for the lifetime of the modal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="relative flex flex-col w-full max-w-2xl h-[85vh] max-h-[700px] bg-background rounded-lg shadow-lg border overflow-hidden"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-translation-title"
+      >
+        <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
+          <h3 id="add-translation-title" className="text-base font-semibold">
+            {isEdit ? 'Edit translation' : 'Add translation'}
+          </h3>
+          <Button variant="ghost" size="sm" onClick={onClose} title="Close">
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+        <div className="flex flex-col flex-1 min-h-0">
+          <div className="flex flex-col gap-2 p-4 pb-2 shrink-0">
+            <div className="flex gap-2">
+              <div className="flex flex-1 gap-1">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Original word..."
+                    value={addForm.original}
+                    onChange={(e) => setAddForm((prev) => ({ ...prev, original: e.target.value }))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && addForm.original.trim() && !translating) {
+                        e.preventDefault();
+                        handleTranslate();
+                      }
+                    }}
+                    autoFocus
+                    className={`w-full pl-3 py-2 text-sm rounded-md border border-input bg-background ${
+                      addForm.original ? 'pr-16' : 'pr-3'
+                    }`}
+                  />
+                  {addForm.original && (
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => {
+                          setAddForm((prev) => ({ ...prev, original: '' }));
+                          stopListening(ORIGINAL_REC_ID);
+                        }}
+                        title="Clear"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => speak(addForm.original, addForm.originalLanguage)}
+                        title="Speak"
+                      >
+                        <Volume2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <SpeechInputButton
+                  id={ORIGINAL_REC_ID}
+                  onAppend={handleAppendOriginal}
+                  disabled={recordingField === 'translation'}
+                  onStart={() => setRecordingField('original')}
+                  onStop={() => setRecordingField(null)}
+                  active={recordingField !== 'translation'}
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 px-2"
+                  onClick={handleTranslate}
+                  disabled={translating || !addForm.original.trim()}
+                  title="Suggest translations from OpenAI, DeepSeek and Glosbe (Enter)"
+                >
+                  <Languages className="h-4 w-4" />
+                </Button>
+              </div>
+              <select
+                value={addForm.originalLanguage}
+                onChange={(e) => {
+                  localStorage.setItem('library-orig-lang', e.target.value);
+                  setAddForm((prev) => ({ ...prev, originalLanguage: e.target.value }));
+                }}
+                className="px-2 py-2 text-sm rounded-md border border-input bg-background"
+              >
+                {LANGUAGE_OPTIONS.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="shrink-0 px-2"
+                onClick={() =>
+                  setAddForm((prev) => {
+                    localStorage.setItem('library-orig-lang', prev.translationLanguage);
+                    localStorage.setItem('library-trans-lang', prev.originalLanguage);
+                    return {
+                      original: prev.translation,
+                      translation: prev.original,
+                      originalLanguage: prev.translationLanguage,
+                      translationLanguage: prev.originalLanguage,
+                    };
+                  })
+                }
+                title="Swap languages"
+              >
+                <ArrowUpDown className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex gap-2">
+              <div className="flex flex-1 gap-1">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="Translation..."
+                    value={addForm.translation}
+                    onChange={(e) =>
+                      setAddForm((prev) => ({ ...prev, translation: e.target.value }))
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSave();
+                    }}
+                    className={`w-full pl-3 py-2 text-sm rounded-md border border-input bg-background ${
+                      addForm.translation ? 'pr-16' : 'pr-3'
+                    }`}
+                  />
+                  {addForm.translation && (
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => {
+                          setAddForm((prev) => ({ ...prev, translation: '' }));
+                          stopListening(TRANSLATION_REC_ID);
+                        }}
+                        title="Clear"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => speak(addForm.translation, addForm.translationLanguage)}
+                        title="Speak"
+                      >
+                        <Volume2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+                <SpeechInputButton
+                  id={TRANSLATION_REC_ID}
+                  onAppend={handleAppendTranslation}
+                  disabled={recordingField === 'original'}
+                  onStart={() => setRecordingField('translation')}
+                  onStop={() => setRecordingField(null)}
+                  active={recordingField !== 'original'}
+                />
+              </div>
+              <select
+                value={addForm.translationLanguage}
+                onChange={(e) => {
+                  localStorage.setItem('library-trans-lang', e.target.value);
+                  setAddForm((prev) => ({ ...prev, translationLanguage: e.target.value }));
+                }}
+                className="px-2 py-2 text-sm rounded-md border border-input bg-background"
+              >
+                {LANGUAGE_OPTIONS.map((l) => (
+                  <option key={l.code} value={l.code}>
+                    {l.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {translating && (
+              <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
+                <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                Fetching suggestions from OpenAI, DeepSeek and Glosbe...
+              </div>
+            )}
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-2">
+            {providerResults && (
+              <div className="rounded-md border">
+                <div className="flex border-b sticky top-0 bg-background rounded-t-md z-10">
+                  {(['openai', 'deepseek', 'glosbe'] as TranslationProvider[]).map((p) => {
+                    const r = providerResults[p];
+                    const label = p === 'openai' ? 'OpenAI' : p === 'deepseek' ? 'DeepSeek' : 'Glosbe';
+                    const count = r?.translations?.length ?? 0;
+                    const isActive = activeProvider === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setActiveProvider(p)}
+                        className={
+                          'flex-1 px-3 py-2 text-sm font-medium border-b-2 transition-colors ' +
+                          (isActive
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground')
+                        }
+                      >
+                        {label}
+                        {r?.error ? (
+                          <span className="ml-1 text-xs text-red-600">!</span>
+                        ) : (
+                          <span className="ml-1 text-xs text-muted-foreground">({count})</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="p-3 flex flex-col gap-3">
+                  {(() => {
+                    const r = providerResults[activeProvider];
+                    if (!r) return null;
+                    if (r.error) {
+                      return <p className="text-sm text-red-600">Error: {r.error}</p>;
+                    }
+                    if (r.translations.length === 0) {
+                      return <p className="text-sm text-muted-foreground">No translations returned.</p>;
+                    }
+                    return (
+                      <>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-muted-foreground uppercase">
+                            Translations
+                          </span>
+                          <div className="flex flex-wrap gap-1">
+                            {r.translations.map((opt, i) => (
+                              <Button
+                                key={`${activeProvider}-t-${i}`}
+                                variant={addForm.translation === opt ? 'default' : 'outline'}
+                                size="sm"
+                                onClick={() =>
+                                  setAddForm((prev) => ({ ...prev, translation: opt }))
+                                }
+                              >
+                                {opt}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                        {r.examples && r.examples.length > 0 && (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs font-medium text-muted-foreground uppercase">
+                              Examples
+                            </span>
+                            <ul className="flex flex-col gap-1.5">
+                              {r.examples.map((ex, i) => (
+                                <li key={`${activeProvider}-e-${i}`} className="text-sm">
+                                  <div className="font-medium">{ex.original}</div>
+                                  <div className="text-muted-foreground">{ex.translated}</div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 px-4 py-3 border-t shrink-0">
+          <Button size="sm" variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            onClick={handleSave}
+            disabled={saving || !addForm.original.trim() || !addForm.translation.trim()}
+          >
+            {saving ? (isEdit ? 'Saving...' : 'Adding...') : isEdit ? 'Save' : 'Add'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function TranslationAddModal() {
+  const { isOpen, mode, editId, prefill, close, notifyChanged } = useTranslationAdd();
+  const [sttLanguage, setSttLanguage] = useState<string | undefined>(undefined);
+  const { inputDeviceId, outputDeviceId } = useAudioDevices();
+
+  if (!isOpen) return null;
+
+  return (
+    <DeepgramFileSTTProvider
+      language={sttLanguage}
+      audioInputDeviceId={inputDeviceId || undefined}
+      audioOutputDeviceId={outputDeviceId || undefined}
+    >
+      <ModalBody
+        mode={mode}
+        editId={editId}
+        prefill={prefill}
+        onClose={close}
+        onChanged={notifyChanged}
+        onSttLanguageChange={setSttLanguage}
+      />
+    </DeepgramFileSTTProvider>
+  );
+}
