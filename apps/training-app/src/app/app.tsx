@@ -3,6 +3,7 @@ import { AudioDevicesProvider, UserSession, init, isUserLoggedIn } from '@lifeis
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { CONFIG } from '../config';
 import { useEffect, useState } from 'react';
+import { BookOpen, Brain, PenLine, Library as LibraryIcon } from 'lucide-react';
 import { StudyPage } from './pages/study.page';
 import { LibraryPage } from './pages/library.page';
 import { SentenceTrainingPage } from './pages/sentence-training.page';
@@ -38,51 +39,59 @@ export function App() {
                   <NavLink
                     to="/"
                     end
+                    title="Study"
                     className={({ isActive }) =>
-                      `px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
+                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
                         isActive
                           ? 'text-violet-900 bg-violet-500/12'
                           : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
                       }`
                     }
                   >
-                    Study
+                    <BookOpen className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Study</span>
                   </NavLink>
                   <NavLink
                     to="/sentence-training"
+                    title="Sentence Training"
                     className={({ isActive }) =>
-                      `px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
+                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
                         isActive
                           ? 'text-violet-900 bg-violet-500/12'
                           : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
                       }`
                     }
                   >
-                    Sentence Training
+                    <Brain className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Sentence Training</span>
                   </NavLink>
                   <NavLink
                     to="/sentence-construction"
+                    title="Sentence Construction"
                     className={({ isActive }) =>
-                      `px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
+                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
                         isActive
                           ? 'text-violet-900 bg-violet-500/12'
                           : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
                       }`
                     }
                   >
-                    Sentence Construction
+                    <PenLine className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Sentence Construction</span>
                   </NavLink>
                   <NavLink
                     to="/library"
+                    title="Library"
                     className={({ isActive }) =>
-                      `px-3 py-1 rounded-lg text-sm font-semibold transition-colors ${
+                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
                         isActive
                           ? 'text-violet-900 bg-violet-500/12'
                           : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
                       }`
                     }
                   >
-                    Library
+                    <LibraryIcon className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Library</span>
                   </NavLink>
                 </nav>
               )}

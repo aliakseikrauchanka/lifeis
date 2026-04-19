@@ -240,10 +240,31 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
             </div>
             <div className="flex flex-wrap gap-2 pt-1">
               {words.map((w) => (
-                <span key={w.translationId} className="px-2 py-1 text-sm rounded bg-violet-100 text-violet-900">
-                  {w.original}
+                <span
+                  key={w.translationId}
+                  className="inline-flex items-center gap-1 px-2 py-1 text-sm rounded bg-violet-100 text-violet-900"
+                >
+                  <span>{w.original}</span>
+                  <button
+                    type="button"
+                    onClick={() => speak(w.original, originalLanguage)}
+                    title="Speak"
+                    className="inline-flex hover:text-violet-700"
+                  >
+                    <Volume2 className="h-3 w-3" />
+                  </button>
                   {showWordTranslations && (
-                    <span className="text-xs text-muted-foreground ml-1">({w.translation})</span>
+                    <>
+                      <span className="text-xs text-muted-foreground ml-1">({w.translation})</span>
+                      <button
+                        type="button"
+                        onClick={() => speak(w.translation, translationLanguage)}
+                        title="Speak translation"
+                        className="inline-flex text-muted-foreground hover:text-foreground"
+                      >
+                        <Volume2 className="h-3 w-3" />
+                      </button>
+                    </>
                   )}
                 </span>
               ))}

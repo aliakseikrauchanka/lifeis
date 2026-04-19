@@ -35,12 +35,22 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   const isEdit = mode === 'edit';
   const { stopListening } = useSpeechToText();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
-  const [addForm, setAddForm] = useState(() => ({
-    original: prefill?.original ?? '',
-    translation: prefill?.translation ?? '',
-    originalLanguage: prefill?.originalLanguage ?? trainingLanguage,
-    translationLanguage: prefill?.translationLanguage ?? nativeLanguage,
-  }));
+  const [addForm, setAddForm] = useState(() => {
+    const savedOrig = !isEdit ? localStorage.getItem('modal-orig-lang') : null;
+    const savedTrans = !isEdit ? localStorage.getItem('modal-trans-lang') : null;
+    return {
+      original: prefill?.original ?? '',
+      translation: prefill?.translation ?? '',
+      originalLanguage: prefill?.originalLanguage ?? savedOrig ?? trainingLanguage,
+      translationLanguage: prefill?.translationLanguage ?? savedTrans ?? nativeLanguage,
+    };
+  });
+
+  useEffect(() => {
+    if (isEdit) return;
+    localStorage.setItem('modal-orig-lang', addForm.originalLanguage);
+    localStorage.setItem('modal-trans-lang', addForm.translationLanguage);
+  }, [isEdit, addForm.originalLanguage, addForm.translationLanguage]);
   const [saving, setSaving] = useState(false);
   const [translating, setTranslating] = useState(false);
   const [providerResults, setProviderResults] =
@@ -143,165 +153,216 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
         </div>
         <div className="flex flex-col flex-1 min-h-0">
           <div className="flex flex-col gap-2 p-4 pb-2 shrink-0">
-            <div className="flex gap-2">
-              <div className="flex flex-1 gap-1">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    placeholder="Original word..."
-                    value={addForm.original}
-                    onChange={(e) => setAddForm((prev) => ({ ...prev, original: e.target.value }))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && addForm.original.trim() && !translating) {
-                        e.preventDefault();
-                        handleTranslate();
-                      }
-                    }}
-                    autoFocus
-                    className={`w-full pl-3 py-2 text-sm rounded-md border border-input bg-background ${
-                      addForm.original ? 'pr-16' : 'pr-3'
-                    }`}
-                  />
-                  {addForm.original && (
-                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => {
-                          setAddForm((prev) => ({ ...prev, original: '' }));
-                          stopListening(ORIGINAL_REC_ID);
-                        }}
-                        title="Clear"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => speak(addForm.original, addForm.originalLanguage)}
-                        title="Speak"
-                      >
-                        <Volume2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
+            <div className="flex gap-2 items-stretch">
+              <div className="flex flex-col gap-2 flex-1 min-w-0">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      placeholder="Original word..."
+                      value={addForm.original}
+                      onChange={(e) => setAddForm((prev) => ({ ...prev, original: e.target.value }))}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && addForm.original.trim() && !translating && !isEdit) {
+                          e.preventDefault();
+                          handleTranslate();
+                        }
+                      }}
+                      autoFocus={!isEdit}
+                      disabled={isEdit}
+                      className={`w-full pl-3 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground ${
+                        addForm.original ? 'pr-16' : 'pr-3'
+                      }`}
+                    />
+                    {addForm.original && !isEdit && (
+                      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => {
+                            setAddForm((prev) => ({ ...prev, original: '' }));
+                            stopListening(ORIGINAL_REC_ID);
+                          }}
+                          title="Clear"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => speak(addForm.original, addForm.originalLanguage)}
+                          title="Speak"
+                        >
+                          <Volume2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                    {addForm.original && isEdit && (
+                      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => speak(addForm.original, addForm.originalLanguage)}
+                          title="Speak"
+                        >
+                          <Volume2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-1 flex-wrap sm:flex-nowrap">
+                    <Button
+                      size="sm"
+                      className="shrink-0 px-2 bg-violet-600 hover:bg-violet-700 text-white"
+                      onClick={handleTranslate}
+                      disabled={isEdit || translating || !addForm.original.trim()}
+                      title="Suggest translations from OpenAI, DeepSeek and Glosbe (Enter)"
+                    >
+                      <Languages className="h-4 w-4" />
+                    </Button>
+                    <SpeechInputButton
+                      id={ORIGINAL_REC_ID}
+                      onAppend={handleAppendOriginal}
+                      disabled={isEdit || recordingField === 'translation'}
+                      onStart={() => setRecordingField('original')}
+                      onStop={() => setRecordingField(null)}
+                      active={recordingField !== 'translation'}
+                    />
+                    <select
+                      value={addForm.originalLanguage}
+                      onChange={(e) => {
+                        setAddForm((prev) => ({ ...prev, originalLanguage: e.target.value }));
+                      }}
+                      disabled={isEdit}
+                      className="sm:hidden px-2 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground"
+                    >
+                      {LANGUAGE_OPTIONS.map((l) => (
+                        <option key={l.code} value={l.code}>
+                          {l.flag}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={addForm.originalLanguage}
+                      onChange={(e) => {
+                        setAddForm((prev) => ({ ...prev, originalLanguage: e.target.value }));
+                      }}
+                      disabled={isEdit}
+                      className="hidden sm:block px-2 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground"
+                    >
+                      {LANGUAGE_OPTIONS.map((l) => (
+                        <option key={l.code} value={l.code}>
+                          {l.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <SpeechInputButton
-                  id={ORIGINAL_REC_ID}
-                  onAppend={handleAppendOriginal}
-                  disabled={recordingField === 'translation'}
-                  onStart={() => setRecordingField('original')}
-                  onStop={() => setRecordingField(null)}
-                  active={recordingField !== 'translation'}
-                />
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      placeholder="Translation..."
+                      value={addForm.translation}
+                      onChange={(e) =>
+                        setAddForm((prev) => ({ ...prev, translation: e.target.value }))
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSave();
+                      }}
+                      autoFocus={isEdit}
+                      className={`w-full pl-3 py-2 text-sm rounded-md border border-input bg-background ${
+                        addForm.translation ? 'pr-16' : 'pr-3'
+                      }`}
+                    />
+                    {addForm.translation && (
+                      <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => {
+                            setAddForm((prev) => ({ ...prev, translation: '' }));
+                            stopListening(TRANSLATION_REC_ID);
+                          }}
+                          title="Clear"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 w-7 p-0"
+                          onClick={() => speak(addForm.translation, addForm.translationLanguage)}
+                          title="Speak"
+                        >
+                          <Volume2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex gap-1 flex-wrap sm:flex-nowrap">
+                    <SpeechInputButton
+                      id={TRANSLATION_REC_ID}
+                      onAppend={handleAppendTranslation}
+                      disabled={recordingField === 'original'}
+                      onStart={() => setRecordingField('translation')}
+                      onStop={() => setRecordingField(null)}
+                      active={recordingField !== 'original'}
+                    />
+                    <select
+                      value={addForm.translationLanguage}
+                      onChange={(e) => {
+                        setAddForm((prev) => ({ ...prev, translationLanguage: e.target.value }));
+                      }}
+                      disabled={isEdit}
+                      className="sm:hidden px-2 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground"
+                    >
+                      {LANGUAGE_OPTIONS.map((l) => (
+                        <option key={l.code} value={l.code}>
+                          {l.flag}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={addForm.translationLanguage}
+                      onChange={(e) => {
+                        setAddForm((prev) => ({ ...prev, translationLanguage: e.target.value }));
+                      }}
+                      disabled={isEdit}
+                      className="hidden sm:block px-2 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground"
+                    >
+                      {LANGUAGE_OPTIONS.map((l) => (
+                        <option key={l.code} value={l.code}>
+                          {l.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center shrink-0">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   className="shrink-0 px-2"
-                  onClick={handleTranslate}
-                  disabled={translating || !addForm.original.trim()}
-                  title="Suggest translations from OpenAI, DeepSeek and Glosbe (Enter)"
+                  onClick={() =>
+                    setAddForm((prev) => ({
+                      original: prev.translation,
+                      translation: prev.original,
+                      originalLanguage: prev.translationLanguage,
+                      translationLanguage: prev.originalLanguage,
+                    }))
+                  }
+                  disabled={isEdit}
+                  title="Swap languages"
                 >
-                  <Languages className="h-4 w-4" />
+                  <ArrowUpDown className="h-4 w-4" />
                 </Button>
               </div>
-              <select
-                value={addForm.originalLanguage}
-                onChange={(e) => {
-                  setAddForm((prev) => ({ ...prev, originalLanguage: e.target.value }));
-                }}
-                className="px-2 py-2 text-sm rounded-md border border-input bg-background"
-              >
-                {LANGUAGE_OPTIONS.map((l) => (
-                  <option key={l.code} value={l.code}>
-                    {l.label}
-                  </option>
-                ))}
-              </select>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="shrink-0 px-2"
-                onClick={() =>
-                  setAddForm((prev) => ({
-                    original: prev.translation,
-                    translation: prev.original,
-                    originalLanguage: prev.translationLanguage,
-                    translationLanguage: prev.originalLanguage,
-                  }))
-                }
-                title="Swap languages"
-              >
-                <ArrowUpDown className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="flex gap-2">
-              <div className="flex flex-1 gap-1">
-                <div className="relative flex-1">
-                  <input
-                    type="text"
-                    placeholder="Translation..."
-                    value={addForm.translation}
-                    onChange={(e) =>
-                      setAddForm((prev) => ({ ...prev, translation: e.target.value }))
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSave();
-                    }}
-                    className={`w-full pl-3 py-2 text-sm rounded-md border border-input bg-background ${
-                      addForm.translation ? 'pr-16' : 'pr-3'
-                    }`}
-                  />
-                  {addForm.translation && (
-                    <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => {
-                          setAddForm((prev) => ({ ...prev, translation: '' }));
-                          stopListening(TRANSLATION_REC_ID);
-                        }}
-                        title="Clear"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => speak(addForm.translation, addForm.translationLanguage)}
-                        title="Speak"
-                      >
-                        <Volume2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </div>
-                <SpeechInputButton
-                  id={TRANSLATION_REC_ID}
-                  onAppend={handleAppendTranslation}
-                  disabled={recordingField === 'original'}
-                  onStart={() => setRecordingField('translation')}
-                  onStop={() => setRecordingField(null)}
-                  active={recordingField !== 'original'}
-                />
-              </div>
-              <select
-                value={addForm.translationLanguage}
-                onChange={(e) => {
-                  setAddForm((prev) => ({ ...prev, translationLanguage: e.target.value }));
-                }}
-                className="px-2 py-2 text-sm rounded-md border border-input bg-background"
-              >
-                {LANGUAGE_OPTIONS.map((l) => (
-                  <option key={l.code} value={l.code}>
-                    {l.label}
-                  </option>
-                ))}
-              </select>
             </div>
             {translating && (
               <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
@@ -366,8 +427,28 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                                 onClick={() =>
                                   setAddForm((prev) => ({ ...prev, translation: opt }))
                                 }
+                                className="inline-flex items-center gap-2"
                               >
-                                {opt}
+                                <span>{opt}</span>
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    speak(opt, addForm.translationLanguage);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      speak(opt, addForm.translationLanguage);
+                                    }
+                                  }}
+                                  title="Speak"
+                                  className="inline-flex items-center opacity-70 hover:opacity-100"
+                                >
+                                  <Volume2 className="h-3 w-3" />
+                                </span>
                               </Button>
                             ))}
                           </div>
@@ -380,8 +461,30 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                             <ul className="flex flex-col gap-1.5">
                               {r.examples.map((ex, i) => (
                                 <li key={`${activeProvider}-e-${i}`} className="text-sm">
-                                  <div className="font-medium">{ex.original}</div>
-                                  <div className="text-muted-foreground">{ex.translated}</div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="font-medium flex-1">{ex.original}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 w-7 p-0 shrink-0"
+                                      onClick={() => speak(ex.original, addForm.originalLanguage)}
+                                      title="Speak"
+                                    >
+                                      <Volume2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground flex-1">{ex.translated}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-7 w-7 p-0 shrink-0"
+                                      onClick={() => speak(ex.translated, addForm.translationLanguage)}
+                                      title="Speak"
+                                    >
+                                      <Volume2 className="h-3 w-3" />
+                                    </Button>
+                                  </div>
                                 </li>
                               ))}
                             </ul>

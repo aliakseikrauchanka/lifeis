@@ -41,6 +41,7 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
   const [words, setWords] = useState<SentenceTrainingWord[]>([]);
   const [showWordTranslations, setShowWordTranslations] = useState<boolean>(false);
   const [originalLanguage, setOriginalLanguage] = useState<string>('');
+  const [translationLanguage, setTranslationLanguage] = useState<string>('');
 
   const [userText, setUserText] = useState<string>('');
   const [grammarFeedback, setGrammarFeedback] = useState<string>('');
@@ -70,6 +71,7 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
       );
       setWords(data.words);
       setOriginalLanguage(data.originalLanguage);
+      setTranslationLanguage(data.translationLanguage);
       onLanguageChange(data.originalLanguage);
       setPhase('writing');
     } catch (err) {
@@ -190,7 +192,7 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
                 return (
                   <span
                     key={w.translationId}
-                    className={`px-2 py-1 text-sm rounded ${
+                    className={`inline-flex items-center gap-1 px-2 py-1 text-sm rounded ${
                       used
                         ? 'bg-green-100 text-green-900'
                         : missed
@@ -198,18 +200,28 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
                         : 'bg-violet-100 text-violet-900'
                     }`}
                   >
-                    {w.original}
-                    {showWordTranslations && (
-                      <span className="text-xs text-muted-foreground ml-1">({w.translation})</span>
-                    )}
+                    <span>{w.original}</span>
                     <button
                       type="button"
-                      className="ml-1 align-middle inline-flex"
+                      className="inline-flex hover:opacity-70"
                       onClick={() => speak(w.original, originalLanguage)}
-                      title="Speak"
+                      title="Speak original"
                     >
                       <Volume2 className="h-3 w-3" />
                     </button>
+                    {showWordTranslations && (
+                      <>
+                        <span className="text-xs text-muted-foreground ml-1">({w.translation})</span>
+                        <button
+                          type="button"
+                          className="inline-flex text-muted-foreground hover:text-foreground"
+                          onClick={() => speak(w.translation, translationLanguage)}
+                          title="Speak translation"
+                        >
+                          <Volume2 className="h-3 w-3" />
+                        </button>
+                      </>
+                    )}
                   </span>
                 );
               })}

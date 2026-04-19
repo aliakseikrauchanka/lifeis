@@ -13,7 +13,8 @@ import {
   SrsCard,
 } from '../api/srs.api';
 import { useNavigate } from 'react-router-dom';
-import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, Pencil, Sparkles, PenLine } from 'lucide-react';
+import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, Pencil, Sparkles, PenLine, Volume2 } from 'lucide-react';
+import { speak } from '../api/tts.api';
 import { useTranslationAdd } from '../contexts/translation-add.context';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { matchesAppLanguagePair, getLanguageLabel } from '../constants/language-options';
@@ -306,46 +307,64 @@ export function LibraryPage() {
         const isDue = enrolled && card.due_at <= Date.now();
         return (
           <Card key={t._id} className={enrolled ? 'border-primary/30 bg-primary/5' : ''}>
-            <CardContent className="flex items-center gap-4 p-4" data-no-add-selection>
-              {isDue && (
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 shrink-0"
-                  checked={selectedIds.has(t._id)}
-                  onChange={() => toggleSelected(t._id)}
-                  title="Select for sentence training"
-                />
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium truncate">{t.original}</span>
-                  {isDue && (
-                    <span className="inline-flex items-center gap-1 text-xs text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded-full shrink-0">
-                      <Clock className="h-3 w-3" /> Due
-                    </span>
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground truncate">{t.translation}</div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {t.originalLanguage} → {t.translationLanguage}
+            <CardContent
+              className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-4"
+              data-no-add-selection
+            >
+              <div className="flex items-start gap-3 sm:flex-1 min-w-0">
+                {isDue && (
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 mt-1 shrink-0"
+                    checked={selectedIds.has(t._id)}
+                    onChange={() => toggleSelected(t._id)}
+                    title="Select for sentence training"
+                  />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1">
+                    <span className="font-medium truncate">{t.original}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 shrink-0"
+                      onClick={() => speak(t.original, t.originalLanguage)}
+                      title="Speak"
+                    >
+                      <Volume2 className="h-3 w-3" />
+                    </Button>
+                    {isDue && (
+                      <span className="inline-flex items-center gap-1 text-xs text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded-full shrink-0">
+                        <Clock className="h-3 w-3" /> Due
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-sm text-muted-foreground truncate">{t.translation}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 w-6 p-0 shrink-0"
+                      onClick={() => speak(t.translation, t.translationLanguage)}
+                      title="Speak"
+                    >
+                      <Volume2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {t.originalLanguage} → {t.translationLanguage}
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-1 shrink-0">
+              <div className="flex gap-1 shrink-0 justify-end">
                 <Button
                   variant={enrolled ? 'destructive' : 'default'}
                   size="sm"
                   onClick={() => handleToggle(t._id)}
                   disabled={togglingId === t._id}
+                  title={enrolled ? 'Remove from deck' : 'Add to deck'}
                 >
-                  {enrolled ? (
-                    <>
-                      <BookX className="h-4 w-4 mr-1" /> Remove
-                    </>
-                  ) : (
-                    <>
-                      <BookPlus className="h-4 w-4 mr-1" /> Add to Deck
-                    </>
-                  )}
+                  {enrolled ? <BookX className="h-4 w-4" /> : <BookPlus className="h-4 w-4" />}
                 </Button>
                 <Button
                   variant="ghost"
