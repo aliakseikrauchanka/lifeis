@@ -1,0 +1,254 @@
+import { useMemo, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Button } from '../components/ui/button';
+import { Volume2, RotateCcw } from 'lucide-react';
+import { generateSentenceBuilder, SentenceBuilderGenerated } from '../api/srs.api';
+import { speak } from '../api/tts.api';
+import { useAppLevel } from '../hooks/use-app-level';
+import { useAppLanguages } from '../hooks/use-app-languages';
+
+type Phase = 'idle' | 'playing' | 'success';
+
+const normalize = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/[.,!?;:"'«»„“”()]/g, '')
+    .trim();
+
+export function SentenceBuilderPage() {
+  const [level] = useAppLevel();
+  const { nativeLanguage, trainingLanguage } = useAppLanguages();
+
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<SentenceBuilderGenerated | null>(null);
+  const [source, setSource] = useState<'random' | 'library'>(() => {
+    const v = localStorage.getItem('sentence-builder-source');
+    return v === 'library' ? 'library' : 'random';
+  });
+
+  // State as indices into `data.shuffled`
+  const [placed, setPlaced] = useState<number[]>([]);
+  const [checked, setChecked] = useState(false);
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    setError(null);
+    setPlaced([]);
+    setChecked(false);
+    try {
+      localStorage.setItem('sentence-builder-source', source);
+      const result = await generateSentenceBuilder({ level, nativeLanguage, trainingLanguage, source });
+      setData(result);
+      setPhase('playing');
+    } catch (err) {
+      setError((err as Error).message);
+      setPhase('idle');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const availableIdx = useMemo(() => {
+    if (!data) return [];
+    const used = new Set(placed);
+    return data.shuffled.map((_, i) => i).filter((i) => !used.has(i));
+  }, [data, placed]);
+
+  const handlePick = (i: number) => {
+    setPlaced((prev) => [...prev, i]);
+    setChecked(false);
+  };
+
+  const handleRemove = (pos: number) => {
+    setPlaced((prev) => prev.filter((_, i) => i !== pos));
+    setChecked(false);
+  };
+
+  const handleReset = () => {
+    setPlaced([]);
+    setChecked(false);
+  };
+
+  const handleCheck = () => {
+    if (!data) return;
+    setChecked(true);
+    const built = placed.map((i) => data.shuffled[i]);
+    const targetNorm = data.words.map(normalize).join(' ');
+    const builtNorm = built.map(normalize).join(' ');
+    if (targetNorm === builtNorm) setPhase('success');
+  };
+
+  const correctnessAt = (pos: number): 'correct' | 'wrong' | null => {
+    if (!checked || !data) return null;
+    const picked = data.shuffled[placed[pos]];
+    const target = data.words[pos];
+    if (target === undefined) return 'wrong';
+    return normalize(picked) === normalize(target) ? 'correct' : 'wrong';
+  };
+
+  return (
+    <div className="flex flex-col items-center p-4 gap-4">
+      <div className="flex flex-col items-center gap-2 w-full max-w-xl">
+        <h1 className="text-xl font-semibold">Sentence Builder</h1>
+        <div className="flex flex-wrap items-end gap-3 justify-center">
+          <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
+            Source
+            <div className="inline-flex rounded border border-input overflow-hidden">
+              <button
+                type="button"
+                className={`px-2 py-1 text-sm ${
+                  source === 'random' ? 'bg-violet-600 text-white' : 'bg-background text-foreground hover:bg-muted'
+                }`}
+                onClick={() => setSource('random')}
+                disabled={loading}
+              >
+                Random
+              </button>
+              <button
+                type="button"
+                className={`px-2 py-1 text-sm border-l border-input ${
+                  source === 'library' ? 'bg-violet-600 text-white' : 'bg-background text-foreground hover:bg-muted'
+                }`}
+                onClick={() => setSource('library')}
+                disabled={loading}
+              >
+                Library
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
+            Level
+            <div
+              className="rounded border border-input bg-muted/40 px-2 py-1 text-sm text-foreground"
+              title="Change in Profile"
+            >
+              {level}
+            </div>
+          </div>
+          <Button size="sm" onClick={handleGenerate} disabled={loading}>
+            {phase === 'idle' ? 'Start' : 'New sentence'}
+          </Button>
+        </div>
+      </div>
+
+      {error && <div className="text-sm text-red-600">{error}</div>}
+
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin h-6 w-6 border-2 border-primary border-t-transparent rounded-full" />
+        </div>
+      )}
+
+      {data && !loading && (
+        <Card className="w-full max-w-xl">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center justify-between gap-2">
+              <span>Translate to {data.originalLanguage}</span>
+              {phase === 'success' && (
+                <span className="text-sm font-normal text-green-700 bg-green-100 px-2 py-0.5 rounded">
+                  ✓ Correct!
+                </span>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                {data.translationLanguage}
+              </div>
+              <p className="text-lg">{data.nativeSentence}</p>
+            </div>
+
+            <div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Your answer</div>
+              <div className="min-h-[3rem] rounded-md border border-dashed border-input bg-muted/30 p-2 flex flex-wrap gap-2">
+                {placed.length === 0 && (
+                  <span className="text-sm text-muted-foreground self-center">
+                    Tap words below to build the sentence…
+                  </span>
+                )}
+                {placed.map((srcIdx, pos) => {
+                  const word = data.shuffled[srcIdx];
+                  const correctness = correctnessAt(pos);
+                  const color =
+                    correctness === 'correct'
+                      ? 'bg-green-100 text-green-900 border-green-300'
+                      : correctness === 'wrong'
+                      ? 'bg-red-100 text-red-900 border-red-300'
+                      : 'bg-violet-100 text-violet-900 border-violet-200';
+                  return (
+                    <button
+                      key={`placed-${pos}`}
+                      type="button"
+                      onClick={() => handleRemove(pos)}
+                      className={`px-3 py-1 rounded border text-sm ${color} hover:opacity-80`}
+                      title="Remove"
+                    >
+                      {word}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Words</div>
+              <div className="flex flex-wrap gap-2">
+                {availableIdx.map((i) => (
+                  <button
+                    key={`avail-${i}`}
+                    type="button"
+                    onClick={() => handlePick(i)}
+                    className="px-3 py-1 rounded border border-input bg-background text-sm hover:bg-muted"
+                  >
+                    {data.shuffled[i]}
+                  </button>
+                ))}
+                {availableIdx.length === 0 && (
+                  <span className="text-sm text-muted-foreground">All words placed.</span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                onClick={handleCheck}
+                disabled={placed.length === 0 || phase === 'success'}
+              >
+                Check
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleReset} disabled={placed.length === 0}>
+                <RotateCcw className="h-4 w-4 mr-1" />
+                Reset
+              </Button>
+              {phase === 'success' && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => speak(data.trainingSentence, data.originalLanguage)}
+                  title="Speak"
+                >
+                  <Volume2 className="h-4 w-4 mr-1" />
+                  Speak
+                </Button>
+              )}
+            </div>
+
+            {phase === 'success' && (
+              <div className="border-t pt-3">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Target</div>
+                <p className="text-sm">{data.trainingSentence}</p>
+              </div>
+            )}
+            {checked && phase !== 'success' && (
+              <div className="text-sm text-red-700">Not quite — try rearranging.</div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}

@@ -3,11 +3,12 @@ import { AudioDevicesProvider, UserSession, init, isUserLoggedIn } from '@lifeis
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { CONFIG } from '../config';
 import { useEffect, useState } from 'react';
-import { BookOpen, Brain, PenLine, Library as LibraryIcon } from 'lucide-react';
+import { BookOpen, Brain, PenLine, Blocks, Library as LibraryIcon } from 'lucide-react';
 import { StudyPage } from './pages/study.page';
 import { LibraryPage } from './pages/library.page';
 import { SentenceTrainingPage } from './pages/sentence-training.page';
 import { SentenceConstructionPage } from './pages/sentence-construction.page';
+import { SentenceBuilderPage } from './pages/sentence-builder.page';
 import { ProfileMenu } from './components/profile-menu';
 import { HeaderAddButton } from './components/header-add-button';
 import { TranslationAddModal } from './components/translation-add-modal';
@@ -80,6 +81,20 @@ export function App() {
                     <span className="hidden sm:inline">Sentence Construction</span>
                   </NavLink>
                   <NavLink
+                    to="/sentence-builder"
+                    title="Sentence Builder"
+                    className={({ isActive }) =>
+                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
+                        isActive
+                          ? 'text-violet-900 bg-violet-500/12'
+                          : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
+                      }`
+                    }
+                  >
+                    <Blocks className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Sentence Builder</span>
+                  </NavLink>
+                  <NavLink
                     to="/library"
                     title="Library"
                     className={({ isActive }) =>
@@ -112,6 +127,7 @@ export function App() {
                   <Route path="/library" element={<LibraryPage />} />
                   <Route path="/sentence-training" element={<SentenceTrainingPage />} />
                   <Route path="/sentence-construction" element={<SentenceConstructionPage />} />
+                  <Route path="/sentence-builder" element={<SentenceBuilderPage />} />
                 </Routes>
               </main>
             )}

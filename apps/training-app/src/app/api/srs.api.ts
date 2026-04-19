@@ -271,6 +271,33 @@ export const checkSentenceConstruction = async (payload: {
   return res.json();
 };
 
+export interface SentenceBuilderGenerated {
+  trainingSentence: string;
+  nativeSentence: string;
+  words: string[];
+  shuffled: string[];
+  originalLanguage: string;
+  translationLanguage: string;
+}
+
+export const generateSentenceBuilder = async (params: {
+  level: CefrLevel;
+  nativeLanguage: string;
+  trainingLanguage: string;
+  source?: 'random' | 'library';
+}): Promise<SentenceBuilderGenerated> => {
+  const res = await utilFetch('/srs/sentence-builder/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.message || 'Failed to generate sentence builder');
+  }
+  return res.json();
+};
+
 export const fetchTranslations = async (): Promise<TranslationData[]> => {
   const res = await utilFetch('/translations');
   if (!res.ok) throw new Error('Failed to fetch translations');

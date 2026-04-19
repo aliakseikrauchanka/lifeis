@@ -736,5 +736,136 @@ No extra fields.`,
     }
   });
 
+  // POST /sentence-builder/generate — native sentence + shuffled training-language word buttons
+  router.post('/sentence-builder/generate', verifyAccessToken, async (req, res) => {
+    try {
+      const levelRaw = typeof req.body?.level === 'string' ? req.body.level : '';
+      if (!CEFR_LEVELS.has(levelRaw)) {
+        return res.status(400).json({ message: 'level must be one of A1, A2, B1, B2, C1, C2' });
+      }
+      const nativeLanguage = typeof req.body?.nativeLanguage === 'string' ? req.body.nativeLanguage : '';
+      const trainingLanguage = typeof req.body?.trainingLanguage === 'string' ? req.body.trainingLanguage : '';
+      if (!ALLOWED_LANGUAGE_CODES.has(nativeLanguage) || !ALLOWED_LANGUAGE_CODES.has(trainingLanguage)) {
+        return res.status(400).json({ message: 'Invalid nativeLanguage or trainingLanguage' });
+      }
+      if (nativeLanguage === trainingLanguage) {
+        return res.status(400).json({ message: 'nativeLanguage and trainingLanguage must differ' });
+      }
+
+      const source = req.body?.source === 'library' ? 'library' : 'random';
+      const userId = res.locals.userId;
+
+      const tokenize = (s: string): string[] =>
+        s
+          .split(/\s+/)
+          .map((t) => t.replace(/^[.,!?;:"'«»„“”()\-]+|[.,!?;:"'«»„“”()\-]+$/g, ''))
+          .filter((t) => t.length > 0);
+
+      const shuffle = <T,>(arr: T[]): T[] => {
+        const out = [...arr];
+        for (let i = out.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [out[i], out[j]] = [out[j], out[i]];
+        }
+        return out;
+      };
+
+      if (source === 'library') {
+        const langFilter = buildLanguagePairFilter(nativeLanguage, trainingLanguage);
+        const pipeline: Record<string, unknown>[] = [
+          { $match: { owner_id: userId } },
+          {
+            $lookup: {
+              from: 'translations',
+              localField: 'translation_id',
+              foreignField: '_id',
+              as: 'translation',
+            },
+          },
+          { $unwind: '$translation' },
+        ];
+        if (langFilter && langFilter !== 'invalid') pipeline.push({ $match: langFilter });
+        pipeline.push({ $sample: { size: 100 } });
+        const sampled = (await srsCollection.aggregate(pipeline).toArray()) as Array<{
+          translation: { original: string; translation: string; originalLanguage: string; translationLanguage: string };
+        }>;
+        if (sampled.length === 0) {
+          return res.status(404).json({ message: 'No enrolled cards available for this language pair' });
+        }
+        const normalized = sampled.map((c) => {
+          if (c.translation.translationLanguage === trainingLanguage && c.translation.originalLanguage !== trainingLanguage) {
+            return {
+              trainingText: c.translation.translation,
+              nativeText: c.translation.original,
+            };
+          }
+          return {
+            trainingText: c.translation.original,
+            nativeText: c.translation.translation,
+          };
+        });
+        const candidates = normalized.filter((c) => tokenize(c.trainingText).length >= 4);
+        if (candidates.length === 0) {
+          return res.status(404).json({
+            message: 'No enrolled cards with sentences (4+ words) in the training language. Add longer phrases to your library.',
+          });
+        }
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+        const words = tokenize(pick.trainingText);
+        return res.json({
+          trainingSentence: pick.trainingText,
+          nativeSentence: pick.nativeText,
+          words,
+          shuffled: shuffle(words),
+          originalLanguage: trainingLanguage,
+          translationLanguage: nativeLanguage,
+          source: 'library',
+        });
+      }
+
+      const completion = await deepSeek.chat.completions.create({
+        model: TRAINING_MODEL,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `Generate one sentence for a ${levelRaw} learner. The sentence must contain BETWEEN 6 AND 12 words in ${trainingLanguage}. Return JSON with:
+- "trainingSentence": the sentence in ${trainingLanguage}, written naturally with normal punctuation and capitalization, matching CEFR level ${levelRaw} vocabulary and grammar.
+- "nativeSentence": the same sentence translated into ${nativeLanguage}, natural and idiomatic.
+- "words": array of strings — the exact tokens of "trainingSentence" in order, one token per word. Strip outer punctuation from each token (commas, periods, question/exclamation marks), but keep internal apostrophes and hyphens intact. Preserve casing as it appears in the sentence.
+No extra fields.`,
+          },
+          { role: 'user', content: `Level: ${levelRaw}` },
+        ],
+      });
+      const raw = completion.choices[0].message.content ?? '{}';
+      const parsed = JSON.parse(raw);
+      const trainingSentence = typeof parsed.trainingSentence === 'string' ? parsed.trainingSentence.trim() : '';
+      const nativeSentence = typeof parsed.nativeSentence === 'string' ? parsed.nativeSentence.trim() : '';
+      const words = Array.isArray(parsed.words)
+        ? parsed.words.filter((w: unknown) => typeof w === 'string' && w.length > 0)
+        : [];
+      if (!trainingSentence || !nativeSentence || words.length < 4) {
+        return res.status(502).json({ message: 'Failed to generate a valid sentence' });
+      }
+      const shuffled = [...words];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      res.json({
+        trainingSentence,
+        nativeSentence,
+        words,
+        shuffled,
+        originalLanguage: trainingLanguage,
+        translationLanguage: nativeLanguage,
+      });
+    } catch (error) {
+      console.error('Error generating sentence builder:', error);
+      res.status(500).json({ message: 'Error generating sentence builder' });
+    }
+  });
+
   return router;
 };
