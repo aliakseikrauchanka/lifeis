@@ -386,6 +386,7 @@ export function WordBuilderPage() {
                   onChange={(e) => {
                     setTyped(e.target.value);
                     setChecked(false);
+                    if (phase === 'success') setPhase('playing');
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -394,7 +395,6 @@ export function WordBuilderPage() {
                     }
                   }}
                   placeholder={`Type in ${view.targetLang}…`}
-                  disabled={phase === 'success'}
                   className="w-full rounded border border-input bg-background p-2 text-sm"
                   autoFocus
                 />

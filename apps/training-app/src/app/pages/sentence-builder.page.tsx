@@ -324,6 +324,7 @@ export function SentenceBuilderPage() {
                   onChange={(e) => {
                     setTyped(e.target.value);
                     setChecked(false);
+                    if (phase === 'success') setPhase('playing');
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -332,7 +333,6 @@ export function SentenceBuilderPage() {
                     }
                   }}
                   placeholder={`Type the sentence in ${view.targetLang}…`}
-                  disabled={phase === 'success'}
                   className="w-full min-h-[5rem] rounded border border-input bg-background p-2 text-sm"
                 />
               </div>

@@ -20,6 +20,10 @@ interface ScrapeResult {
   word?: string;
 }
 
+function escapeRegex(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 class RateLimiter {
   private lastRequestTime = 0;
   private minDelay: number;
@@ -189,47 +193,68 @@ export class GlosbeScraper {
   }
 
   /**
+   * Strip simple HTML tags (Glosbe cells sometimes include nested markup).
+   */
+  private stripHtmlTags(s: string): string {
+    return s.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  /**
    * Parse translations from HTML
-   * Uses multiple strategies to extract translations
+   * Glosbe lists source (left) and target (right) columns; generic "phrase" regexes
+   * were matching the Russian column even for ru→pl. We read the target column:
+   * <div lang="{toLang}" ... dir-aware-pl-2 ...> (right cell in "similar phrases" rows).
    */
   private parseTranslations(html: string): string[] {
-    const translations: Set<string> = new Set();
+    const translations = new Set<string>();
+    const to = this.config.toLang;
 
-    // Strategy 1: Look for translation elements with class containing "translation" or "phrase"
-    const translationPatterns = [
-      /<[^>]*class="[^"]*translation[^"]*"[^>]*>([^<]+)<\/[^>]+>/gi,
-      /<[^>]*class="[^"]*phrase[^"]*"[^>]*>([^<]+)<\/[^>]+>/gi,
-      /<span[^>]*data-translation="([^"]+)"[^>]*>/gi,
-      /<div[^>]*data-translation="([^"]+)"[^>]*>/gi,
-    ];
+    // Primary: target-language cells in two-column phrase rows (padding class dir-aware-pl-2).
+    const rowPattern = new RegExp(
+      `<div(?=[^>]*\\blang="${escapeRegex(to)}"\\b)(?=[^>]*\\bdir-aware-pl-2\\b)[^>]*>([\\s\\S]*?)</div>`,
+      'gi',
+    );
+    let m: RegExpExecArray | null;
+    while ((m = rowPattern.exec(html)) !== null) {
+      const inner = m[1] ?? '';
+      if (/icon-loading|googleTranslate_container|glosbeTranslate_container/i.test(inner)) continue;
+      const plain = this.stripHtmlTags(inner);
+      if (!plain || plain.length < 2) continue;
+      for (const chunk of plain.split(/[·•|\n\r]+/)) {
+        const part = chunk.trim();
+        if (part.length >= 2 && this.isValidTranslation(part)) translations.add(part);
+      }
+    }
 
-    for (const pattern of translationPatterns) {
-      const matches = Array.from(html.matchAll(pattern));
-      for (const match of matches) {
-        const text = match[1]?.trim();
-        if (text && this.isValidTranslation(text)) {
-          translations.add(text);
+    // Fallback: data-translation / class-based (only keep script-appropriate hits)
+    if (translations.size === 0) {
+      const translationPatterns = [
+        /<span[^>]*data-translation="([^"]+)"[^>]*>/gi,
+        /<div[^>]*data-translation="([^"]+)"[^>]*>/gi,
+        /<[^>]*class="[^"]*translation[^"]*"[^>]*>([^<]+)<\/[^>]+>/gi,
+      ];
+      for (const pattern of translationPatterns) {
+        const matches = Array.from(html.matchAll(pattern));
+        for (const match of matches) {
+          const text = match[1]?.trim();
+          if (text && this.isValidTranslation(text)) translations.add(text);
         }
       }
     }
 
-    // Strategy 2: Look for Russian text in specific structures
-    // This is a fallback for when the HTML structure doesn't match expected patterns
-    if (translations.size === 0) {
+    // Last resort: Russian-like segments only when the target language is Russian
+    if (translations.size === 0 && to === 'ru') {
       const russianTextPattern = /[А-Яа-яЁё][А-Яа-яЁё\s,.-]{2,}/g;
       const russianMatches = html.match(russianTextPattern);
       if (russianMatches) {
-        // Filter out common page elements and navigation text
         const filtered = russianMatches
           .map((text) => text.trim())
           .filter((text) => {
-            // Filter out very long texts (likely page content, not translations)
             if (text.length > 50) return false;
-            // Filter out common navigation words
             const commonWords = ['словарь', 'перевод', 'пример', 'язык', 'глосбе', 'поиск'];
             return !commonWords.some((word) => text.toLowerCase().includes(word));
           })
-          .slice(0, this.config.maxTranslations * 2); // Get more candidates, will be limited later
+          .slice(0, this.config.maxTranslations * 2);
 
         filtered.forEach((text) => translations.add(text));
       }
@@ -239,17 +264,25 @@ export class GlosbeScraper {
   }
 
   /**
-   * Validate if a string is a valid translation
+   * Validate if a string is a valid translation for the requested target language
    */
   private isValidTranslation(text: string): boolean {
     if (!text || text.length < 2) return false;
-    // Check if it contains target language characters (Russian in this case)
-    // This can be made more generic based on toLang
-    if (this.config.toLang === 'ru') {
-      return /[А-Яа-яЁё]/.test(text);
+    if (text.startsWith('<') || text.startsWith('&')) return false;
+
+    const hasLatin = /\p{Script=Latin}/u.test(text);
+    const hasCyrillic = /\p{Script=Cyrillic}/u.test(text);
+
+    switch (this.config.toLang) {
+      case 'ru':
+        return hasCyrillic;
+      case 'sr':
+        return hasLatin || hasCyrillic;
+      default:
+        // pl, en, de, fr, fi, es — reject pure Cyrillic (usually leaked source column)
+        if (hasCyrillic && !hasLatin) return false;
+        return /\p{L}/u.test(text);
     }
-    // For other languages, just check it's not just HTML/whitespace
-    return text.length > 0 && !text.startsWith('<') && !text.startsWith('&');
   }
 
   /**

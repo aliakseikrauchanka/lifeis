@@ -122,14 +122,6 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  useEffect(() => {
-    if (prefill?.original?.trim()) {
-      handleTranslate();
-    }
-    // Run only once per modal mount; prefill is stable for the lifetime of the modal.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -349,16 +341,16 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   variant="ghost"
                   size="sm"
                   className="shrink-0 px-2"
-                  onClick={() =>
+                  onClick={() => {
+                    setProviderResults(null);
                     setAddForm((prev) => ({
-                      original: prev.translation,
-                      translation: prev.original,
+                      ...prev,
                       originalLanguage: prev.translationLanguage,
                       translationLanguage: prev.originalLanguage,
-                    }))
-                  }
+                    }));
+                  }}
                   disabled={isEdit}
-                  title="Swap languages"
+                  title="Swap source and target languages only (text fields stay as-is)"
                 >
                   <ArrowUpDown className="h-4 w-4" />
                 </Button>
