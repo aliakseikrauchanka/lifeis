@@ -43,6 +43,50 @@ function buildLanguagePairFilter(
   };
 }
 
+/**
+ * If a trainingLanguage is provided and the card's translationLanguage matches it
+ * (i.e. stored reversed relative to how the user wants to train), swap the
+ * original/translation fields so that `original` is always the training-side text.
+ */
+function normalizePickedForTraining<T extends { translation: { original: string; translation: string; originalLanguage: string; translationLanguage: string } }>(
+  picked: T[],
+  trainingLanguage: unknown,
+): { picked: T[]; originalLanguage: string; translationLanguage: string } {
+  if (picked.length === 0) {
+    return { picked, originalLanguage: '', translationLanguage: '' };
+  }
+  const validTraining =
+    typeof trainingLanguage === 'string' && ALLOWED_LANGUAGE_CODES.has(trainingLanguage)
+      ? trainingLanguage
+      : null;
+  const needsSwap =
+    validTraining !== null &&
+    picked[0].translation.originalLanguage !== validTraining &&
+    picked[0].translation.translationLanguage === validTraining;
+  if (needsSwap) {
+    const normalized = picked.map((c) => ({
+      ...c,
+      translation: {
+        ...c.translation,
+        original: c.translation.translation,
+        translation: c.translation.original,
+        originalLanguage: c.translation.translationLanguage,
+        translationLanguage: c.translation.originalLanguage,
+      },
+    })) as T[];
+    return {
+      picked: normalized,
+      originalLanguage: normalized[0].translation.originalLanguage,
+      translationLanguage: normalized[0].translation.translationLanguage,
+    };
+  }
+  return {
+    picked,
+    originalLanguage: picked[0].translation.originalLanguage,
+    translationLanguage: picked[0].translation.translationLanguage,
+  };
+}
+
 function formatLanguagePairSuffix(nativeLanguage: unknown, trainingLanguage: unknown): string {
   if (
     typeof nativeLanguage === 'string' &&
@@ -418,6 +462,11 @@ export const getSrsRoutes = (client: MongoClient) => {
         picked = sameLang.slice(0, wordCountRaw) as typeof picked;
       }
 
+      ({ picked, originalLanguage, translationLanguage } = normalizePickedForTraining(
+        picked,
+        req.body?.trainingLanguage,
+      ));
+
       const words = picked.map((c) => ({
         translationId: c.translation._id.toString(),
         original: c.translation.original,
@@ -608,6 +657,11 @@ No extra fields.`,
         }
         picked = sameLang.slice(0, wordCountRaw) as typeof picked;
       }
+
+      ({ picked, originalLanguage, translationLanguage } = normalizePickedForTraining(
+        picked,
+        req.body?.trainingLanguage,
+      ));
 
       const words = picked.map((c) => ({
         translationId: c.translation._id.toString(),

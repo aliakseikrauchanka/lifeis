@@ -93,7 +93,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
     try {
       const data = await generateSentenceTraining(
         translationIds && translationIds.length > 0
-          ? { sentenceCount, level, translationIds }
+          ? { sentenceCount, level, translationIds, nativeLanguage, trainingLanguage }
           : { wordCount, sentenceCount, level, nativeLanguage, trainingLanguage },
       );
       setWords(data.words);

@@ -26,9 +26,28 @@ export function StudyPage() {
     setLoading(true);
     try {
       const cards = await fetchDueCards();
-      const filtered = cards.filter((c: SrsCard) =>
-        matchesAppLanguagePair(c.translation, nativeLanguage, trainingLanguage),
-      );
+      const filtered = cards
+        .filter((c: SrsCard) =>
+          matchesAppLanguagePair(c.translation, nativeLanguage, trainingLanguage),
+        )
+        .map((c: SrsCard) => {
+          if (
+            c.translation.originalLanguage !== trainingLanguage &&
+            c.translation.translationLanguage === trainingLanguage
+          ) {
+            return {
+              ...c,
+              translation: {
+                ...c.translation,
+                original: c.translation.translation,
+                translation: c.translation.original,
+                originalLanguage: c.translation.translationLanguage,
+                translationLanguage: c.translation.originalLanguage,
+              },
+            };
+          }
+          return c;
+        });
       setQueue(filtered);
       setCardIndex(0);
     } catch (err) {

@@ -66,7 +66,7 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
     try {
       const data = await generateSentenceConstruction(
         translationIds && translationIds.length > 0
-          ? { level, translationIds }
+          ? { level, translationIds, nativeLanguage, trainingLanguage }
           : { level, wordCount, nativeLanguage, trainingLanguage },
       );
       setWords(data.words);
