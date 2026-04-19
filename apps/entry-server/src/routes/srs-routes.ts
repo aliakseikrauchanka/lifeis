@@ -6,6 +6,19 @@ import { deepSeek } from '../utils/deepseek';
 
 const VALID_RATINGS = new Set<Rating>(['again', 'hard', 'good', 'easy']);
 const ALLOWED_LANGUAGE_CODES = new Set(['pl', 'ru-RU', 'en-US', 'de-DE', 'fr-FR', 'sr-RS', 'fi', 'es']);
+const LANGUAGE_NAMES: Record<string, string> = {
+  pl: 'Polish',
+  'ru-RU': 'Russian',
+  'en-US': 'English',
+  'de-DE': 'German',
+  'fr-FR': 'French',
+  'sr-RS': 'Serbian',
+  fi: 'Finnish',
+  es: 'Spanish',
+};
+function languageName(code: string): string {
+  return LANGUAGE_NAMES[code] ?? code;
+}
 const MAX_TRANSCRIPT_LENGTH = 2000;
 const CEFR_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 const TRAINING_MODEL = 'deepseek-chat';
@@ -487,8 +500,8 @@ export const getSrsRoutes = (client: MongoClient) => {
           {
             role: 'system',
             content: `Return a JSON object with:
-- "story": a single string in ${originalLanguage} consisting of ${sentencesClause}. Match CEFR language level ${level} — use vocabulary and grammar typical for a ${level} learner. The story must use all the given words (each at least once). Join sentences with a single space, no numbering or bullets.
-- "translation": the same story translated into ${translationLanguage} as a single natural string (no numbering, no bullets).
+- "story": a single string written ONLY in ${languageName(originalLanguage)} (language code ${originalLanguage}). It MUST be ${sentencesClause}. Match CEFR language level ${level} — use vocabulary and grammar typical for a ${level} learner. The story must use all the given words (each at least once). Join sentences with a single space, no numbering or bullets. Do not mix other languages.
+- "translation": the same story translated ONLY into ${languageName(translationLanguage)} (language code ${translationLanguage}) as a single natural string (no numbering, no bullets). Do not mix other languages.
 No extra fields.`,
           },
           { role: 'user', content: wordList },
@@ -530,11 +543,11 @@ No extra fields.`,
         messages: [
           {
             role: 'system',
-            content: `You are a warm, supportive language coach evaluating a recall attempt of a short target story in ${originalLanguage} (the user typed or spoke it from memory — STT errors are possible). Return JSON with:
+            content: `You are a warm, supportive language coach evaluating a recall attempt of a short target story in ${languageName(originalLanguage)} (language code ${originalLanguage}; the user typed or spoke it from memory — STT errors are possible). Return JSON with:
 - "score": integer 0-10 reflecting how closely the transcript matches the target (content, word order, completeness; ignore minor punctuation/case; STT errors are partial penalties).
-- "grammarFeedback": **MUST be written in Russian (ru-RU) using the Cyrillic alphabet. Never Polish, English, or any other language — only Russian.** Analyse the user's transcript on its own, as standalone ${originalLanguage} text, regardless of whether it matches the target. Point out every spelling, case, gender, conjugation, agreement, preposition, and word-order mistake with the correct form. Use a polite, encouraging tone (e.g. start with a brief positive note, then list corrections kindly; address the user as "ты"). Do not mention the target story here. If the transcript is already fully correct, praise the user and say there is nothing to correct.
+- "grammarFeedback": **MUST be written in Russian (ru-RU) using the Cyrillic alphabet. Never Polish, English, or any other language — only Russian.** Analyse the user's transcript on its own, as standalone ${languageName(originalLanguage)} text, regardless of whether it matches the target. Point out every spelling, case, gender, conjugation, agreement, preposition, and word-order mistake with the correct form. Use a polite, encouraging tone (e.g. start with a brief positive note, then list corrections kindly; address the user as "ты"). Do not mention the target story here. If the transcript is already fully correct, praise the user and say there is nothing to correct.
 - "matchFeedback": **MUST be written in Russian (ru-RU) using the Cyrillic alphabet.** Briefly and supportively describe how close the attempt is to the target story (what was remembered, what was missed or different). Keep it kind and motivating — never discouraging. 1–2 sentences.
-- "corrected": the user's transcript rewritten in ${originalLanguage} with all spelling and grammar mistakes fixed (preserve the user's intent and wording; only fix errors). Empty string only if the transcript is already fully correct.
+- "corrected": the user's transcript rewritten ONLY in ${languageName(originalLanguage)} (language code ${originalLanguage}) with all spelling and grammar mistakes fixed (preserve the user's intent and wording; only fix errors). Empty string only if the transcript is already fully correct.
 No extra fields.`,
           },
           {
@@ -707,10 +720,10 @@ No extra fields.`,
         messages: [
           {
             role: 'system',
-            content: `You are a warm, supportive language coach reviewing sentences the user wrote in ${originalLanguage} using a given set of words. Target CEFR level: ${level}. Return JSON with:
+            content: `You are a warm, supportive language coach reviewing sentences the user wrote in ${languageName(originalLanguage)} (language code ${originalLanguage}) using a given set of words. Target CEFR level: ${level}. Return JSON with:
 - "grammarFeedback": **MUST be in Russian (Cyrillic). Never Polish, English, or any other language.** Point out every spelling, case, gender, conjugation, agreement, preposition, and word-order mistake with the correct form. Polite, encouraging tone; address the user as "ты". If the text is correct, praise and say there is nothing to fix.
 - "levelSuggestion": **MUST be in Russian (Cyrillic).** Suggest how to rewrite the user's text so it sounds more like CEFR ${level} — richer vocabulary, more idiomatic phrasing, grammar structures typical for ${level}. Explain briefly *why* each suggestion is more ${level}. Kind, supportive tone.
-- "improved": the user's text rewritten in ${originalLanguage} to match CEFR ${level} (grammar-correct, more natural, ${level}-appropriate vocabulary and structures). Preserve meaning and keep using the same target words where possible.
+- "improved": the user's text rewritten ONLY in ${languageName(originalLanguage)} (language code ${originalLanguage}) to match CEFR ${level} (grammar-correct, more natural, ${level}-appropriate vocabulary and structures). Preserve meaning and keep using the same target words where possible.
 - "usedWords": array of the original target words (from the given list) that appear in the user's text (case-insensitive, stem-tolerant match).
 - "missingWords": array of the target words NOT found in the user's text.
 No extra fields.`,
@@ -832,9 +845,9 @@ No extra fields.`,
         messages: [
           {
             role: 'system',
-            content: `Generate one sentence for a ${levelRaw} learner. The sentence must contain BETWEEN 6 AND 12 words in ${trainingLanguage}. Return JSON with:
-- "trainingSentence": the sentence in ${trainingLanguage}, written naturally with normal punctuation and capitalization, matching CEFR level ${levelRaw} vocabulary and grammar.
-- "nativeSentence": the same sentence translated into ${nativeLanguage}, natural and idiomatic.
+            content: `Generate one sentence for a ${levelRaw} learner. The sentence must contain BETWEEN 6 AND 12 words in ${languageName(trainingLanguage)} (language code ${trainingLanguage}). Return JSON with:
+- "trainingSentence": the sentence ONLY in ${languageName(trainingLanguage)} (language code ${trainingLanguage}), written naturally with normal punctuation and capitalization, matching CEFR level ${levelRaw} vocabulary and grammar.
+- "nativeSentence": the same sentence translated ONLY into ${languageName(nativeLanguage)} (language code ${nativeLanguage}), natural and idiomatic.
 - "words": array of strings — the exact tokens of "trainingSentence" in order, one token per word. Strip outer punctuation from each token (commas, periods, question/exclamation marks), but keep internal apostrophes and hyphens intact. Preserve casing as it appears in the sentence.
 No extra fields.`,
           },
@@ -867,6 +880,110 @@ No extra fields.`,
     } catch (error) {
       console.error('Error generating sentence builder:', error);
       res.status(500).json({ message: 'Error generating sentence builder' });
+    }
+  });
+
+  // POST /word-builder/generate — native word/phrase + training-language text to reconstruct letter-by-letter
+  router.post('/word-builder/generate', verifyAccessToken, async (req, res) => {
+    try {
+      const levelRaw = typeof req.body?.level === 'string' ? req.body.level : '';
+      if (!CEFR_LEVELS.has(levelRaw)) {
+        return res.status(400).json({ message: 'level must be one of A1, A2, B1, B2, C1, C2' });
+      }
+      const nativeLanguage = typeof req.body?.nativeLanguage === 'string' ? req.body.nativeLanguage : '';
+      const trainingLanguage = typeof req.body?.trainingLanguage === 'string' ? req.body.trainingLanguage : '';
+      if (!ALLOWED_LANGUAGE_CODES.has(nativeLanguage) || !ALLOWED_LANGUAGE_CODES.has(trainingLanguage)) {
+        return res.status(400).json({ message: 'Invalid nativeLanguage or trainingLanguage' });
+      }
+      if (nativeLanguage === trainingLanguage) {
+        return res.status(400).json({ message: 'nativeLanguage and trainingLanguage must differ' });
+      }
+
+      const source = req.body?.source === 'library' ? 'library' : 'random';
+      const userId = res.locals.userId;
+
+      if (source === 'library') {
+        const langFilter = buildLanguagePairFilter(nativeLanguage, trainingLanguage);
+        const pipeline: Record<string, unknown>[] = [
+          { $match: { owner_id: userId } },
+          {
+            $lookup: {
+              from: 'translations',
+              localField: 'translation_id',
+              foreignField: '_id',
+              as: 'translation',
+            },
+          },
+          { $unwind: '$translation' },
+        ];
+        if (langFilter && langFilter !== 'invalid') pipeline.push({ $match: langFilter });
+        pipeline.push({ $sample: { size: 100 } });
+        const sampled = (await srsCollection.aggregate(pipeline).toArray()) as Array<{
+          translation: { _id: ObjectId; original: string; translation: string; originalLanguage: string; translationLanguage: string };
+        }>;
+        if (sampled.length === 0) {
+          return res.status(404).json({ message: 'No enrolled cards available for this language pair' });
+        }
+        const normalized = sampled.map((c) => {
+          if (c.translation.translationLanguage === trainingLanguage && c.translation.originalLanguage !== trainingLanguage) {
+            return {
+              translationId: c.translation._id.toString(),
+              trainingText: c.translation.translation,
+              nativeText: c.translation.original,
+            };
+          }
+          return {
+            translationId: c.translation._id.toString(),
+            trainingText: c.translation.original,
+            nativeText: c.translation.translation,
+          };
+        });
+        const candidates = normalized.filter((c) => c.trainingText.trim().length >= 2 && c.trainingText.length <= 40);
+        if (candidates.length === 0) {
+          return res.status(404).json({ message: 'No suitable enrolled cards (≤40 chars) for word builder' });
+        }
+        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+        return res.json({
+          trainingText: pick.trainingText,
+          nativeText: pick.nativeText,
+          originalLanguage: trainingLanguage,
+          translationLanguage: nativeLanguage,
+          source: 'library',
+          translationId: pick.translationId,
+        });
+      }
+
+      const completion = await deepSeek.chat.completions.create({
+        model: TRAINING_MODEL,
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `Generate one short word OR short phrase (1 to 4 words, total length between 3 and 30 characters) in ${languageName(trainingLanguage)} (language code ${trainingLanguage}) appropriate for a CEFR ${levelRaw} learner. Return JSON with:
+- "trainingText": the word or phrase ONLY in ${languageName(trainingLanguage)} (language code ${trainingLanguage}), natural casing, no trailing punctuation.
+- "nativeText": the same word/phrase translated ONLY into ${languageName(nativeLanguage)} (language code ${nativeLanguage}), natural and concise.
+No extra fields.`,
+          },
+          { role: 'user', content: `Level: ${levelRaw}` },
+        ],
+      });
+      const raw = completion.choices[0].message.content ?? '{}';
+      const parsed = JSON.parse(raw);
+      const trainingText = typeof parsed.trainingText === 'string' ? parsed.trainingText.trim() : '';
+      const nativeText = typeof parsed.nativeText === 'string' ? parsed.nativeText.trim() : '';
+      if (!trainingText || !nativeText || trainingText.length < 2 || trainingText.length > 40) {
+        return res.status(502).json({ message: 'Failed to generate a valid word/phrase' });
+      }
+      res.json({
+        trainingText,
+        nativeText,
+        originalLanguage: trainingLanguage,
+        translationLanguage: nativeLanguage,
+        source: 'random',
+      });
+    } catch (error) {
+      console.error('Error generating word builder:', error);
+      res.status(500).json({ message: 'Error generating word builder' });
     }
   });
 

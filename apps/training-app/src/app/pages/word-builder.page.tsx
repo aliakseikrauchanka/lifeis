@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Volume2, RotateCcw } from 'lucide-react';
-import { generateSentenceBuilder, reviewCard, Rating, SentenceBuilderGenerated } from '../api/srs.api';
+import { Volume2, RotateCcw, Delete } from 'lucide-react';
+import { generateWordBuilder, reviewCard, Rating, WordBuilderGenerated } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import { GradeButtons } from '../components/grade-buttons';
 import { useAppLevel } from '../hooks/use-app-level';
@@ -11,28 +11,9 @@ import { useAppDirection } from '../hooks/use-app-direction';
 
 type Phase = 'idle' | 'playing' | 'success';
 
-const normalize = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/[.,!?;:"'«»„“”()]/g, '')
-    .trim();
+const normChar = (c: string) => c.toLowerCase();
 
-const tokenize = (s: string): string[] =>
-  s
-    .split(/\s+/)
-    .map((t) => t.replace(/^[.,!?;:"'«»„“”()\-]+|[.,!?;:"'«»„“”()\-]+$/g, ''))
-    .filter((t) => t.length > 0);
-
-const shuffleArray = <T,>(arr: T[]): T[] => {
-  const out = [...arr];
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
-  }
-  return out;
-};
-
-export function SentenceBuilderPage() {
+export function WordBuilderPage() {
   const [level] = useAppLevel();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
   const [direction] = useAppDirection();
@@ -40,36 +21,83 @@ export function SentenceBuilderPage() {
   const [phase, setPhase] = useState<Phase>('idle');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<SentenceBuilderGenerated | null>(null);
+  const [data, setData] = useState<WordBuilderGenerated | null>(null);
+
   const [source, setSource] = useState<'random' | 'library'>(() => {
-    const v = localStorage.getItem('sentence-builder-source');
+    const v = localStorage.getItem('word-builder-source');
     return v === 'library' ? 'library' : 'random';
   });
   const [mode, setMode] = useState<'buttons' | 'type'>(() => {
-    const v = localStorage.getItem('sentence-builder-mode');
+    const v = localStorage.getItem('word-builder-mode');
     return v === 'type' ? 'type' : 'buttons';
   });
-  const [typed, setTyped] = useState('');
 
-  // State as indices into `data.shuffled`
-  const [placed, setPlaced] = useState<number[]>([]);
+  const [placed, setPlaced] = useState<number[]>([]); // indices into shuffledChars
+  const [typed, setTyped] = useState('');
   const [checked, setChecked] = useState(false);
+  const [revealed, setRevealed] = useState(false);
   const [grade, setGrade] = useState<Rating | null>(null);
   const [grading, setGrading] = useState(false);
-  const [revealed, setRevealed] = useState(false);
+
+  const view = useMemo(() => {
+    if (!data) return null;
+    if (direction === 'native-to-training') {
+      return {
+        sourceText: data.nativeText,
+        sourceLang: data.translationLanguage,
+        targetText: data.trainingText,
+        targetLang: data.originalLanguage,
+      };
+    }
+    return {
+      sourceText: data.trainingText,
+      sourceLang: data.originalLanguage,
+      targetText: data.nativeText,
+      targetLang: data.translationLanguage,
+    };
+  }, [data, direction]);
+
+  const targetChars = useMemo(() => (view ? Array.from(view.targetText) : []), [view]);
+  const shuffledChars = useMemo(() => {
+    if (!view) return [];
+    const chars = Array.from(view.targetText);
+    const arr = [...chars];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [view]);
+
+  const availableIdx = useMemo(() => {
+    if (!view) return [];
+    const used = new Set(placed);
+    return shuffledChars.map((_, i) => i).filter((i) => !used.has(i));
+  }, [view, placed, shuffledChars]);
+
+  useEffect(() => {
+    if (!data) return;
+    setPlaced([]);
+    setTyped('');
+    setChecked(false);
+    setRevealed(false);
+    setGrade(null);
+    setPhase((p) => (p === 'success' ? 'playing' : p));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [direction]);
 
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
     setPlaced([]);
-    setChecked(false);
-    setGrade(null);
     setTyped('');
+    setChecked(false);
     setRevealed(false);
+    setGrade(null);
     try {
-      localStorage.setItem('sentence-builder-source', source);
-      localStorage.setItem('sentence-builder-mode', mode);
-      const result = await generateSentenceBuilder({ level, nativeLanguage, trainingLanguage, source });
+      localStorage.setItem('word-builder-source', source);
+      localStorage.setItem('word-builder-mode', mode);
+      const result = await generateWordBuilder({ level, nativeLanguage, trainingLanguage, source });
       setData(result);
       setPhase('playing');
     } catch (err) {
@@ -80,84 +108,80 @@ export function SentenceBuilderPage() {
     }
   };
 
-  const view = useMemo(() => {
-    if (!data) return null;
-    if (direction === 'native-to-training') {
-      return {
-        sourceText: data.nativeSentence,
-        sourceLang: data.translationLanguage,
-        targetText: data.trainingSentence,
-        targetLang: data.originalLanguage,
-        words: data.words,
-        shuffled: data.shuffled,
-      };
-    }
-    const reversedWords = tokenize(data.nativeSentence);
-    return {
-      sourceText: data.trainingSentence,
-      sourceLang: data.originalLanguage,
-      targetText: data.nativeSentence,
-      targetLang: data.translationLanguage,
-      words: reversedWords,
-      shuffled: shuffleArray(reversedWords),
-    };
-  }, [data, direction]);
-
-  useEffect(() => {
-    if (!data) return;
-    setPlaced([]);
-    setTyped('');
-    setChecked(false);
-    setGrade(null);
-    setRevealed(false);
-    if (phase === 'success') setPhase('playing');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [direction]);
-
-  const availableIdx = useMemo(() => {
-    if (!view) return [];
-    const used = new Set(placed);
-    return view.shuffled.map((_, i) => i).filter((i) => !used.has(i));
-  }, [view, placed]);
-
   const handlePick = (i: number) => {
     setPlaced((prev) => [...prev, i]);
     setChecked(false);
   };
 
-  const handleRemove = (pos: number) => {
-    setPlaced((prev) => prev.filter((_, i) => i !== pos));
+  const handlePopLast = () => {
+    setPlaced((prev) => prev.slice(0, -1));
     setChecked(false);
   };
 
   const handleReset = () => {
     setPlaced([]);
+    setTyped('');
     setChecked(false);
   };
 
   const handleCheck = () => {
     if (!view) return;
     setChecked(true);
-    const targetNorm = view.words.map(normalize).join(' ');
-    const builtNorm =
+    const target = view.targetText.trim();
+    const built =
       mode === 'type'
-        ? typed.split(/\s+/).map(normalize).filter(Boolean).join(' ')
-        : placed.map((i) => view.shuffled[i]).map(normalize).join(' ');
-    if (targetNorm === builtNorm) setPhase('success');
+        ? typed.trim()
+        : placed.map((i) => shuffledChars[i]).join('');
+    if (built.toLowerCase() === target.toLowerCase()) {
+      setPhase('success');
+    }
   };
+
+  // Keyboard support in buttons mode — subscribe once, read current state via refs
+  const stateRef = useRef({ mode, data, phase, placed, shuffledChars });
+  stateRef.current = { mode, data, phase, placed, shuffledChars };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const { mode: m, data: d, phase: p, placed: pl, shuffledChars: sc } = stateRef.current;
+      if (m !== 'buttons' || !d || p === 'success') return;
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        handlePopLast();
+        return;
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleCheck();
+        return;
+      }
+      if (e.key.length !== 1) return;
+      const wanted = normChar(e.key);
+      const usedSet = new Set(pl);
+      const idx = sc.findIndex((c, i) => !usedSet.has(i) && normChar(c) === wanted);
+      if (idx !== -1) {
+        e.preventDefault();
+        handlePick(idx);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [handleCheck, handlePopLast]);
 
   const correctnessAt = (pos: number): 'correct' | 'wrong' | null => {
     if (!checked || !view) return null;
-    const picked = view.shuffled[placed[pos]];
-    const target = view.words[pos];
+    const picked = shuffledChars[placed[pos]];
+    const target = targetChars[pos];
     if (target === undefined) return 'wrong';
-    return normalize(picked) === normalize(target) ? 'correct' : 'wrong';
+    return normChar(picked) === normChar(target) ? 'correct' : 'wrong';
   };
 
   return (
     <div className="flex flex-col items-center p-4 gap-4">
       <div className="flex flex-col items-center gap-2 w-full max-w-xl">
-        <h1 className="text-xl font-semibold">Sentence Builder</h1>
+        <h1 className="text-xl font-semibold">Word Builder</h1>
         <div className="flex flex-wrap items-end gap-3 justify-center">
           <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
             Source
@@ -195,7 +219,7 @@ export function SentenceBuilderPage() {
                 onClick={() => setMode('buttons')}
                 disabled={loading}
               >
-                Buttons
+                Letters
               </button>
               <button
                 type="button"
@@ -219,7 +243,7 @@ export function SentenceBuilderPage() {
             </div>
           </div>
           <Button size="sm" onClick={handleGenerate} disabled={loading}>
-            {phase === 'idle' ? 'Start' : 'New sentence'}
+            {phase === 'idle' ? 'Start' : 'New'}
           </Button>
         </div>
       </div>
@@ -267,14 +291,14 @@ export function SentenceBuilderPage() {
               <>
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Your answer</div>
-                  <div className="min-h-[3rem] rounded-md border border-dashed border-input bg-muted/30 p-2 flex flex-wrap gap-2">
+                  <div className="min-h-[3rem] rounded-md border border-dashed border-input bg-muted/30 p-2 flex flex-wrap gap-1">
                     {placed.length === 0 && (
                       <span className="text-sm text-muted-foreground self-center">
-                        Tap words below to build the sentence…
+                        Tap letters below or type on your keyboard…
                       </span>
                     )}
                     {placed.map((srcIdx, pos) => {
-                      const word = view.shuffled[srcIdx];
+                      const ch = shuffledChars[srcIdx];
                       const correctness = correctnessAt(pos);
                       const color =
                         correctness === 'correct'
@@ -282,15 +306,19 @@ export function SentenceBuilderPage() {
                           : correctness === 'wrong'
                           ? 'bg-red-100 text-red-900 border-red-300'
                           : 'bg-violet-100 text-violet-900 border-violet-200';
+                      const display = ch === ' ' ? '␣' : ch;
                       return (
                         <button
                           key={`placed-${pos}`}
                           type="button"
-                          onClick={() => handleRemove(pos)}
-                          className={`px-3 py-1 rounded border text-sm ${color} hover:opacity-80`}
+                          onClick={() => {
+                            setPlaced((prev) => prev.filter((_, i) => i !== pos));
+                            setChecked(false);
+                          }}
+                          className={`w-8 h-8 rounded border text-sm font-mono ${color} hover:opacity-80`}
                           title="Remove"
                         >
-                          {word}
+                          {display}
                         </button>
                       );
                     })}
@@ -298,20 +326,29 @@ export function SentenceBuilderPage() {
                 </div>
 
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Words</div>
-                  <div className="flex flex-wrap gap-2">
-                    {availableIdx.map((i) => (
-                      <button
-                        key={`avail-${i}`}
-                        type="button"
-                        onClick={() => handlePick(i)}
-                        className="px-3 py-1 rounded border border-input bg-background text-sm hover:bg-muted"
-                      >
-                        {view.shuffled[i]}
-                      </button>
-                    ))}
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-2">
+                    <span>Letters</span>
+                    <Button size="sm" variant="ghost" className="h-6 px-2" onClick={handlePopLast} disabled={placed.length === 0} title="Backspace">
+                      <Delete className="h-3 w-3" />
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {availableIdx.map((i) => {
+                      const ch = shuffledChars[i];
+                      const display = ch === ' ' ? '␣' : ch;
+                      return (
+                        <button
+                          key={`avail-${i}`}
+                          type="button"
+                          onClick={() => handlePick(i)}
+                          className="w-8 h-8 rounded border border-input bg-background text-sm font-mono hover:bg-muted"
+                        >
+                          {display}
+                        </button>
+                      );
+                    })}
                     {availableIdx.length === 0 && (
-                      <span className="text-sm text-muted-foreground">All words placed.</span>
+                      <span className="text-sm text-muted-foreground">All letters placed.</span>
                     )}
                   </div>
                 </div>
@@ -319,21 +356,23 @@ export function SentenceBuilderPage() {
             ) : (
               <div>
                 <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Your answer</div>
-                <textarea
+                <input
+                  type="text"
                   value={typed}
                   onChange={(e) => {
                     setTyped(e.target.value);
                     setChecked(false);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
+                    if (e.key === 'Enter') {
                       e.preventDefault();
                       handleCheck();
                     }
                   }}
-                  placeholder={`Type the sentence in ${view.targetLang}…`}
+                  placeholder={`Type in ${view.targetLang}…`}
                   disabled={phase === 'success'}
-                  className="w-full min-h-[5rem] rounded border border-input bg-background p-2 text-sm"
+                  className="w-full rounded border border-input bg-background p-2 text-sm"
+                  autoFocus
                 />
               </div>
             )}
@@ -352,10 +391,7 @@ export function SentenceBuilderPage() {
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => {
-                  handleReset();
-                  setTyped('');
-                }}
+                onClick={handleReset}
                 disabled={mode === 'buttons' ? placed.length === 0 : !typed}
               >
                 <RotateCcw className="h-4 w-4 mr-1" />

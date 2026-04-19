@@ -7,6 +7,7 @@ import { speak } from '../api/tts.api';
 import { BookOpen, Check, Volume2, ChevronLeft, ChevronRight, Volume1 } from 'lucide-react';
 import { GradeButtons } from '../components/grade-buttons';
 import { useAppLanguages } from '../hooks/use-app-languages';
+import { useAppDirection } from '../hooks/use-app-direction';
 import { matchesAppLanguagePair } from '../constants/language-options';
 
 export function StudyPage() {
@@ -19,8 +20,23 @@ export function StudyPage() {
   const [cardIndex, setCardIndex] = useState(0);
   const [autoSpeak, setAutoSpeak] = useState(() => localStorage.getItem('srs-auto-speak') === 'true');
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
+  const [direction] = useAppDirection();
 
-  const current = queue[cardIndex];
+  const rawCurrent = queue[cardIndex];
+  const current = rawCurrent
+    ? direction === 'native-to-training'
+      ? {
+          ...rawCurrent,
+          translation: {
+            ...rawCurrent.translation,
+            original: rawCurrent.translation.translation,
+            translation: rawCurrent.translation.original,
+            originalLanguage: rawCurrent.translation.translationLanguage,
+            translationLanguage: rawCurrent.translation.originalLanguage,
+          },
+        }
+      : rawCurrent
+    : undefined;
 
   const loadCards = useCallback(async () => {
     setLoading(true);
@@ -60,6 +76,11 @@ export function StudyPage() {
   useEffect(() => {
     loadCards();
   }, [loadCards]);
+
+  useEffect(() => {
+    setRevealed(false);
+    setExamples([]);
+  }, [direction]);
 
   const toggleAutoSpeak = () => {
     setAutoSpeak((prev) => {
@@ -136,8 +157,8 @@ export function StudyPage() {
     }
 
     const newQueue = [...queue.slice(0, cardIndex), ...queue.slice(cardIndex + 1)];
-    if (rating === 'again') {
-      newQueue.push(current);
+    if (rating === 'again' && rawCurrent) {
+      newQueue.push(rawCurrent);
     }
 
     if (newQueue.length === 0) {

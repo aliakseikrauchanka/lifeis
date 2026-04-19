@@ -300,6 +300,33 @@ export const generateSentenceBuilder = async (params: {
   return res.json();
 };
 
+export interface WordBuilderGenerated {
+  trainingText: string;
+  nativeText: string;
+  originalLanguage: string;
+  translationLanguage: string;
+  source?: 'random' | 'library';
+  translationId?: string;
+}
+
+export const generateWordBuilder = async (params: {
+  level: CefrLevel;
+  nativeLanguage: string;
+  trainingLanguage: string;
+  source?: 'random' | 'library';
+}): Promise<WordBuilderGenerated> => {
+  const res = await utilFetch('/srs/word-builder/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body?.message || 'Failed to generate word builder');
+  }
+  return res.json();
+};
+
 export const fetchTranslations = async (): Promise<TranslationData[]> => {
   const res = await utilFetch('/translations');
   if (!res.ok) throw new Error('Failed to fetch translations');

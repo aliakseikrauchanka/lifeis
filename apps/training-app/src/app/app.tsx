@@ -3,14 +3,16 @@ import { AudioDevicesProvider, UserSession, init, isUserLoggedIn } from '@lifeis
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { CONFIG } from '../config';
 import { useEffect, useState } from 'react';
-import { BookOpen, Brain, PenLine, Blocks, Library as LibraryIcon } from 'lucide-react';
+import { BookOpen, Brain, PenLine, Blocks, Type, Library as LibraryIcon } from 'lucide-react';
 import { StudyPage } from './pages/study.page';
 import { LibraryPage } from './pages/library.page';
 import { SentenceTrainingPage } from './pages/sentence-training.page';
 import { SentenceConstructionPage } from './pages/sentence-construction.page';
 import { SentenceBuilderPage } from './pages/sentence-builder.page';
+import { WordBuilderPage } from './pages/word-builder.page';
 import { ProfileMenu } from './components/profile-menu';
 import { HeaderAddButton } from './components/header-add-button';
+import { DirectionToggle } from './components/direction-toggle';
 import { TranslationAddModal } from './components/translation-add-modal';
 import { SelectionAddButton } from './components/selection-add-button';
 import { TranslationAddProvider } from './contexts/translation-add.context';
@@ -95,6 +97,24 @@ export function App() {
                     <span className="hidden sm:inline">Sentence Builder</span>
                   </NavLink>
                   <NavLink
+                    to="/word-builder"
+                    title="Word Builder"
+                    className={({ isActive }) =>
+                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
+                        isActive
+                          ? 'text-violet-900 bg-violet-500/12'
+                          : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
+                      }`
+                    }
+                  >
+                    <Type className="h-4 w-4 sm:hidden" />
+                    <span className="hidden sm:inline">Word Builder</span>
+                  </NavLink>
+                </nav>
+              )}
+              <div className="ml-auto flex items-center gap-1">
+                {isLoggedIn && (
+                  <NavLink
                     to="/library"
                     title="Library"
                     className={({ isActive }) =>
@@ -108,10 +128,9 @@ export function App() {
                     <LibraryIcon className="h-4 w-4 sm:hidden" />
                     <span className="hidden sm:inline">Library</span>
                   </NavLink>
-                </nav>
-              )}
-              <div className="ml-auto flex items-center gap-1">
+                )}
                 {isLoggedIn && <HeaderAddButton />}
+                {isLoggedIn && <DirectionToggle />}
                 {isLoggedIn && <ProfileMenu />}
                 <UserSession
                   isLoggedIn={isLoggedIn}
@@ -128,6 +147,7 @@ export function App() {
                   <Route path="/sentence-training" element={<SentenceTrainingPage />} />
                   <Route path="/sentence-construction" element={<SentenceConstructionPage />} />
                   <Route path="/sentence-builder" element={<SentenceBuilderPage />} />
+                  <Route path="/word-builder" element={<WordBuilderPage />} />
                 </Routes>
               </main>
             )}
