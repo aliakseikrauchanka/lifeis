@@ -23,7 +23,8 @@ interface TranslationAddContextValue {
   notifyChanged: () => void;
   refreshIndex: () => Promise<void>;
   subscribeChanged: (fn: () => void) => () => void;
-  findByOriginal: (text: string) => TranslationData | undefined;
+  /** Match when selected text equals stored original or stored translation (after normalize). */
+  findByOriginalOrTranslation: (text: string) => TranslationData | undefined;
 }
 
 const TranslationAddContext = createContext<TranslationAddContextValue | null>(null);
@@ -38,7 +39,8 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
   const [editId, setEditId] = useState<string | null>(null);
   const [prefill, setPrefill] = useState<TranslationAddPrefill | null>(null);
   const subscribersRef = useRef(new Set<() => void>());
-  const indexRef = useRef<Map<string, TranslationData>>(new Map());
+  const indexOriginalRef = useRef<Map<string, TranslationData>>(new Map());
+  const indexTranslationRef = useRef<Map<string, TranslationData>>(new Map());
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
   const languagesRef = useRef({ nativeLanguage, trainingLanguage });
   useEffect(() => {
@@ -48,14 +50,17 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
   const refreshIndex = useCallback(async () => {
     try {
       const list = await fetchTranslations();
-      const next = new Map<string, TranslationData>();
+      const byOrig = new Map<string, TranslationData>();
+      const byTrans = new Map<string, TranslationData>();
       for (const t of list) {
-        next.set(normalize(t.original), t);
+        byOrig.set(normalize(t.original), t);
+        byTrans.set(normalize(t.translation), t);
       }
-      indexRef.current = next;
+      indexOriginalRef.current = byOrig;
+      indexTranslationRef.current = byTrans;
     } catch (err) {
       // Silently ignore — user may be logged out or network may be offline.
-      // The index simply remains empty and findByOriginal returns undefined.
+      // The index simply remains empty and lookup returns undefined.
     }
   }, []);
 
@@ -63,8 +68,10 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
     refreshIndex();
   }, [refreshIndex]);
 
-  const findByOriginal = useCallback((text: string): TranslationData | undefined => {
-    const match = indexRef.current.get(normalize(text));
+  const findByOriginalOrTranslation = useCallback((text: string): TranslationData | undefined => {
+    const key = normalize(text);
+    const match =
+      indexOriginalRef.current.get(key) ?? indexTranslationRef.current.get(key);
     if (!match) return undefined;
     const { nativeLanguage: n, trainingLanguage: t } = languagesRef.current;
     return matchesAppLanguagePair(match, n, t) ? match : undefined;
@@ -121,7 +128,7 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
       notifyChanged,
       refreshIndex,
       subscribeChanged,
-      findByOriginal,
+      findByOriginalOrTranslation,
     }),
     [
       isOpen,
@@ -134,7 +141,7 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
       notifyChanged,
       refreshIndex,
       subscribeChanged,
-      findByOriginal,
+      findByOriginalOrTranslation,
     ],
   );
 

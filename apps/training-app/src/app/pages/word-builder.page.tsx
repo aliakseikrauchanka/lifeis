@@ -11,7 +11,16 @@ import { useAppDirection } from '../hooks/use-app-direction';
 
 type Phase = 'idle' | 'playing' | 'success';
 
-const normChar = (c: string) => c.toLowerCase();
+/** Compare/sort letters; NFC so precomposed ć matches c+combining and keys from the OS. */
+const normChar = (c: string) => c.normalize('NFC').toLowerCase();
+
+/** Option (⌥) on macOS/iOS is reported as altKey without ctrl — used for Polish ś, ć, ń, ó, … */
+function isAppleLikePlatform(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  const p = navigator.platform ?? '';
+  const ua = navigator.userAgent ?? '';
+  return /Mac|iPhone|iPad|iPod/i.test(p) || /Mac OS X|iPhone|iPad/i.test(ua);
+}
 
 export function WordBuilderPage() {
   const [level] = useAppLevel();
@@ -57,17 +66,19 @@ export function WordBuilderPage() {
     };
   }, [data, direction]);
 
-  const targetChars = useMemo(() => (view ? Array.from(view.targetText) : []), [view]);
+  const nfcTargetText = useMemo(() => (view ? view.targetText.normalize('NFC') : ''), [view]);
+
+  const targetChars = useMemo(() => (nfcTargetText ? Array.from(nfcTargetText) : []), [nfcTargetText]);
   const shuffledChars = useMemo(() => {
-    if (!view) return [];
-    const chars = Array.from(view.targetText);
+    if (!nfcTargetText) return [];
+    const chars = Array.from(nfcTargetText);
     const arr = [...chars];
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
-  }, [view]);
+  }, [nfcTargetText]);
 
   const availableIdx = useMemo(() => {
     if (!view) return [];
@@ -127,11 +138,12 @@ export function WordBuilderPage() {
   const handleCheck = () => {
     if (!view) return;
     setChecked(true);
-    const target = view.targetText.trim();
-    const built =
+    const target = nfcTargetText.trim().normalize('NFC');
+    const built = (
       mode === 'type'
         ? typed.trim()
-        : placed.map((i) => shuffledChars[i]).join('');
+        : placed.map((i) => shuffledChars[i]).join('')
+    ).normalize('NFC');
     if (built.toLowerCase() === target.toLowerCase()) {
       setPhase('success');
     }
@@ -146,7 +158,15 @@ export function WordBuilderPage() {
       const { mode: m, data: d, phase: p, placed: pl, shuffledChars: sc } = stateRef.current;
       if (m !== 'buttons' || !d || p === 'success') return;
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // AltGr (Windows/Linux): ctrl+alt or AltGraph — Polish letters via Right Alt.
+      const isAltGr =
+        (e.altKey && e.ctrlKey) || (typeof e.getModifierState === 'function' && e.getModifierState('AltGraph'));
+      // macOS: Option+letter produces ś, ć, … — only altKey is set, not ctrlKey (unlike AltGr).
+      const isMacOptionTyping = isAppleLikePlatform() && e.altKey && !e.ctrlKey && !e.metaKey;
+      if (e.metaKey) return;
+      if (e.ctrlKey && !isAltGr) return;
+      if (e.altKey && !isAltGr && !isMacOptionTyping) return;
+      if (e.isComposing || e.key === 'Dead') return;
       if (e.key === 'Backspace') {
         e.preventDefault();
         handlePopLast();
@@ -157,8 +177,12 @@ export function WordBuilderPage() {
         handleCheck();
         return;
       }
-      if (e.key.length !== 1) return;
-      const wanted = normChar(e.key);
+      const mergedKey = e.key.normalize('NFC');
+      // Must be exactly one code point — never take "last char" of named keys:
+      // "Shift" → 't', "Alt" → 't', "ArrowRight" → 't', etc.
+      const chars = [...mergedKey];
+      if (chars.length !== 1) return;
+      const wanted = normChar(chars[0] ?? '');
       const usedSet = new Set(pl);
       const idx = sc.findIndex((c, i) => !usedSet.has(i) && normChar(c) === wanted);
       if (idx !== -1) {

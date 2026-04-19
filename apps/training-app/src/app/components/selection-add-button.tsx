@@ -38,7 +38,7 @@ function getSelectionInfo(): { text: string; position: Position } | null {
 }
 
 export function SelectionAddButton() {
-  const { open, openForEdit, findByOriginal, isOpen } = useTranslationAdd();
+  const { open, openForEdit, findByOriginalOrTranslation, isOpen } = useTranslationAdd();
   const [info, setInfo] = useState<{ text: string; position: Position } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -77,7 +77,7 @@ export function SelectionAddButton() {
 
   if (!info) return null;
 
-  const existing = findByOriginal(info.text);
+  const existing = findByOriginalOrTranslation(info.text);
   const preview = info.text.length > 40 ? info.text.slice(0, 37) + '…' : info.text;
 
   const handleAdd = () => {
