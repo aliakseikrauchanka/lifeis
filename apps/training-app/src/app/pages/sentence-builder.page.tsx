@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Volume2, RotateCcw } from 'lucide-react';
-import { generateSentenceBuilder, SentenceBuilderGenerated } from '../api/srs.api';
+import { generateSentenceBuilder, reviewCard, Rating, SentenceBuilderGenerated } from '../api/srs.api';
 import { speak } from '../api/tts.api';
+import { GradeButtons } from '../components/grade-buttons';
 import { useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
 
@@ -27,18 +28,30 @@ export function SentenceBuilderPage() {
     const v = localStorage.getItem('sentence-builder-source');
     return v === 'library' ? 'library' : 'random';
   });
+  const [mode, setMode] = useState<'buttons' | 'type'>(() => {
+    const v = localStorage.getItem('sentence-builder-mode');
+    return v === 'type' ? 'type' : 'buttons';
+  });
+  const [typed, setTyped] = useState('');
 
   // State as indices into `data.shuffled`
   const [placed, setPlaced] = useState<number[]>([]);
   const [checked, setChecked] = useState(false);
+  const [grade, setGrade] = useState<Rating | null>(null);
+  const [grading, setGrading] = useState(false);
+  const [revealed, setRevealed] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
     setError(null);
     setPlaced([]);
     setChecked(false);
+    setGrade(null);
+    setTyped('');
+    setRevealed(false);
     try {
       localStorage.setItem('sentence-builder-source', source);
+      localStorage.setItem('sentence-builder-mode', mode);
       const result = await generateSentenceBuilder({ level, nativeLanguage, trainingLanguage, source });
       setData(result);
       setPhase('playing');
@@ -74,9 +87,11 @@ export function SentenceBuilderPage() {
   const handleCheck = () => {
     if (!data) return;
     setChecked(true);
-    const built = placed.map((i) => data.shuffled[i]);
     const targetNorm = data.words.map(normalize).join(' ');
-    const builtNorm = built.map(normalize).join(' ');
+    const builtNorm =
+      mode === 'type'
+        ? typed.split(/\s+/).map(normalize).filter(Boolean).join(' ')
+        : placed.map((i) => data.shuffled[i]).map(normalize).join(' ');
     if (targetNorm === builtNorm) setPhase('success');
   };
 
@@ -115,6 +130,31 @@ export function SentenceBuilderPage() {
                 disabled={loading}
               >
                 Library
+              </button>
+            </div>
+          </div>
+          <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
+            Mode
+            <div className="inline-flex rounded border border-input overflow-hidden">
+              <button
+                type="button"
+                className={`px-2 py-1 text-sm ${
+                  mode === 'buttons' ? 'bg-violet-600 text-white' : 'bg-background text-foreground hover:bg-muted'
+                }`}
+                onClick={() => setMode('buttons')}
+                disabled={loading}
+              >
+                Buttons
+              </button>
+              <button
+                type="button"
+                className={`px-2 py-1 text-sm border-l border-input ${
+                  mode === 'type' ? 'bg-violet-600 text-white' : 'bg-background text-foreground hover:bg-muted'
+                }`}
+                onClick={() => setMode('type')}
+                disabled={loading}
+              >
+                Type
               </button>
             </div>
           </div>
@@ -158,69 +198,115 @@ export function SentenceBuilderPage() {
               <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
                 {data.translationLanguage}
               </div>
-              <p className="text-lg">{data.nativeSentence}</p>
-            </div>
-
-            <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Your answer</div>
-              <div className="min-h-[3rem] rounded-md border border-dashed border-input bg-muted/30 p-2 flex flex-wrap gap-2">
-                {placed.length === 0 && (
-                  <span className="text-sm text-muted-foreground self-center">
-                    Tap words below to build the sentence…
-                  </span>
-                )}
-                {placed.map((srcIdx, pos) => {
-                  const word = data.shuffled[srcIdx];
-                  const correctness = correctnessAt(pos);
-                  const color =
-                    correctness === 'correct'
-                      ? 'bg-green-100 text-green-900 border-green-300'
-                      : correctness === 'wrong'
-                      ? 'bg-red-100 text-red-900 border-red-300'
-                      : 'bg-violet-100 text-violet-900 border-violet-200';
-                  return (
-                    <button
-                      key={`placed-${pos}`}
-                      type="button"
-                      onClick={() => handleRemove(pos)}
-                      className={`px-3 py-1 rounded border text-sm ${color} hover:opacity-80`}
-                      title="Remove"
-                    >
-                      {word}
-                    </button>
-                  );
-                })}
+              <div className="flex items-start gap-2">
+                <p className="text-lg flex-1">{data.nativeSentence}</p>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0 rounded-full shrink-0"
+                  onClick={() => speak(data.nativeSentence, data.translationLanguage)}
+                  title="Speak"
+                >
+                  <Volume2 className="h-4 w-4" />
+                </Button>
               </div>
             </div>
 
-            <div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Words</div>
-              <div className="flex flex-wrap gap-2">
-                {availableIdx.map((i) => (
-                  <button
-                    key={`avail-${i}`}
-                    type="button"
-                    onClick={() => handlePick(i)}
-                    className="px-3 py-1 rounded border border-input bg-background text-sm hover:bg-muted"
-                  >
-                    {data.shuffled[i]}
-                  </button>
-                ))}
-                {availableIdx.length === 0 && (
-                  <span className="text-sm text-muted-foreground">All words placed.</span>
-                )}
+            {mode === 'buttons' ? (
+              <>
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Your answer</div>
+                  <div className="min-h-[3rem] rounded-md border border-dashed border-input bg-muted/30 p-2 flex flex-wrap gap-2">
+                    {placed.length === 0 && (
+                      <span className="text-sm text-muted-foreground self-center">
+                        Tap words below to build the sentence…
+                      </span>
+                    )}
+                    {placed.map((srcIdx, pos) => {
+                      const word = data.shuffled[srcIdx];
+                      const correctness = correctnessAt(pos);
+                      const color =
+                        correctness === 'correct'
+                          ? 'bg-green-100 text-green-900 border-green-300'
+                          : correctness === 'wrong'
+                          ? 'bg-red-100 text-red-900 border-red-300'
+                          : 'bg-violet-100 text-violet-900 border-violet-200';
+                      return (
+                        <button
+                          key={`placed-${pos}`}
+                          type="button"
+                          onClick={() => handleRemove(pos)}
+                          className={`px-3 py-1 rounded border text-sm ${color} hover:opacity-80`}
+                          title="Remove"
+                        >
+                          {word}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Words</div>
+                  <div className="flex flex-wrap gap-2">
+                    {availableIdx.map((i) => (
+                      <button
+                        key={`avail-${i}`}
+                        type="button"
+                        onClick={() => handlePick(i)}
+                        className="px-3 py-1 rounded border border-input bg-background text-sm hover:bg-muted"
+                      >
+                        {data.shuffled[i]}
+                      </button>
+                    ))}
+                    {availableIdx.length === 0 && (
+                      <span className="text-sm text-muted-foreground">All words placed.</span>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Your answer</div>
+                <textarea
+                  value={typed}
+                  onChange={(e) => {
+                    setTyped(e.target.value);
+                    setChecked(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleCheck();
+                    }
+                  }}
+                  placeholder={`Type the sentence in ${data.originalLanguage}…`}
+                  disabled={phase === 'success'}
+                  className="w-full min-h-[5rem] rounded border border-input bg-background p-2 text-sm"
+                />
               </div>
-            </div>
+            )}
 
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
                 onClick={handleCheck}
-                disabled={placed.length === 0 || phase === 'success'}
+                disabled={
+                  phase === 'success' ||
+                  (mode === 'buttons' ? placed.length === 0 : !typed.trim())
+                }
               >
                 Check
               </Button>
-              <Button size="sm" variant="outline" onClick={handleReset} disabled={placed.length === 0}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  handleReset();
+                  setTyped('');
+                }}
+                disabled={mode === 'buttons' ? placed.length === 0 : !typed}
+              >
                 <RotateCcw className="h-4 w-4 mr-1" />
                 Reset
               </Button>
@@ -244,7 +330,55 @@ export function SentenceBuilderPage() {
               </div>
             )}
             {checked && phase !== 'success' && (
-              <div className="text-sm text-red-700">Not quite — try rearranging.</div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-red-700">Not quite — try again.</span>
+                {!revealed && (
+                  <Button size="sm" variant="outline" onClick={() => setRevealed(true)}>
+                    Show answer
+                  </Button>
+                )}
+              </div>
+            )}
+            {revealed && phase !== 'success' && (
+              <div className="border-t pt-3">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Answer</div>
+                <div className="flex items-start gap-2">
+                  <p className="text-sm flex-1">{data.trainingSentence}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 rounded-full shrink-0"
+                    onClick={() => speak(data.trainingSentence, data.originalLanguage)}
+                    title="Speak"
+                  >
+                    <Volume2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {checked && data.source === 'library' && data.translationId && (
+              <div className="border-t pt-3 space-y-2">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide">
+                  How hard was this card?
+                </div>
+                <GradeButtons
+                  onGrade={async (r) => {
+                    if (!data.translationId) return;
+                    setGrading(true);
+                    try {
+                      await reviewCard(data.translationId, r);
+                      setGrade(r);
+                    } catch (err) {
+                      setError((err as Error).message);
+                    } finally {
+                      setGrading(false);
+                    }
+                  }}
+                  disabled={grading || grade !== null}
+                  selected={grade ?? undefined}
+                />
+              </div>
             )}
           </CardContent>
         </Card>

@@ -787,7 +787,7 @@ No extra fields.`,
         if (langFilter && langFilter !== 'invalid') pipeline.push({ $match: langFilter });
         pipeline.push({ $sample: { size: 100 } });
         const sampled = (await srsCollection.aggregate(pipeline).toArray()) as Array<{
-          translation: { original: string; translation: string; originalLanguage: string; translationLanguage: string };
+          translation: { _id: ObjectId; original: string; translation: string; originalLanguage: string; translationLanguage: string };
         }>;
         if (sampled.length === 0) {
           return res.status(404).json({ message: 'No enrolled cards available for this language pair' });
@@ -795,11 +795,13 @@ No extra fields.`,
         const normalized = sampled.map((c) => {
           if (c.translation.translationLanguage === trainingLanguage && c.translation.originalLanguage !== trainingLanguage) {
             return {
+              translationId: c.translation._id.toString(),
               trainingText: c.translation.translation,
               nativeText: c.translation.original,
             };
           }
           return {
+            translationId: c.translation._id.toString(),
             trainingText: c.translation.original,
             nativeText: c.translation.translation,
           };
@@ -820,6 +822,7 @@ No extra fields.`,
           originalLanguage: trainingLanguage,
           translationLanguage: nativeLanguage,
           source: 'library',
+          translationId: pick.translationId,
         });
       }
 

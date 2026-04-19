@@ -278,6 +278,8 @@ export interface SentenceBuilderGenerated {
   shuffled: string[];
   originalLanguage: string;
   translationLanguage: string;
+  source?: 'random' | 'library';
+  translationId?: string;
 }
 
 export const generateSentenceBuilder = async (params: {
