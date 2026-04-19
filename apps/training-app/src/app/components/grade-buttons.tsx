@@ -1,5 +1,6 @@
 import { Button } from './ui/button';
 import { Rating } from '../api/srs.api';
+import { useI18n } from '../i18n/i18n-context';
 
 interface GradeButtonsProps {
   onGrade: (rating: Rating) => void;
@@ -9,6 +10,7 @@ interface GradeButtonsProps {
 }
 
 export function GradeButtons({ onGrade, disabled, showHotkeys, selected }: GradeButtonsProps) {
+  const { t } = useI18n();
   return (
     <div className="flex justify-center gap-2">
       <Button
@@ -18,7 +20,7 @@ export function GradeButtons({ onGrade, disabled, showHotkeys, selected }: Grade
         disabled={disabled}
         className={`gap-1 ${selected && selected !== 'again' ? 'opacity-40' : ''}`}
       >
-        Again
+        {t('grade.again')}
         {showHotkeys && (
           <kbd className="text-xs px-1 py-0.5 rounded bg-red-800/30 border border-red-400/30">1</kbd>
         )}
@@ -32,7 +34,7 @@ export function GradeButtons({ onGrade, disabled, showHotkeys, selected }: Grade
         onClick={() => onGrade('hard')}
         disabled={disabled}
       >
-        Hard
+        {t('grade.hard')}
         {showHotkeys && (
           <kbd className="text-xs px-1 py-0.5 rounded bg-orange-100 border border-orange-300">2</kbd>
         )}
@@ -46,7 +48,7 @@ export function GradeButtons({ onGrade, disabled, showHotkeys, selected }: Grade
         onClick={() => onGrade('good')}
         disabled={disabled}
       >
-        Good
+        {t('grade.good')}
         {showHotkeys && (
           <kbd className="text-xs px-1 py-0.5 rounded bg-green-100 border border-green-300">3</kbd>
         )}
@@ -60,7 +62,7 @@ export function GradeButtons({ onGrade, disabled, showHotkeys, selected }: Grade
         onClick={() => onGrade('easy')}
         disabled={disabled}
       >
-        Easy
+        {t('grade.easy')}
         {showHotkeys && (
           <kbd className="text-xs px-1 py-0.5 rounded bg-blue-100 border border-blue-300">4</kbd>
         )}

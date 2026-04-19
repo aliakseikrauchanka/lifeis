@@ -2,10 +2,12 @@ import { ArrowRight } from 'lucide-react';
 import { useAppDirection } from '../hooks/use-app-direction';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { getLanguageFlag, getLanguageLabel } from '../constants/language-options';
+import { useI18n } from '../i18n/i18n-context';
 
 export function DirectionToggle() {
   const [direction, setDirection] = useAppDirection();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
+  const { t } = useI18n();
 
   const from = direction === 'native-to-training' ? nativeLanguage : trainingLanguage;
   const to = direction === 'native-to-training' ? trainingLanguage : nativeLanguage;
@@ -13,7 +15,10 @@ export function DirectionToggle() {
   const toggle = () =>
     setDirection(direction === 'native-to-training' ? 'training-to-native' : 'native-to-training');
 
-  const title = `Training direction: ${getLanguageLabel(from)} → ${getLanguageLabel(to)} (click to swap)`;
+  const title = t('direction.title', {
+    from: getLanguageLabel(from),
+    to: getLanguageLabel(to),
+  });
 
   return (
     <button

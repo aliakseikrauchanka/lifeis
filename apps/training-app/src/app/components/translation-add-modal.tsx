@@ -18,6 +18,7 @@ import {
 } from '../contexts/translation-add.context';
 import { LANGUAGE_OPTIONS } from '../constants/language-options';
 import { useAppLanguages } from '../hooks/use-app-languages';
+import { useI18n } from '../i18n/i18n-context';
 
 const ORIGINAL_REC_ID = 'global-add-original';
 const TRANSLATION_REC_ID = 'global-add-translation';
@@ -33,6 +34,7 @@ interface ModalBodyProps {
 
 function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageChange }: ModalBodyProps) {
   const isEdit = mode === 'edit';
+  const { t } = useI18n();
   const { stopListening } = useSpeechToText();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
   const [addForm, setAddForm] = useState(() => {
@@ -137,9 +139,9 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       >
         <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
           <h3 id="add-translation-title" className="text-base font-semibold">
-            {isEdit ? 'Edit translation' : 'Add translation'}
+            {isEdit ? t('modal.editTranslation') : t('header.addTranslation')}
           </h3>
-          <Button variant="ghost" size="sm" onClick={onClose} title="Close">
+          <Button variant="ghost" size="sm" onClick={onClose} title={t('profile.close')}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -151,7 +153,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   <div className="relative flex-1">
                     <input
                       type="text"
-                      placeholder="Original word..."
+                      placeholder={t('modal.placeholderOriginal')}
                       value={addForm.original}
                       onChange={(e) => setAddForm((prev) => ({ ...prev, original: e.target.value }))}
                       onKeyDown={(e) => {
@@ -176,7 +178,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                             setAddForm((prev) => ({ ...prev, original: '' }));
                             stopListening(ORIGINAL_REC_ID);
                           }}
-                          title="Clear"
+                          title={t('modal.clear')}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -185,7 +187,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                           size="sm"
                           className="h-7 w-7 p-0"
                           onClick={() => speak(addForm.original, addForm.originalLanguage)}
-                          title="Speak"
+                          title={t('a11y.speak')}
                         >
                           <Volume2 className="h-4 w-4" />
                         </Button>
@@ -198,7 +200,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                           size="sm"
                           className="h-7 w-7 p-0"
                           onClick={() => speak(addForm.original, addForm.originalLanguage)}
-                          title="Speak"
+                          title={t('a11y.speak')}
                         >
                           <Volume2 className="h-4 w-4" />
                         </Button>
@@ -211,7 +213,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       className="shrink-0 px-2 bg-violet-600 hover:bg-violet-700 text-white"
                       onClick={handleTranslate}
                       disabled={isEdit || translating || !addForm.original.trim()}
-                      title="Suggest translations from OpenAI, DeepSeek and Glosbe (Enter)"
+                      title={t('modal.suggestTitle')}
                     >
                       <Languages className="h-4 w-4" />
                     </Button>
@@ -257,7 +259,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   <div className="relative flex-1">
                     <input
                       type="text"
-                      placeholder="Translation..."
+                      placeholder={t('modal.placeholderTranslation')}
                       value={addForm.translation}
                       onChange={(e) =>
                         setAddForm((prev) => ({ ...prev, translation: e.target.value }))
@@ -280,7 +282,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                             setAddForm((prev) => ({ ...prev, translation: '' }));
                             stopListening(TRANSLATION_REC_ID);
                           }}
-                          title="Clear"
+                          title={t('modal.clear')}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -289,7 +291,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                           size="sm"
                           className="h-7 w-7 p-0"
                           onClick={() => speak(addForm.translation, addForm.translationLanguage)}
-                          title="Speak"
+                          title={t('a11y.speak')}
                         >
                           <Volume2 className="h-4 w-4" />
                         </Button>
@@ -350,7 +352,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                     }));
                   }}
                   disabled={isEdit}
-                  title="Swap source and target languages only (text fields stay as-is)"
+                  title={t('modal.swapLanguagesTitle')}
                 >
                   <ArrowUpDown className="h-4 w-4" />
                 </Button>
@@ -359,7 +361,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
             {translating && (
               <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
                 <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                Fetching suggestions from OpenAI, DeepSeek and Glosbe...
+                {t('modal.fetchingSuggestions')}
               </div>
             )}
           </div>
@@ -399,16 +401,20 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                     const r = providerResults[activeProvider];
                     if (!r) return null;
                     if (r.error) {
-                      return <p className="text-sm text-red-600">Error: {r.error}</p>;
+                      return (
+                        <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: r.error })}</p>
+                      );
                     }
                     if (r.translations.length === 0) {
-                      return <p className="text-sm text-muted-foreground">No translations returned.</p>;
+                      return (
+                        <p className="text-sm text-muted-foreground">{t('modal.noSuggestions')}</p>
+                      );
                     }
                     return (
                       <>
                         <div className="flex flex-col gap-1">
                           <span className="text-xs font-medium text-muted-foreground uppercase">
-                            Translations
+                            {t('modal.translationsHeading')}
                           </span>
                           <div className="flex flex-wrap gap-1">
                             {r.translations.map((opt, i) => (
@@ -436,7 +442,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                                       speak(opt, addForm.translationLanguage);
                                     }
                                   }}
-                                  title="Speak"
+                                  title={t('a11y.speak')}
                                   className="inline-flex items-center opacity-70 hover:opacity-100"
                                 >
                                   <Volume2 className="h-3 w-3" />
@@ -448,7 +454,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                         {r.examples && r.examples.length > 0 && (
                           <div className="flex flex-col gap-1">
                             <span className="text-xs font-medium text-muted-foreground uppercase">
-                              Examples
+                              {t('modal.examplesHeading')}
                             </span>
                             <ul className="flex flex-col gap-1.5">
                               {r.examples.map((ex, i) => (
@@ -460,7 +466,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                                       size="sm"
                                       className="h-7 w-7 p-0 shrink-0"
                                       onClick={() => speak(ex.original, addForm.originalLanguage)}
-                                      title="Speak"
+                                      title={t('a11y.speak')}
                                     >
                                       <Volume2 className="h-3 w-3" />
                                     </Button>
@@ -472,7 +478,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                                       size="sm"
                                       className="h-7 w-7 p-0 shrink-0"
                                       onClick={() => speak(ex.translated, addForm.translationLanguage)}
-                                      title="Speak"
+                                      title={t('a11y.speak')}
                                     >
                                       <Volume2 className="h-3 w-3" />
                                     </Button>
@@ -492,14 +498,20 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
         </div>
         <div className="flex justify-end gap-2 px-4 py-3 border-t shrink-0">
           <Button size="sm" variant="ghost" onClick={onClose}>
-            Cancel
+            {t('modal.cancel')}
           </Button>
           <Button
             size="sm"
             onClick={handleSave}
             disabled={saving || !addForm.original.trim() || !addForm.translation.trim()}
           >
-            {saving ? (isEdit ? 'Saving...' : 'Adding...') : isEdit ? 'Save' : 'Add'}
+            {saving
+              ? isEdit
+                ? t('modal.saving')
+                : t('modal.adding')
+              : isEdit
+                ? t('modal.save')
+                : t('modal.add')}
           </Button>
         </div>
       </div>

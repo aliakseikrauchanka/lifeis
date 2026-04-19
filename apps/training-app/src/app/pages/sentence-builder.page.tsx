@@ -8,6 +8,7 @@ import { GradeButtons } from '../components/grade-buttons';
 import { useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { useAppDirection } from '../hooks/use-app-direction';
+import { useI18n } from '../i18n/i18n-context';
 
 type Phase = 'idle' | 'playing' | 'success';
 
@@ -33,6 +34,7 @@ const shuffleArray = <T,>(arr: T[]): T[] => {
 };
 
 export function SentenceBuilderPage() {
+  const { t } = useI18n();
   const [level] = useAppLevel();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
   const [direction] = useAppDirection();
@@ -157,10 +159,10 @@ export function SentenceBuilderPage() {
   return (
     <div className="flex flex-col items-center p-4 gap-4">
       <div className="flex flex-col items-center gap-2 w-full max-w-xl">
-        <h1 className="text-xl font-semibold">Sentence Builder</h1>
+        <h1 className="text-xl font-semibold">{t('nav.sentenceBuilder')}</h1>
         <div className="flex flex-wrap items-end gap-3 justify-center">
           <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Source
+            {t('cfg.source')}
             <div className="inline-flex rounded border border-input overflow-hidden">
               <button
                 type="button"
@@ -170,7 +172,7 @@ export function SentenceBuilderPage() {
                 onClick={() => setSource('random')}
                 disabled={loading}
               >
-                Random
+                {t('opt.random')}
               </button>
               <button
                 type="button"
@@ -180,12 +182,12 @@ export function SentenceBuilderPage() {
                 onClick={() => setSource('library')}
                 disabled={loading}
               >
-                Library
+                {t('opt.library')}
               </button>
             </div>
           </div>
           <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Mode
+            {t('cfg.mode')}
             <div className="inline-flex rounded border border-input overflow-hidden">
               <button
                 type="button"
@@ -195,7 +197,7 @@ export function SentenceBuilderPage() {
                 onClick={() => setMode('buttons')}
                 disabled={loading}
               >
-                Buttons
+                {t('opt.buttons')}
               </button>
               <button
                 type="button"
@@ -205,21 +207,21 @@ export function SentenceBuilderPage() {
                 onClick={() => setMode('type')}
                 disabled={loading}
               >
-                Type
+                {t('opt.type')}
               </button>
             </div>
           </div>
           <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Level
+            {t('cfg.level')}
             <div
               className="rounded border border-input bg-muted/40 px-2 py-1 text-sm text-foreground"
-              title="Change in Profile"
+              title={t('hint.changeInProfile')}
             >
               {level}
             </div>
           </div>
           <Button size="sm" onClick={handleGenerate} disabled={loading}>
-            {phase === 'idle' ? 'Start' : 'New sentence'}
+            {phase === 'idle' ? t('btn.start') : t('btn.newSentence')}
           </Button>
         </div>
       </div>
@@ -411,7 +413,7 @@ export function SentenceBuilderPage() {
             {checked && data.source === 'library' && data.translationId && (
               <div className="border-t pt-3 space-y-2">
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                  How hard was this card?
+                  {t('grade.howHard')}
                 </div>
                 <GradeButtons
                   onGrade={async (r) => {

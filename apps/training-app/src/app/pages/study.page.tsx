@@ -9,8 +9,10 @@ import { GradeButtons } from '../components/grade-buttons';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { useAppDirection } from '../hooks/use-app-direction';
 import { matchesAppLanguagePair } from '../constants/language-options';
+import { useI18n } from '../i18n/i18n-context';
 
 export function StudyPage() {
+  const { t } = useI18n();
   const [queue, setQueue] = useState<SrsCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
@@ -218,11 +220,11 @@ export function StudyPage() {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 px-4 text-center">
         <Check className="h-16 w-16 text-green-500" />
-        <h2 className="text-2xl font-semibold">All caught up!</h2>
-        <p className="text-muted-foreground">No cards due right now.</p>
+        <h2 className="text-2xl font-semibold">{t('study.allCaughtUp')}</h2>
+        <p className="text-muted-foreground">{t('study.noCardsDue')}</p>
         <Link to="/library">
           <Button variant="outline" className="gap-2">
-            <BookOpen className="h-4 w-4" /> Go to Library
+            <BookOpen className="h-4 w-4" /> {t('study.goToLibrary')}
           </Button>
         </Link>
       </div>
@@ -237,7 +239,9 @@ export function StudyPage() {
           <kbd className="text-xs px-1.5 py-0.5 rounded bg-muted border">←</kbd>
         </Button>
         <div className="text-sm text-muted-foreground">
-          {cardIndex + 1} / {queue.length} card{queue.length !== 1 ? 's' : ''}
+          {queue.length === 1
+            ? t('study.progressSingular', { current: cardIndex + 1, total: queue.length })
+            : t('study.progressPlural', { current: cardIndex + 1, total: queue.length })}
         </div>
         <Button variant="ghost" size="sm" onClick={goToNext} className="gap-1">
           <kbd className="text-xs px-1.5 py-0.5 rounded bg-muted border">→</kbd>
@@ -248,10 +252,10 @@ export function StudyPage() {
           size="sm"
           onClick={toggleAutoSpeak}
           className="gap-1 ml-2"
-          title="Auto-speak on new card"
+          title={t('study.autoTitle')}
         >
           <Volume1 className="h-4 w-4" />
-          Auto
+          {t('study.auto')}
         </Button>
       </div>
 
@@ -296,7 +300,7 @@ export function StudyPage() {
 
           <div className={`w-full border-t pt-3 transition-all duration-300 ${!revealed ? 'blur-md select-none' : ''}`}>
             <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
-              Examples
+              {t('study.examplesSection')}
             </div>
             {loadingExamples ? (
               <div className="flex justify-center">
@@ -334,7 +338,8 @@ export function StudyPage() {
             ) : null}
           </div>
           <div className={`text-xs text-muted-foreground transition-opacity duration-300 ${revealed ? 'opacity-0' : ''}`}>
-            Press <kbd className="px-1.5 py-0.5 rounded bg-muted border">E</kbd> to reveal
+            {t('study.pressRevealPrefix')}{' '}
+            <kbd className="px-1.5 py-0.5 rounded bg-muted border">E</kbd> {t('study.pressRevealSuffix')}
           </div>
         </CardContent>
 

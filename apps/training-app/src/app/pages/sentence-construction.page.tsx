@@ -13,12 +13,14 @@ import {
 import { speak } from '../api/tts.api';
 import { useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
+import { useI18n } from '../i18n/i18n-context';
 
 type Phase = 'idle' | 'writing' | 'recording' | 'checking' | 'checked';
 
 const RECORDING_ID = 'sentence-construction';
 
 function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lang: string) => void }) {
+  const { t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlIds = (searchParams.get('ids') || '').split(',').map((s) => s.trim()).filter(Boolean);
   const autoTriggeredRef = useRef(false);
@@ -124,10 +126,10 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
   return (
     <div className="flex flex-col items-center p-4 gap-4">
       <div className="flex flex-col items-center gap-2 w-full max-w-xl">
-        <h1 className="text-xl font-semibold">Sentence Construction</h1>
+        <h1 className="text-xl font-semibold">{t('nav.sentenceConstruction')}</h1>
         <div className="flex flex-wrap items-end gap-3 justify-center">
           <label className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Words
+            {t('cfg.words')}
             <select
               className="rounded border border-input bg-background px-2 py-1 text-sm text-foreground"
               value={wordCount}
@@ -142,10 +144,10 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
             </select>
           </label>
           <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Level
+            {t('cfg.level')}
             <div
               className="rounded border border-input bg-muted/40 px-2 py-1 text-sm text-foreground"
-              title="Change in Profile"
+              title={t('hint.changeInProfile')}
             >
               {level}
             </div>
@@ -155,7 +157,7 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
             onClick={() => handleGenerate()}
             disabled={loading || phase === 'checking' || phase === 'recording'}
           >
-            {phase === 'idle' ? 'Start' : 'New words'}
+            {phase === 'idle' ? t('btn.start') : t('btn.newWords')}
           </Button>
         </div>
       </div>

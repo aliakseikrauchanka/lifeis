@@ -18,8 +18,10 @@ import { speak } from '../api/tts.api';
 import { useTranslationAdd } from '../contexts/translation-add.context';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { matchesAppLanguagePair, getLanguageLabel } from '../constants/language-options';
+import { useI18n } from '../i18n/i18n-context';
 
 export function LibraryPage() {
+  const { t } = useI18n();
   const [translations, setTranslations] = useState<TranslationData[]>([]);
   const [enrolledCards, setEnrolledCards] = useState<Map<string, SrsCard>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -95,12 +97,12 @@ export function LibraryPage() {
     }
   };
 
-  const startEditing = (t: TranslationData) => {
-    openForEdit(t._id, {
-      original: t.original,
-      translation: t.translation,
-      originalLanguage: t.originalLanguage,
-      translationLanguage: t.translationLanguage,
+  const startEditing = (entry: TranslationData) => {
+    openForEdit(entry._id, {
+      original: entry.original,
+      translation: entry.translation,
+      originalLanguage: entry.originalLanguage,
+      translationLanguage: entry.translationLanguage,
     });
   };
 
@@ -193,11 +195,11 @@ export function LibraryPage() {
   if (translations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-4 px-4 text-center">
-        <p className="text-muted-foreground">No translations yet. Add one or import a file.</p>
+        <p className="text-muted-foreground">{t('library.empty')}</p>
         <div className="flex gap-2">
           <Button onClick={() => openAddModal()} className="gap-1">
             <Plus className="h-4 w-4" />
-            Add translation
+            {t('header.addTranslation')}
           </Button>
           <input
             ref={fileInputRef}
@@ -213,7 +215,7 @@ export function LibraryPage() {
             className="gap-1"
           >
             <Upload className="h-4 w-4" />
-            {importing ? 'Importing...' : 'Import from File'}
+            {importing ? t('library.importing') : t('library.importFromFile')}
           </Button>
         </div>
         {importResult && (
@@ -229,7 +231,7 @@ export function LibraryPage() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <input
           type="text"
-          placeholder="Search translations..."
+          placeholder={t('library.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-input bg-background"
@@ -238,11 +240,20 @@ export function LibraryPage() {
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
         <div className="flex flex-col">
           <h2 className="text-lg font-semibold whitespace-nowrap">
-            {search ? `${filteredTranslations.length} of ${languageFiltered.length}` : languageFiltered.length} Translations
+            {search
+              ? t('library.countFiltered', {
+                  filtered: filteredTranslations.length,
+                  total: languageFiltered.length,
+                })
+              : t('library.countTranslations', { count: languageFiltered.length })}
           </h2>
           {hiddenByLanguageCount > 0 && (
             <span className="text-xs text-muted-foreground">
-              {hiddenByLanguageCount} hidden · showing {getLanguageLabel(trainingLanguage)} ↔ {getLanguageLabel(nativeLanguage)}
+              {t('library.hiddenPair', {
+                hidden: hiddenByLanguageCount,
+                training: getLanguageLabel(trainingLanguage),
+                native: getLanguageLabel(nativeLanguage),
+              })}
             </span>
           )}
         </div>
@@ -261,7 +272,7 @@ export function LibraryPage() {
             className="gap-1"
           >
             <Plus className="h-4 w-4" />
-            Add
+            {t('library.add')}
           </Button>
           <Button
             size="sm"
@@ -271,7 +282,7 @@ export function LibraryPage() {
             className="gap-1"
           >
             <Upload className="h-4 w-4" />
-            {importing ? 'Importing...' : 'Import'}
+            {importing ? t('library.importing') : t('library.import')}
           </Button>
           {unenrolledIds.length > 0 && (
             <Button
@@ -281,19 +292,19 @@ export function LibraryPage() {
               className="gap-1"
             >
               <BookPlus className="h-4 w-4" />
-              {enrollingAll ? 'Enrolling...' : `Enroll All (${unenrolledIds.length})`}
+              {enrollingAll ? t('library.enrolling') : t('library.enrollAll', { count: unenrolledIds.length })}
             </Button>
           )}
           {selectedIds.size > 0 && (
             <Button size="sm" onClick={handleTrainWithSelected} className="gap-1">
               <Sparkles className="h-4 w-4" />
-              Train with selected ({selectedIds.size})
+              {t('library.trainSelected', { count: selectedIds.size })}
             </Button>
           )}
           {selectedIds.size > 0 && (
             <Button size="sm" variant="outline" onClick={handleConstructWithSelected} className="gap-1">
               <PenLine className="h-4 w-4" />
-              Construct with selected ({selectedIds.size})
+              {t('library.constructSelected', { count: selectedIds.size })}
             </Button>
           )}
         </div>
@@ -301,12 +312,12 @@ export function LibraryPage() {
       {importResult && (
         <p className="text-sm text-muted-foreground mb-2">{importResult}</p>
       )}
-      {filteredTranslations.map((t) => {
-        const card = enrolledCards.get(t._id);
+      {filteredTranslations.map((row) => {
+        const card = enrolledCards.get(row._id);
         const enrolled = !!card;
         const isDue = enrolled && card.due_at <= Date.now();
         return (
-          <Card key={t._id} className={enrolled ? 'border-primary/30 bg-primary/5' : ''}>
+          <Card key={row._id} className={enrolled ? 'border-primary/30 bg-primary/5' : ''}>
             <CardContent
               className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-4"
               data-no-add-selection
@@ -316,19 +327,19 @@ export function LibraryPage() {
                   <input
                     type="checkbox"
                     className="h-4 w-4 mt-1 shrink-0"
-                    checked={selectedIds.has(t._id)}
-                    onChange={() => toggleSelected(t._id)}
+                    checked={selectedIds.has(row._id)}
+                    onChange={() => toggleSelected(row._id)}
                     title="Select for sentence training"
                   />
                 )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1">
-                    <span className="font-medium truncate">{t.original}</span>
+                    <span className="font-medium truncate">{row.original}</span>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-6 w-6 p-0 shrink-0"
-                      onClick={() => speak(t.original, t.originalLanguage)}
+                      onClick={() => speak(row.original, row.originalLanguage)}
                       title="Speak"
                     >
                       <Volume2 className="h-3 w-3" />
@@ -340,19 +351,19 @@ export function LibraryPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-1">
-                    <span className="text-sm text-muted-foreground truncate">{t.translation}</span>
+                    <span className="text-sm text-muted-foreground truncate">{row.translation}</span>
                     <Button
                       variant="ghost"
                       size="sm"
                       className="h-6 w-6 p-0 shrink-0"
-                      onClick={() => speak(t.translation, t.translationLanguage)}
+                      onClick={() => speak(row.translation, row.translationLanguage)}
                       title="Speak"
                     >
                       <Volume2 className="h-3 w-3" />
                     </Button>
                   </div>
                   <div className="text-xs text-muted-foreground mt-1">
-                    {t.originalLanguage} → {t.translationLanguage}
+                    {row.originalLanguage} → {row.translationLanguage}
                   </div>
                 </div>
               </div>
@@ -360,8 +371,8 @@ export function LibraryPage() {
                 <Button
                   variant={enrolled ? 'destructive' : 'default'}
                   size="sm"
-                  onClick={() => handleToggle(t._id)}
-                  disabled={togglingId === t._id}
+                  onClick={() => handleToggle(row._id)}
+                  disabled={togglingId === row._id}
                   title={enrolled ? 'Remove from deck' : 'Add to deck'}
                 >
                   {enrolled ? <BookX className="h-4 w-4" /> : <BookPlus className="h-4 w-4" />}
@@ -369,7 +380,7 @@ export function LibraryPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => startEditing(t)}
+                  onClick={() => startEditing(row)}
                   title="Edit translation"
                 >
                   <Pencil className="h-4 w-4 text-muted-foreground" />
@@ -377,8 +388,8 @@ export function LibraryPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleDelete(t._id)}
-                  disabled={deletingId === t._id}
+                  onClick={() => handleDelete(row._id)}
+                  disabled={deletingId === row._id}
                   title="Delete translation"
                 >
                   <Trash2 className="h-4 w-4 text-muted-foreground" />

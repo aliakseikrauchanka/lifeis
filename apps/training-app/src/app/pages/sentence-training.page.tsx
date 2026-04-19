@@ -16,12 +16,14 @@ import { GradeButtons } from '../components/grade-buttons';
 import { SpeechInputButton } from '../components/speech-input-button';
 import { useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
+import { useI18n } from '../i18n/i18n-context';
 
 type Phase = 'idle' | 'memorize' | 'recall' | 'recording' | 'checking' | 'checked';
 
 const RECORDING_ID = 'sentence-training';
 
 function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: string) => void }) {
+  const { t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlIds = (searchParams.get('ids') || '').split(',').map((s) => s.trim()).filter(Boolean);
   const autoTriggeredRef = useRef(false);
@@ -161,10 +163,10 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
   return (
     <div className="flex flex-col items-center p-4 gap-4">
       <div className="flex flex-col items-center gap-2 w-full max-w-xl">
-        <h1 className="text-xl font-semibold">Sentence Training</h1>
+        <h1 className="text-xl font-semibold">{t('nav.sentenceTraining')}</h1>
         <div className="flex flex-wrap items-end gap-3 justify-center">
           <label className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Words
+            {t('cfg.words')}
             <select
               className="rounded border border-input bg-background px-2 py-1 text-sm text-foreground"
               value={wordCount}
@@ -179,7 +181,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
             </select>
           </label>
           <label className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Sentences
+            {t('cfg.sentences')}
             <select
               className="rounded border border-input bg-background px-2 py-1 text-sm text-foreground"
               value={sentenceCount}
@@ -194,10 +196,10 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
             </select>
           </label>
           <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Level
+            {t('cfg.level')}
             <div
               className="rounded border border-input bg-muted/40 px-2 py-1 text-sm text-foreground"
-              title="Change in Profile"
+              title={t('hint.changeInProfile')}
             >
               {level}
             </div>
@@ -207,7 +209,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
             onClick={() => handleGenerate()}
             disabled={loading || phase === 'recording' || phase === 'checking'}
           >
-            {phase === 'idle' ? 'Start' : 'New round'}
+            {phase === 'idle' ? t('btn.start') : t('btn.newRound')}
           </Button>
         </div>
       </div>
@@ -332,7 +334,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
             {phase === 'memorize' && (
               <div>
                 <Button size="sm" onClick={handleBeginRecall}>
-                  Start
+                  {t('btn.start')}
                 </Button>
               </div>
             )}

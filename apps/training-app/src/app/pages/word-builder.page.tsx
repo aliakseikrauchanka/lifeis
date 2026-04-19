@@ -8,6 +8,8 @@ import { GradeButtons } from '../components/grade-buttons';
 import { useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { useAppDirection } from '../hooks/use-app-direction';
+import { useI18n } from '../i18n/i18n-context';
+import { getLanguageLabel } from '../constants/language-options';
 
 type Phase = 'idle' | 'playing' | 'success';
 
@@ -23,6 +25,7 @@ function isAppleLikePlatform(): boolean {
 }
 
 export function WordBuilderPage() {
+  const { t } = useI18n();
   const [level] = useAppLevel();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
   const [direction] = useAppDirection();
@@ -205,10 +208,10 @@ export function WordBuilderPage() {
   return (
     <div className="flex flex-col items-center p-4 gap-4">
       <div className="flex flex-col items-center gap-2 w-full max-w-xl">
-        <h1 className="text-xl font-semibold">Word Builder</h1>
+        <h1 className="text-xl font-semibold">{t('nav.wordBuilder')}</h1>
         <div className="flex flex-wrap items-end gap-3 justify-center">
           <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Source
+            {t('cfg.source')}
             <div className="inline-flex rounded border border-input overflow-hidden">
               <button
                 type="button"
@@ -218,7 +221,7 @@ export function WordBuilderPage() {
                 onClick={() => setSource('random')}
                 disabled={loading}
               >
-                Random
+                {t('opt.random')}
               </button>
               <button
                 type="button"
@@ -228,12 +231,12 @@ export function WordBuilderPage() {
                 onClick={() => setSource('library')}
                 disabled={loading}
               >
-                Library
+                {t('opt.library')}
               </button>
             </div>
           </div>
           <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Mode
+            {t('cfg.mode')}
             <div className="inline-flex rounded border border-input overflow-hidden">
               <button
                 type="button"
@@ -243,7 +246,7 @@ export function WordBuilderPage() {
                 onClick={() => setMode('buttons')}
                 disabled={loading}
               >
-                Letters
+                {t('opt.letters')}
               </button>
               <button
                 type="button"
@@ -253,21 +256,21 @@ export function WordBuilderPage() {
                 onClick={() => setMode('type')}
                 disabled={loading}
               >
-                Type
+                {t('opt.type')}
               </button>
             </div>
           </div>
           <div className="flex flex-col text-xs text-muted-foreground uppercase tracking-wide gap-1">
-            Level
+            {t('cfg.level')}
             <div
               className="rounded border border-input bg-muted/40 px-2 py-1 text-sm text-foreground"
-              title="Change in Profile"
+              title={t('hint.changeInProfile')}
             >
               {level}
             </div>
           </div>
           <Button size="sm" onClick={handleGenerate} disabled={loading}>
-            {phase === 'idle' ? 'Start' : 'New'}
+            {phase === 'idle' ? t('btn.start') : t('btn.newWord')}
           </Button>
         </div>
       </div>
@@ -284,10 +287,10 @@ export function WordBuilderPage() {
         <Card className="w-full max-w-xl">
           <CardHeader>
             <CardTitle className="text-base flex items-center justify-between gap-2">
-              <span>Translate to {view.targetLang}</span>
+              <span>{t('wordBuilder.translateTo', { lang: getLanguageLabel(view.targetLang) })}</span>
               {phase === 'success' && (
                 <span className="text-sm font-normal text-green-700 bg-green-100 px-2 py-0.5 rounded">
-                  ✓ Correct!
+                  {t('wordBuilder.correctBadge')}
                 </span>
               )}
             </CardTitle>
@@ -304,7 +307,7 @@ export function WordBuilderPage() {
                   size="sm"
                   className="h-8 w-8 p-0 rounded-full shrink-0"
                   onClick={() => speak(view.sourceText, view.sourceLang)}
-                  title="Speak"
+                  title={t('a11y.speak')}
                 >
                   <Volume2 className="h-4 w-4" />
                 </Button>
@@ -314,11 +317,13 @@ export function WordBuilderPage() {
             {mode === 'buttons' ? (
               <>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Your answer</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                    {t('wordBuilder.yourAnswer')}
+                  </div>
                   <div className="min-h-[3rem] rounded-md border border-dashed border-input bg-muted/30 p-2 flex flex-wrap gap-1">
                     {placed.length === 0 && (
                       <span className="text-sm text-muted-foreground self-center">
-                        Tap letters below or type on your keyboard…
+                        {t('wordBuilder.tapLettersHint')}
                       </span>
                     )}
                     {placed.map((srcIdx, pos) => {
@@ -340,7 +345,7 @@ export function WordBuilderPage() {
                             setChecked(false);
                           }}
                           className={`w-8 h-8 rounded border text-sm font-mono ${color} hover:opacity-80`}
-                          title="Remove"
+                          title={t('wordBuilder.removeLetter')}
                         >
                           {display}
                         </button>
@@ -351,8 +356,15 @@ export function WordBuilderPage() {
 
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1 flex items-center gap-2">
-                    <span>Letters</span>
-                    <Button size="sm" variant="ghost" className="h-6 px-2" onClick={handlePopLast} disabled={placed.length === 0} title="Backspace">
+                    <span>{t('opt.letters')}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2"
+                      onClick={handlePopLast}
+                      disabled={placed.length === 0}
+                      title={t('wordBuilder.backspaceTitle')}
+                    >
                       <Delete className="h-3 w-3" />
                     </Button>
                   </div>
@@ -372,14 +384,16 @@ export function WordBuilderPage() {
                       );
                     })}
                     {availableIdx.length === 0 && (
-                      <span className="text-sm text-muted-foreground">All letters placed.</span>
+                      <span className="text-sm text-muted-foreground">{t('wordBuilder.allLettersPlaced')}</span>
                     )}
                   </div>
                 </div>
               </>
             ) : (
               <div>
-                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Your answer</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                  {t('wordBuilder.yourAnswer')}
+                </div>
                 <input
                   type="text"
                   value={typed}
@@ -394,7 +408,7 @@ export function WordBuilderPage() {
                       handleCheck();
                     }
                   }}
-                  placeholder={`Type in ${view.targetLang}…`}
+                  placeholder={t('wordBuilder.typeIn', { lang: getLanguageLabel(view.targetLang) })}
                   className="w-full rounded border border-input bg-background p-2 text-sm"
                   autoFocus
                 />
@@ -410,7 +424,7 @@ export function WordBuilderPage() {
                   (mode === 'buttons' ? placed.length === 0 : !typed.trim())
                 }
               >
-                Check
+                {t('wordBuilder.check')}
               </Button>
               <Button
                 size="sm"
@@ -419,40 +433,44 @@ export function WordBuilderPage() {
                 disabled={mode === 'buttons' ? placed.length === 0 : !typed}
               >
                 <RotateCcw className="h-4 w-4 mr-1" />
-                Reset
+                {t('wordBuilder.reset')}
               </Button>
               {phase === 'success' && (
                 <Button
                   size="sm"
                   variant="ghost"
                   onClick={() => speak(view.targetText, view.targetLang)}
-                  title="Speak"
+                  title={t('a11y.speak')}
                 >
                   <Volume2 className="h-4 w-4 mr-1" />
-                  Speak
+                  {t('wordBuilder.speak')}
                 </Button>
               )}
             </div>
 
             {phase === 'success' && (
               <div className="border-t pt-3">
-                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Target</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                  {t('wordBuilder.target')}
+                </div>
                 <p className="text-sm">{view.targetText}</p>
               </div>
             )}
             {checked && phase !== 'success' && (
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-red-700">Not quite — try again.</span>
+                <span className="text-sm text-red-700">{t('wordBuilder.notQuite')}</span>
                 {!revealed && (
                   <Button size="sm" variant="outline" onClick={() => setRevealed(true)}>
-                    Show answer
+                    {t('wordBuilder.showAnswer')}
                   </Button>
                 )}
               </div>
             )}
             {revealed && phase !== 'success' && (
               <div className="border-t pt-3">
-                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Answer</div>
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                  {t('wordBuilder.answer')}
+                </div>
                 <div className="flex items-start gap-2">
                   <p className="text-sm flex-1">{view.targetText}</p>
                   <Button
@@ -460,7 +478,7 @@ export function WordBuilderPage() {
                     size="sm"
                     className="h-7 w-7 p-0 rounded-full shrink-0"
                     onClick={() => speak(view.targetText, view.targetLang)}
-                    title="Speak"
+                    title={t('a11y.speak')}
                   >
                     <Volume2 className="h-3 w-3" />
                   </Button>
@@ -471,7 +489,7 @@ export function WordBuilderPage() {
             {checked && data.source === 'library' && data.translationId && (
               <div className="border-t pt-3 space-y-2">
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">
-                  How hard was this card?
+                  {t('grade.howHard')}
                 </div>
                 <GradeButtons
                   onGrade={async (r) => {

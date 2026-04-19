@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Pencil, Plus } from 'lucide-react';
 import { useTranslationAdd } from '../contexts/translation-add.context';
+import { useI18n } from '../i18n/i18n-context';
 
 const MIN_LEN = 1;
 const MAX_LEN = 500;
@@ -38,6 +39,7 @@ function getSelectionInfo(): { text: string; position: Position } | null {
 }
 
 export function SelectionAddButton() {
+  const { t } = useI18n();
   const { open, openForEdit, findByOriginalOrTranslation, isOpen } = useTranslationAdd();
   const [info, setInfo] = useState<{ text: string; position: Position } | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -108,21 +110,21 @@ export function SelectionAddButton() {
       <button
         type="button"
         onClick={handleAdd}
-        title={`Add "${preview}" as new translation`}
+        title={t('selection.addTitle', { preview })}
         className="flex items-center gap-1 px-2 py-1 bg-violet-600 hover:bg-violet-700 transition-colors"
       >
         <Plus className="h-3.5 w-3.5" />
-        Add
+        {t('selection.add')}
       </button>
       {existing && (
         <button
           type="button"
           onClick={handleEdit}
-          title={`Edit existing "${preview}" in library`}
+          title={t('selection.editTitle', { preview })}
           className="flex items-center gap-1 px-2 py-1 bg-amber-600 hover:bg-amber-700 transition-colors"
         >
           <Pencil className="h-3.5 w-3.5" />
-          Edit
+          {t('selection.edit')}
         </button>
       )}
     </div>
