@@ -44,71 +44,71 @@ export function App() {
                     end
                     title="Study"
                     className={({ isActive }) =>
-                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
+                      `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
                         isActive
                           ? 'text-violet-900 bg-violet-500/12'
                           : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
                       }`
                     }
                   >
-                    <BookOpen className="h-4 w-4 sm:hidden" />
-                    <span className="hidden sm:inline">Study</span>
+                    <BookOpen className="h-4 w-4 md:hidden" />
+                    <span className="hidden md:inline">Study</span>
                   </NavLink>
                   <NavLink
                     to="/sentence-training"
                     title="Sentence Training"
                     className={({ isActive }) =>
-                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
+                      `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
                         isActive
                           ? 'text-violet-900 bg-violet-500/12'
                           : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
                       }`
                     }
                   >
-                    <Brain className="h-4 w-4 sm:hidden" />
-                    <span className="hidden sm:inline">Sentence Training</span>
+                    <Brain className="h-4 w-4 md:hidden" />
+                    <span className="hidden md:inline">Sentence Training</span>
                   </NavLink>
                   <NavLink
                     to="/sentence-construction"
                     title="Sentence Construction"
                     className={({ isActive }) =>
-                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
+                      `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
                         isActive
                           ? 'text-violet-900 bg-violet-500/12'
                           : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
                       }`
                     }
                   >
-                    <PenLine className="h-4 w-4 sm:hidden" />
-                    <span className="hidden sm:inline">Sentence Construction</span>
+                    <PenLine className="h-4 w-4 md:hidden" />
+                    <span className="hidden md:inline">Sentence Construction</span>
                   </NavLink>
                   <NavLink
                     to="/sentence-builder"
                     title="Sentence Builder"
                     className={({ isActive }) =>
-                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
+                      `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
                         isActive
                           ? 'text-violet-900 bg-violet-500/12'
                           : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
                       }`
                     }
                   >
-                    <Blocks className="h-4 w-4 sm:hidden" />
-                    <span className="hidden sm:inline">Sentence Builder</span>
+                    <Blocks className="h-4 w-4 md:hidden" />
+                    <span className="hidden md:inline">Sentence Builder</span>
                   </NavLink>
                   <NavLink
                     to="/word-builder"
                     title="Word Builder"
                     className={({ isActive }) =>
-                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
+                      `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
                         isActive
                           ? 'text-violet-900 bg-violet-500/12'
                           : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
                       }`
                     }
                   >
-                    <Type className="h-4 w-4 sm:hidden" />
-                    <span className="hidden sm:inline">Word Builder</span>
+                    <Type className="h-4 w-4 md:hidden" />
+                    <span className="hidden md:inline">Word Builder</span>
                   </NavLink>
                 </nav>
               )}
@@ -118,15 +118,15 @@ export function App() {
                     to="/library"
                     title="Library"
                     className={({ isActive }) =>
-                      `px-2 sm:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
+                      `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
                         isActive
                           ? 'text-violet-900 bg-violet-500/12'
                           : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
                       }`
                     }
                   >
-                    <LibraryIcon className="h-4 w-4 sm:hidden" />
-                    <span className="hidden sm:inline">Library</span>
+                    <LibraryIcon className="h-4 w-4 md:hidden" />
+                    <span className="hidden md:inline">Library</span>
                   </NavLink>
                 )}
                 {isLoggedIn && <HeaderAddButton />}
@@ -136,6 +136,12 @@ export function App() {
                   isLoggedIn={isLoggedIn}
                   onLoginSuccess={() => setIsLoggedIn(true)}
                   onLogOut={() => setIsLoggedIn(false)}
+                  logoutButtonStyle={{
+                    color: '#6d28d9',
+                    border: '1px solid rgba(124, 58, 237, 0.45)',
+                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                    borderRadius: '0.5rem',
+                  }}
                 />
               </div>
             </header>

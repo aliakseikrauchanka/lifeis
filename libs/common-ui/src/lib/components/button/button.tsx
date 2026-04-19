@@ -7,13 +7,14 @@ export interface IOwnButtonProps {
   color?: DefaultColorPalette;
   // TODO: understand how to override styels better History
   style?: CSSProperties | undefined;
+  className?: string;
   children: ReactNode;
   variant?: DefaultVariantProp;
   disabled?: boolean;
   onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
 }
 
-export function OwnButton({ children, type, onClick, style, disabled, color, variant }: IOwnButtonProps) {
+export function OwnButton({ children, type, onClick, style, className, disabled, color, variant }: IOwnButtonProps) {
   return (
     <Button
       type={type}
@@ -21,6 +22,7 @@ export function OwnButton({ children, type, onClick, style, disabled, color, var
       sx={{ padding: '0.2rem', minHeight: 'initial' }}
       onClick={onClick}
       style={style}
+      className={className}
       color={color}
       variant={variant}
     >
