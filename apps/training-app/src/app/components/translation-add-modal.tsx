@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DeepgramFileSTTProvider, useAudioDevices, useSpeechToText } from '@lifeis/common-ui';
 import { ArrowUpDown, Languages, Volume2, X } from 'lucide-react';
 import { Button } from './ui/button';
@@ -59,6 +59,16 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     useState<Record<TranslationProvider, ProviderTranslationResult> | null>(null);
   const [activeProvider, setActiveProvider] = useState<TranslationProvider>('openai');
   const [recordingField, setRecordingField] = useState<'original' | 'translation' | null>(null);
+  const [focusedField, setFocusedField] = useState<'original' | 'translation'>(
+    isEdit ? 'translation' : 'original',
+  );
+  const originalInputRef = useRef<HTMLInputElement | null>(null);
+  const translationInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    const target = isEdit ? translationInputRef.current : originalInputRef.current;
+    target?.focus();
+  }, [isEdit]);
 
   useEffect(() => {
     if (recordingField === 'original') onSttLanguageChange(addForm.originalLanguage);
@@ -152,6 +162,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
                     <input
+                      ref={originalInputRef}
                       type="text"
                       placeholder={t('modal.placeholderOriginal')}
                       value={addForm.original}
@@ -162,6 +173,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                           handleTranslate();
                         }
                       }}
+                      onFocus={() => setFocusedField('original')}
                       autoFocus={!isEdit}
                       disabled={isEdit}
                       className={`w-full pl-3 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground ${
@@ -224,6 +236,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       onStart={() => setRecordingField('original')}
                       onStop={() => setRecordingField(null)}
                       active={recordingField !== 'translation'}
+                      shortcutEnabled={focusedField === 'original'}
                     />
                     <select
                       value={addForm.originalLanguage}
@@ -258,6 +271,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
                     <input
+                      ref={translationInputRef}
                       type="text"
                       placeholder={t('modal.placeholderTranslation')}
                       value={addForm.translation}
@@ -267,6 +281,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') handleSave();
                       }}
+                      onFocus={() => setFocusedField('translation')}
                       autoFocus={isEdit}
                       className={`w-full pl-3 py-2 text-sm rounded-md border border-input bg-background ${
                         addForm.translation ? 'pr-16' : 'pr-3'
@@ -306,6 +321,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       onStart={() => setRecordingField('translation')}
                       onStop={() => setRecordingField(null)}
                       active={recordingField !== 'original'}
+                      shortcutEnabled={focusedField === 'translation'}
                     />
                     <select
                       value={addForm.translationLanguage}

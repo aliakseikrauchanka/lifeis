@@ -10,6 +10,7 @@ interface SpeechInputButtonProps {
   onStart?: () => void;
   onStop?: () => void;
   active?: boolean;
+  shortcutEnabled?: boolean;
 }
 
 export function SpeechInputButton({
@@ -19,6 +20,7 @@ export function SpeechInputButton({
   onStart,
   onStop,
   active = true,
+  shortcutEnabled = true,
 }: SpeechInputButtonProps) {
   const {
     startListening,
@@ -101,6 +103,22 @@ export function SpeechInputButton({
       audioRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    if (!shortcutEnabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      const isToggle = (e.metaKey || e.ctrlKey) && (e.key === 's' || e.key === 'S');
+      if (!isToggle) return;
+      e.preventDefault();
+      if (isRecording) {
+        handleStop();
+      } else if (connectionReady && !disabled) {
+        handleStart();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [shortcutEnabled, isRecording, connectionReady, disabled, handleStart, handleStop]);
 
   return (
     <>
