@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { DeepgramFileSTTProvider, useAudioDevices } from '@lifeis/common-ui';
+import { DeepgramFileSTTProvider, useAudioDevices, useSpeechToText } from '@lifeis/common-ui';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Volume2 } from 'lucide-react';
@@ -14,6 +14,7 @@ import {
 import { speak } from '../api/tts.api';
 import { GradeButtons } from '../components/grade-buttons';
 import { SpeechInputButton } from '../components/speech-input-button';
+import { ClearableTextarea } from '../components/clearable-textarea';
 import { useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { useI18n } from '../i18n/i18n-context';
@@ -24,6 +25,7 @@ const RECORDING_ID = 'sentence-training';
 
 function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: string) => void }) {
   const { t } = useI18n();
+  const { stopListening } = useSpeechToText();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlIds = (searchParams.get('ids') || '').split(',').map((s) => s.trim()).filter(Boolean);
   const autoTriggeredRef = useRef(false);
@@ -75,6 +77,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
   }, []);
 
   const resetAll = () => {
+    stopListening(RECORDING_ID);
     setWords([]);
     setStory('');
     setStoryTranslation('');
@@ -114,6 +117,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
   };
 
   const handleBeginRecall = () => {
+    stopListening(RECORDING_ID);
     setUserText('');
     setScore(null);
     setGrammarFeedback('');
@@ -344,10 +348,12 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
                 <div className="text-xs text-muted-foreground uppercase tracking-wide">
                   Recall from memory — type or speak
                 </div>
-                <textarea
-                  className="w-full min-h-[8rem] rounded border border-input bg-background p-2 text-sm"
+                <ClearableTextarea
                   value={userText}
-                  onChange={(e) => setUserText(e.target.value)}
+                  onChange={setUserText}
+                  onClear={() => stopListening(RECORDING_ID)}
+                  canClear={phase === 'recall'}
+                  onSpeak={(text) => speak(text, originalLanguage)}
                   disabled={phase === 'recording' || phase === 'checking'}
                   placeholder="Type the sentences you remember…"
                 />

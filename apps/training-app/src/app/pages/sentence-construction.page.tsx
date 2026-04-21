@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { DeepgramFileSTTProvider, useAudioDevices } from '@lifeis/common-ui';
+import { DeepgramFileSTTProvider, useAudioDevices, useSpeechToText } from '@lifeis/common-ui';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Volume2 } from 'lucide-react';
 import { SpeechInputButton } from '../components/speech-input-button';
+import { ClearableTextarea } from '../components/clearable-textarea';
 import {
   generateSentenceConstruction,
   checkSentenceConstruction,
@@ -21,6 +22,7 @@ const RECORDING_ID = 'sentence-construction';
 
 function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lang: string) => void }) {
   const { t } = useI18n();
+  const { stopListening } = useSpeechToText();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlIds = (searchParams.get('ids') || '').split(',').map((s) => s.trim()).filter(Boolean);
   const autoTriggeredRef = useRef(false);
@@ -64,6 +66,7 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
     setError(null);
     setLoading(true);
     resetCheck();
+    stopListening(RECORDING_ID);
     setUserText('');
     try {
       const data = await generateSentenceConstruction(
@@ -235,12 +238,15 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
               <div className="text-xs text-muted-foreground uppercase tracking-wide">
                 Write sentences using these words
               </div>
-              <textarea
-                className="w-full min-h-[10rem] rounded border border-input bg-background p-2 text-sm"
+              <ClearableTextarea
                 value={userText}
-                onChange={(e) => setUserText(e.target.value)}
+                onChange={setUserText}
+                onClear={() => stopListening(RECORDING_ID)}
+                canClear={phase === 'writing'}
+                onSpeak={(text) => speak(text, originalLanguage)}
                 disabled={phase === 'checking' || phase === 'recording'}
                 placeholder={`Write or speak in ${originalLanguage}…`}
+                className="min-h-[10rem]"
               />
               <div className="flex items-center gap-2">
                 <SpeechInputButton
