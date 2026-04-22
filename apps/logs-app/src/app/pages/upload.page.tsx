@@ -1,7 +1,8 @@
 import { useState, useCallback, useRef } from 'react';
-import { Button, Select, MenuItem, FormControl, InputLabel, LinearProgress } from '@mui/material';
+import { Button, Select, MenuItem, FormControl, InputLabel, LinearProgress, TextField } from '@mui/material';
 import { useBaskets } from '../hooks/use-baskets';
 import { transcribeAudioFiles, TranscribeResult } from '../api/logs/transcribe.api';
+import { deleteLog, updateLog } from '../api/logs/logs.api';
 import { parseDjiTimestampToIso } from '../utils/parse-dji-timestamp';
 import css from './upload.page.module.scss';
 
@@ -14,14 +15,58 @@ export const UploadPage = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [results, setResults] = useState<TranscribeResult[]>([]);
   const [error, setError] = useState<string>('');
+  const [isDragging, setIsDragging] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editDraft, setEditDraft] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
+  const handleRemoveResult = useCallback(async (index: number, logId?: string) => {
+    if (!logId) return;
+    if (!window.confirm('Delete this log?')) return;
+    try {
+      await deleteLog(logId);
+      setResults((prev) => prev.filter((_, i) => i !== index));
+    } catch (err) {
+      setError((err as Error).message);
+    }
+  }, []);
+
+  const handleStartEdit = useCallback((index: number, message: string) => {
+    setEditingIndex(index);
+    setEditDraft(message);
+  }, []);
+
+  const handleCancelEdit = useCallback(() => {
+    setEditingIndex(null);
+    setEditDraft('');
+  }, []);
+
+  const handleSaveEdit = useCallback(
+    async (index: number, logId?: string, basketIdOfLog?: string) => {
+      if (!logId) return;
+      try {
+        await updateLog(logId, editDraft, basketIdOfLog);
+        setResults((prev) => prev.map((r, i) => (i === index ? { ...r, message: editDraft } : r)));
+        setEditingIndex(null);
+        setEditDraft('');
+      } catch (err) {
+        setError((err as Error).message);
+      }
+    },
+    [editDraft],
+  );
+
+  const acceptFiles = useCallback((files: File[]) => {
     const validFiles: File[] = [];
     const errors: string[] = [];
 
     files.forEach((file) => {
+      const isAudio =
+        file.type.startsWith('audio/') || /\.(wav|mp3|m4a|ogg|flac|aac|webm)$/i.test(file.name);
+      if (!isAudio) {
+        errors.push(`${file.name}: not an audio file`);
+        return;
+      }
       if (file.size > MAX_FILE_SIZE) {
         errors.push(`${file.name}: exceeds 10MB limit (${(file.size / 1024 / 1024).toFixed(1)}MB)`);
       } else {
@@ -29,15 +74,41 @@ export const UploadPage = () => {
       }
     });
 
-    if (errors.length > 0) {
-      setError(errors.join('\n'));
-    } else {
-      setError('');
-    }
-
+    setError(errors.length > 0 ? errors.join('\n') : '');
     setSelectedFiles(validFiles);
     setResults([]);
   }, []);
+
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      acceptFiles(Array.from(event.target.files || []));
+    },
+    [acceptFiles],
+  );
+
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      const files = Array.from(e.dataTransfer?.files || []);
+      if (files.length > 0) acceptFiles(files);
+    },
+    [acceptFiles],
+  );
 
   const handleUpload = useCallback(async () => {
     if (selectedFiles.length === 0) return;
@@ -74,14 +145,29 @@ export const UploadPage = () => {
       <h2>Upload WAV Files</h2>
 
       <div className={css.uploadForm}>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept=".wav,.WAV"
-          multiple
-          onChange={handleFileSelect}
-          className={css.fileInput}
-        />
+        <div
+          className={`${css.dropZone} ${isDragging ? css.dropZoneActive : ''}`}
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click();
+          }}
+        >
+          <p>Drag & drop audio files here, or click to select</p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="audio/*,.wav,.WAV,.mp3,.m4a,.ogg,.flac,.aac,.webm"
+            multiple
+            onChange={handleFileSelect}
+            className={css.fileInput}
+          />
+        </div>
 
         <FormControl size="small" className={css.basketSelect}>
           <InputLabel>Basket (auto if empty)</InputLabel>
@@ -135,9 +221,44 @@ export const UploadPage = () => {
           <ul className={css.resultsList}>
             {results.map((r, i) => (
               <li key={i} className={r.error ? css.resultError : css.resultSuccess}>
-                <strong>{r.filename}</strong>
+                <div className={css.resultHeader}>
+                  <strong>{r.filename}</strong>
+                  {!r.error && r.log_id && editingIndex !== i && (
+                    <span className={css.resultActions}>
+                      <Button size="small" onClick={() => handleStartEdit(i, r.message)}>
+                        Edit
+                      </Button>
+                      <Button size="small" color="error" onClick={() => handleRemoveResult(i, r.log_id)}>
+                        Remove
+                      </Button>
+                    </span>
+                  )}
+                </div>
                 {r.error ? (
                   <span className={css.errorText}> - Error: {r.error}</span>
+                ) : editingIndex === i ? (
+                  <div className={css.editBox}>
+                    <TextField
+                      multiline
+                      fullWidth
+                      minRows={2}
+                      size="small"
+                      value={editDraft}
+                      onChange={(e) => setEditDraft(e.target.value)}
+                    />
+                    <div className={css.editActions}>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={() => handleSaveEdit(i, r.log_id, r.basket_id)}
+                      >
+                        Save
+                      </Button>
+                      <Button size="small" onClick={handleCancelEdit}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <div className={css.transcript}>{r.message}</div>

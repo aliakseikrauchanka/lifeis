@@ -4,6 +4,8 @@ export interface TranscribeResult {
   filename: string;
   message: string;
   timestamp: number;
+  log_id?: string;
+  basket_id?: string;
   error?: string;
 }
 

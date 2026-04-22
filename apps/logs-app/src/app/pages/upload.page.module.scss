@@ -1,4 +1,4 @@
-.uploadPage {
+.upload-page {
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -7,22 +7,48 @@
   padding: 8px;
 }
 
-.uploadForm {
+.upload-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.fileInput {
-  padding: 8px 0;
+.file-input {
+  display: none;
 }
 
-.basketSelect {
+.drop-zone {
+  border: 2px dashed #bdbdbd;
+  border-radius: 6px;
+  padding: 24px;
+  text-align: center;
+  cursor: pointer;
+  background: #fafafa;
+  transition: background 0.15s, border-color 0.15s;
+
+  p {
+    margin: 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  &:hover {
+    border-color: #1976d2;
+    background: #f5faff;
+  }
+}
+
+.drop-zone-active {
+  border-color: #1976d2;
+  background: #e3f2fd;
+}
+
+.basket-select {
   min-width: 200px;
 }
 
-.fileList {
+.file-list {
   border: 1px solid #e0e0e0;
   border-radius: 4px;
   padding: 8px;
@@ -38,7 +64,7 @@
   }
 }
 
-.removeBtn {
+.remove-btn {
   background: none;
   border: none;
   cursor: pointer;
@@ -47,7 +73,7 @@
   margin-left: 8px;
 }
 
-.uploadBtn {
+.upload-btn {
   align-self: flex-start;
 }
 
@@ -70,7 +96,7 @@
   padding: 8px;
 }
 
-.resultsList {
+.results-list {
   list-style: none;
   padding: 0;
   margin: 0;
@@ -85,19 +111,43 @@
   }
 }
 
-.resultError {
+.result-error {
   background: #fff3f3;
 }
 
-.resultSuccess {
+.result-success {
   background: #f3fff3;
 }
 
-.errorText {
+.error-text {
   color: #d32f2f;
 }
 
 .transcript {
   margin: 4px 0;
   font-size: 0.875rem;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.edit-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 6px 0;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 8px;
 }

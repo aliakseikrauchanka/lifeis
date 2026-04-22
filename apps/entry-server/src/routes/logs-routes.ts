@@ -288,7 +288,14 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
     }[];
     const logsCollection = await client.db('lifeis').collection('logs');
 
-    const results: { filename: string; message: string; timestamp: number; error?: string }[] = [];
+    const results: {
+      filename: string;
+      message: string;
+      timestamp: number;
+      log_id?: string;
+      basket_id?: string;
+      error?: string;
+    }[] = [];
 
     for (const file of files) {
       try {
@@ -320,8 +327,14 @@ export const createLogsRoutes = (client: MongoClient, geminiModel: GenerativeMod
           owner_id: userId,
         };
 
-        await logsCollection.insertOne(log);
-        results.push({ filename: file.originalname, message: transcript, timestamp });
+        const insertResult = await logsCollection.insertOne(log);
+        results.push({
+          filename: file.originalname,
+          message: transcript,
+          timestamp,
+          log_id: insertResult.insertedId.toString(),
+          basket_id: basket_id ? basket_id.toString() : undefined,
+        });
       } catch (err) {
         results.push({
           filename: file.originalname,
