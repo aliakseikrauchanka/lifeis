@@ -161,8 +161,8 @@ export function LibraryPage() {
     setImporting(true);
     setImportResult(null);
     try {
-      const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-      if (file.size > MAX_FILE_SIZE_BYTES) throw new Error('File too large (max 5 MB)');
+      const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+      if (file.size > MAX_FILE_SIZE_BYTES) throw new Error(`File too large (max ${MAX_FILE_SIZE_BYTES / 1024 / 1024} MB)`);
 
       const text = await file.text();
       const items = JSON.parse(text);
