@@ -62,7 +62,7 @@ This is an **Nx monorepo** with four apps and two shared libraries.
 
 **logs-app** — React/Vite frontend for activity/log tracking. Pages: Logs, Chat, Baskets. Uses MUI DatePickers for date range filtering.
 
-**training-app** — React/Vite frontend for spaced repetition training. Study flashcards from enrolled translations using SM-2 scheduling. Uses shadcn/ui + Tailwind CSS. Pages: Study, Library.
+**training-app** — React/Vite frontend for spaced repetition training. Study flashcards from enrolled translations using SM-2 scheduling. Uses shadcn/ui + Tailwind CSS. Pages: Study, Sentence training, Sentence construction, Sentence builder, Word builder, Library.
 
 ### Shared Libraries
 
