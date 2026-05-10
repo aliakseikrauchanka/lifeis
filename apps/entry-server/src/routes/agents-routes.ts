@@ -324,7 +324,6 @@ export const createAgentsRoutes = (client: MongoClient, genAi: GoogleGenerativeA
           },
         );
 
-        console.log('debug response', response);
         responseText = response.choices[0].message.content;
       } else if (aiProvider === 'deepseek-r1') {
         const response = await deepSeek.chat.completions.create({
