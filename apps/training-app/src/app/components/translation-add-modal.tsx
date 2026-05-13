@@ -71,6 +71,13 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   }, [isEdit]);
 
   useEffect(() => {
+    if (!isEdit && addForm.original.trim()) {
+      handleTranslate();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
     if (recordingField === 'original') onSttLanguageChange(addForm.originalLanguage);
     else if (recordingField === 'translation') onSttLanguageChange(addForm.translationLanguage);
     else onSttLanguageChange(undefined);
