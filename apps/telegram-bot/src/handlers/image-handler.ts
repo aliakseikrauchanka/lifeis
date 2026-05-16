@@ -124,14 +124,14 @@ export async function handleImage(ctx: Context) {
     const cleanText = text?.trim() ?? '';
     const cleanTranslation = translation?.trim() ?? '';
 
-    let reply: string;
     if (!cleanText) {
-      reply = '(No text detected)';
-    } else if (cleanTranslation) {
-      reply = `${cleanText}\n\n--- Polish ---\n${cleanTranslation}`;
-    } else {
-      reply = cleanText;
+      await ctx.telegram.deleteMessage(chatId, statusMsg.message_id);
+      return;
     }
+
+    const reply = cleanTranslation
+      ? `${cleanText}\n\n--- Polish ---\n${cleanTranslation}`
+      : cleanText;
 
     await ctx.telegram.editMessageText(chatId, statusMsg.message_id, undefined, reply);
   } catch (err) {
