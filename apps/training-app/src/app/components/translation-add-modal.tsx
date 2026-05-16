@@ -182,7 +182,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       }}
                       onFocus={() => setFocusedField('original')}
                       autoFocus={!isEdit}
-                      disabled={isEdit}
+                      // disabled={isEdit}
                       className={`w-full pl-3 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground ${
                         addForm.original ? 'pr-16' : 'pr-3'
                       }`}
