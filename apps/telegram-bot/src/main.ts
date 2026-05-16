@@ -14,6 +14,8 @@ bot.on(channelPost('audio'), handleVoice);
 
 bot.on(message('photo'), handleImage);
 bot.on(channelPost('photo'), handleImage);
+bot.on(message('document'), handleImage);
+bot.on(channelPost('document'), handleImage);
 
 bot.launch({ dropPendingUpdates: true }).then(() => {
   console.log('[telegram-bot] Bot is running');

@@ -12,24 +12,57 @@ interface PhotoSize {
   height: number;
 }
 
-function getLargestPhotoFileId(msg: Record<string, unknown>): string | null {
-  if (!msg || typeof msg !== 'object' || !('photo' in msg) || !Array.isArray(msg.photo)) {
-    return null;
+interface TelegramDocument {
+  file_id: string;
+  mime_type?: string;
+  file_size?: number;
+  file_name?: string;
+}
+
+interface ImageSource {
+  fileId: string;
+  mimeType: string;
+  fileSize?: number;
+  filename: string;
+}
+
+function getImageSource(msg: Record<string, unknown>): ImageSource | null {
+  if (!msg || typeof msg !== 'object') return null;
+
+  if ('photo' in msg && Array.isArray(msg.photo) && msg.photo.length > 0) {
+    const photos = msg.photo as PhotoSize[];
+    const largest = photos.reduce((max, p) => (p.width * p.height > max.width * max.height ? p : max));
+    return { fileId: largest.file_id, mimeType: 'image/jpeg', filename: 'image.jpg' };
   }
-  const photos = msg.photo as PhotoSize[];
-  if (photos.length === 0) return null;
-  const largest = photos.reduce((max, p) => (p.width * p.height > max.width * max.height ? p : max));
-  return largest.file_id;
+
+  if ('document' in msg && msg.document && typeof msg.document === 'object') {
+    const doc = msg.document as TelegramDocument;
+    if (doc.file_id && doc.mime_type?.startsWith('image/')) {
+      return {
+        fileId: doc.file_id,
+        mimeType: doc.mime_type,
+        fileSize: doc.file_size,
+        filename: doc.file_name || `image.${doc.mime_type.split('/')[1] || 'jpg'}`,
+      };
+    }
+  }
+
+  return null;
 }
 
 export async function handleImage(ctx: Context) {
   const msg = ctx.message ?? ctx.channelPost;
-  const fileId = msg ? getLargestPhotoFileId(msg as unknown as Record<string, unknown>) : null;
-  if (!fileId) {
+  const source = msg ? getImageSource(msg as unknown as Record<string, unknown>) : null;
+  if (!source) {
     return;
   }
 
   const chatId = msg!.chat.id;
+
+  if (typeof source.fileSize === 'number' && source.fileSize > MAX_IMAGE_BYTES) {
+    await ctx.reply(`Image too large (${source.fileSize} bytes). Limit: ${MAX_IMAGE_BYTES} bytes.`);
+    return;
+  }
 
   if (config.allowedChatIds && !config.allowedChatIds.has(chatId)) {
     await ctx.reply(
@@ -50,7 +83,7 @@ export async function handleImage(ctx: Context) {
 
   try {
     const botToken = config.telegramBotToken;
-    const file = await ctx.telegram.getFile(fileId);
+    const file = await ctx.telegram.getFile(source.fileId);
     const filePath = file.file_path;
     if (!filePath) {
       throw new Error('Could not get file path');
@@ -71,8 +104,8 @@ export async function handleImage(ctx: Context) {
 
     const form = new FormData();
     form.append('image', imageBuffer, {
-      filename: 'image.jpg',
-      contentType: 'image/jpeg',
+      filename: source.filename,
+      contentType: source.mimeType,
     });
 
     const parseUrl = `${config.beUrl}/api/telegram/parse-image`;
