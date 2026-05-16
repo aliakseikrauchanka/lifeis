@@ -291,7 +291,7 @@ export function LibraryPage() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => openAddModal()}
+            onClick={() => openAddModal(search.trim() ? { original: search.trim() } : undefined)}
             className="gap-1"
           >
             <Plus className="h-4 w-4" />
