@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import fs from 'fs';
+import multer from 'multer';
 import { createClient } from '@deepgram/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { verifyTelegramBotKey, verifyTelegramChatId } from '../middlewares/verify-telegram-bot.middleware';
 import { getFilePath, mp3FilePath, uploadMiddlewareFactory } from '../utils/audio-upload';
 import { convertFile } from '../utils/ffmpeg-converter';
@@ -8,6 +10,9 @@ import { safeUnlink } from '../helpers/fs';
 import { deepSeek } from '../utils/deepseek';
 
 const deepgram = createClient(process.env.DEEPGRAM_API_KEY);
+const genAi = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
+const ocrModel = genAi.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
+const imageUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 const routes = Router();
 
 const translateToPolish = async (text: string): Promise<string> => {
@@ -109,6 +114,45 @@ routes.post(
       safeUnlink(filePath);
       res.status(500).json({
         error: 'Transcription failed',
+        message: err instanceof Error ? err.message : 'Unknown error',
+      });
+    }
+  },
+);
+
+routes.post(
+  '/parse-image',
+  verifyTelegramBotKey,
+  verifyTelegramChatId,
+  imageUpload.single('image'),
+  async (req, res) => {
+    if (!req.file?.buffer?.length) {
+      return res.status(400).json({ error: 'No image uploaded' });
+    }
+
+    const mimeType = req.file.mimetype || 'image/jpeg';
+
+    try {
+      const result = await ocrModel.generateContent([
+        'Extract any text visible in the image verbatim. Return ONLY the extracted text, no explanations or commentary. If there is no readable text, return an empty string.',
+        { inlineData: { data: req.file.buffer.toString('base64'), mimeType } },
+      ]);
+      const text = (result.response.text() ?? '').trim();
+
+      let translation = '';
+      if (text) {
+        try {
+          translation = await translateToPolish(text);
+        } catch (translationErr) {
+          console.error('[Telegram parse-image] Polish translation failed:', translationErr);
+        }
+      }
+
+      res.json({ text, translation });
+    } catch (err) {
+      console.error('[Telegram parse-image] Error:', err);
+      res.status(500).json({
+        error: 'Image parsing failed',
         message: err instanceof Error ? err.message : 'Unknown error',
       });
     }
