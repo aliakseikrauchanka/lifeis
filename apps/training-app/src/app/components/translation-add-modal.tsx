@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DeepgramFileSTTProvider, useAudioDevices, useSpeechToText } from '@lifeis/common-ui';
 import { ArrowUpDown, Languages, Volume2, X } from 'lucide-react';
 import { Button } from './ui/button';
+import { LanguagePairSelect } from './language-pair-select/language-pair-select';
 import { SpeechInputButton } from './speech-input-button';
 import {
   createTranslation,
@@ -16,12 +17,62 @@ import {
   TranslationAddPrefill,
   TranslationAddMode,
 } from '../contexts/translation-add.context';
-import { LANGUAGE_OPTIONS } from '../constants/language-options';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { useI18n } from '../i18n/i18n-context';
 
 const ORIGINAL_REC_ID = 'global-add-original';
 const TRANSLATION_REC_ID = 'global-add-translation';
+
+const TRANSLATION_PROVIDERS = ['openai', 'deepseek', 'glosbe'] as const satisfies readonly TranslationProvider[];
+
+const PROVIDER_LABELS: Record<TranslationProvider, string> = {
+  openai: 'OpenAI',
+  deepseek: 'DeepSeek',
+  glosbe: 'Glosbe',
+};
+
+type AddFormFields = {
+  original: string;
+  translation: string;
+  originalLanguage: string;
+  translationLanguage: string;
+};
+
+/** Forward: original → suggestions for translation. Reverse: translation → suggestions for original. */
+type TranslatePlan =
+  | { ok: false }
+  | {
+      ok: true;
+      sourceText: string;
+      targetLang: string;
+      sourceLang: string;
+      suggestionTarget: 'original' | 'translation';
+    };
+
+function getTranslatePlan(form: AddFormFields, isEdit: boolean): TranslatePlan {
+  if (isEdit) return { ok: false };
+  const orig = form.original.trim();
+  const trans = form.translation.trim();
+  if (orig.length > 0) {
+    return {
+      ok: true,
+      sourceText: orig,
+      targetLang: form.translationLanguage,
+      sourceLang: form.originalLanguage,
+      suggestionTarget: 'translation',
+    };
+  }
+  if (trans.length > 0) {
+    return {
+      ok: true,
+      sourceText: trans,
+      targetLang: form.originalLanguage,
+      sourceLang: form.translationLanguage,
+      suggestionTarget: 'original',
+    };
+  }
+  return { ok: false };
+}
 
 interface ModalBodyProps {
   mode: TranslationAddMode;
@@ -58,6 +109,8 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   const [providerResults, setProviderResults] =
     useState<Record<TranslationProvider, ProviderTranslationResult> | null>(null);
   const [activeProvider, setActiveProvider] = useState<TranslationProvider>('openai');
+  /** Which input the suggestion chips apply to after the latest translate call */
+  const [suggestionTarget, setSuggestionTarget] = useState<'original' | 'translation'>('translation');
   const [recordingField, setRecordingField] = useState<'original' | 'translation' | null>(null);
   const [focusedField, setFocusedField] = useState<'original' | 'translation'>(
     isEdit ? 'translation' : 'original',
@@ -66,12 +119,19 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   const translationInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    const target = isEdit ? translationInputRef.current : originalInputRef.current;
-    target?.focus();
-  }, [isEdit]);
+    if (isEdit) {
+      translationInputRef.current?.focus();
+      return;
+    }
+    const hasOrig = (prefill?.original ?? '').trim();
+    const hasTrans = (prefill?.translation ?? '').trim();
+    if (hasTrans && !hasOrig) translationInputRef.current?.focus();
+    else originalInputRef.current?.focus();
+  }, [isEdit, prefill?.original, prefill?.translation]);
 
   useEffect(() => {
-    if (!isEdit && addForm.original.trim()) {
+    if (isEdit) return;
+    if (getTranslatePlan(addForm, false).ok) {
       handleTranslate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -91,20 +151,18 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   }, []);
 
   const handleTranslate = async () => {
-    if (!addForm.original.trim()) return;
+    const plan = getTranslatePlan(addForm, isEdit);
+    if (!plan.ok) return;
+
     setTranslating(true);
     setProviderResults(null);
+    setSuggestionTarget(plan.suggestionTarget);
+
     try {
-      const providers = await translateTextMulti(
-        addForm.original,
-        addForm.translationLanguage,
-        addForm.originalLanguage,
-      );
+      const providers = await translateTextMulti(plan.sourceText, plan.targetLang, plan.sourceLang);
       setProviderResults(providers);
-      const firstWithTranslations = (['openai', 'deepseek', 'glosbe'] as TranslationProvider[]).find(
-        (p) => providers[p]?.translations?.length > 0,
-      );
-      if (firstWithTranslations) setActiveProvider(firstWithTranslations);
+      const firstWithSuggestions = TRANSLATION_PROVIDERS.find((p) => providers[p]?.translations?.length > 0);
+      if (firstWithSuggestions) setActiveProvider(firstWithSuggestions);
     } catch (err) {
       console.error('Translation failed:', err);
     } finally {
@@ -141,6 +199,20 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  const translatePlan = getTranslatePlan(addForm, isEdit);
+  const suggestionSpeakLang =
+    suggestionTarget === 'translation' ? addForm.translationLanguage : addForm.originalLanguage;
+  const suggestionSelected =
+    suggestionTarget === 'translation' ? addForm.translation : addForm.original;
+
+  const applySuggestion = (opt: string) => {
+    setAddForm((prev) =>
+      suggestionTarget === 'translation'
+        ? { ...prev, translation: opt }
+        : { ...prev, original: opt },
+    );
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -175,7 +247,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       value={addForm.original}
                       onChange={(e) => setAddForm((prev) => ({ ...prev, original: e.target.value }))}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' && addForm.original.trim() && !translating && !isEdit) {
+                        if (e.key === 'Enter' && !translating && !isEdit && translatePlan.ok) {
                           e.preventDefault();
                           handleTranslate();
                         }
@@ -231,7 +303,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       size="sm"
                       className="shrink-0 px-2 bg-violet-600 hover:bg-violet-700 text-white"
                       onClick={handleTranslate}
-                      disabled={isEdit || translating || !addForm.original.trim()}
+                      disabled={isEdit || translating || !translatePlan.ok}
                       title={t('modal.suggestTitle')}
                     >
                       <Languages className="h-4 w-4" />
@@ -245,34 +317,18 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       active={recordingField !== 'translation'}
                       shortcutEnabled={focusedField === 'original'}
                     />
-                    <select
+                    <LanguagePairSelect
+                      variant="compact"
                       value={addForm.originalLanguage}
-                      onChange={(e) => {
-                        setAddForm((prev) => ({ ...prev, originalLanguage: e.target.value }));
-                      }}
+                      onChange={(code) => setAddForm((prev) => ({ ...prev, originalLanguage: code }))}
                       disabled={isEdit}
-                      className="sm:hidden px-2 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground"
-                    >
-                      {LANGUAGE_OPTIONS.map((l) => (
-                        <option key={l.code} value={l.code}>
-                          {l.flag}
-                        </option>
-                      ))}
-                    </select>
-                    <select
+                    />
+                    <LanguagePairSelect
+                      variant="full"
                       value={addForm.originalLanguage}
-                      onChange={(e) => {
-                        setAddForm((prev) => ({ ...prev, originalLanguage: e.target.value }));
-                      }}
+                      onChange={(code) => setAddForm((prev) => ({ ...prev, originalLanguage: code }))}
                       disabled={isEdit}
-                      className="hidden sm:block px-2 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground"
-                    >
-                      {LANGUAGE_OPTIONS.map((l) => (
-                        <option key={l.code} value={l.code}>
-                          {l.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
@@ -286,7 +342,13 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                         setAddForm((prev) => ({ ...prev, translation: e.target.value }))
                       }
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleSave();
+                        if (e.key !== 'Enter') return;
+                        if (translatePlan.ok && translatePlan.suggestionTarget === 'original' && !translating) {
+                          e.preventDefault();
+                          handleTranslate();
+                          return;
+                        }
+                        handleSave();
                       }}
                       onFocus={() => setFocusedField('translation')}
                       autoFocus={isEdit}
@@ -330,34 +392,18 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       active={recordingField !== 'original'}
                       shortcutEnabled={focusedField === 'translation'}
                     />
-                    <select
+                    <LanguagePairSelect
+                      variant="compact"
                       value={addForm.translationLanguage}
-                      onChange={(e) => {
-                        setAddForm((prev) => ({ ...prev, translationLanguage: e.target.value }));
-                      }}
+                      onChange={(code) => setAddForm((prev) => ({ ...prev, translationLanguage: code }))}
                       disabled={isEdit}
-                      className="sm:hidden px-2 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground"
-                    >
-                      {LANGUAGE_OPTIONS.map((l) => (
-                        <option key={l.code} value={l.code}>
-                          {l.flag}
-                        </option>
-                      ))}
-                    </select>
-                    <select
+                    />
+                    <LanguagePairSelect
+                      variant="full"
                       value={addForm.translationLanguage}
-                      onChange={(e) => {
-                        setAddForm((prev) => ({ ...prev, translationLanguage: e.target.value }));
-                      }}
+                      onChange={(code) => setAddForm((prev) => ({ ...prev, translationLanguage: code }))}
                       disabled={isEdit}
-                      className="hidden sm:block px-2 py-2 text-sm rounded-md border border-input bg-background disabled:bg-muted/40 disabled:text-muted-foreground"
-                    >
-                      {LANGUAGE_OPTIONS.map((l) => (
-                        <option key={l.code} value={l.code}>
-                          {l.label}
-                        </option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 </div>
               </div>
@@ -368,6 +414,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   className="shrink-0 px-2"
                   onClick={() => {
                     setProviderResults(null);
+                    setSuggestionTarget('translation');
                     setAddForm((prev) => ({
                       ...prev,
                       originalLanguage: prev.translationLanguage,
@@ -392,9 +439,9 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
             {providerResults && (
               <div className="rounded-md border">
                 <div className="flex border-b sticky top-0 bg-background rounded-t-md z-10">
-                  {(['openai', 'deepseek', 'glosbe'] as TranslationProvider[]).map((p) => {
+                  {TRANSLATION_PROVIDERS.map((p) => {
                     const r = providerResults[p];
-                    const label = p === 'openai' ? 'OpenAI' : p === 'deepseek' ? 'DeepSeek' : 'Glosbe';
+                    const label = PROVIDER_LABELS[p];
                     const count = r?.translations?.length ?? 0;
                     const isActive = activeProvider === p;
                     return (
@@ -443,11 +490,9 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                             {r.translations.map((opt, i) => (
                               <Button
                                 key={`${activeProvider}-t-${i}`}
-                                variant={addForm.translation === opt ? 'default' : 'outline'}
+                                variant={suggestionSelected === opt ? 'default' : 'outline'}
                                 size="sm"
-                                onClick={() =>
-                                  setAddForm((prev) => ({ ...prev, translation: opt }))
-                                }
+                                onClick={() => applySuggestion(opt)}
                                 className="inline-flex items-center gap-2"
                               >
                                 <span>{opt}</span>
@@ -456,13 +501,13 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                                   tabIndex={0}
                                   onClick={(e) => {
                                     e.stopPropagation();
-                                    speak(opt, addForm.translationLanguage);
+                                    speak(opt, suggestionSpeakLang);
                                   }}
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
                                       e.preventDefault();
                                       e.stopPropagation();
-                                      speak(opt, addForm.translationLanguage);
+                                      speak(opt, suggestionSpeakLang);
                                     }
                                   }}
                                   title={t('a11y.speak')}
