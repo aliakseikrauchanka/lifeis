@@ -3,6 +3,7 @@ import { Telegraf } from 'telegraf';
 import { message, channelPost } from 'telegraf/filters';
 import { handleVoice } from './handlers/voice-handler';
 import { handleImage } from './handlers/image-handler';
+import { handleText } from './handlers/text-handler';
 import { config } from './config';
 
 const bot = new Telegraf(config.telegramBotToken);
@@ -16,6 +17,8 @@ bot.on(message('photo'), handleImage);
 bot.on(channelPost('photo'), handleImage);
 bot.on(message('document'), handleImage);
 bot.on(channelPost('document'), handleImage);
+
+bot.on(message('text'), handleText);
 
 bot.launch({ dropPendingUpdates: true }).then(() => {
   console.log('[telegram-bot] Bot is running');
