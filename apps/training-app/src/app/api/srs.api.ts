@@ -16,6 +16,7 @@ export interface SrsCard {
   ease: number;
   reps: number;
   lapses: number;
+  learned_at?: number | null;
   translation: TranslationData;
 }
 
@@ -68,6 +69,18 @@ export const unenrollTranslation = async (translationId: string): Promise<void> 
     method: 'DELETE',
   });
   if (!res.ok) throw new Error('Failed to unenroll translation');
+};
+
+export const setTranslationLearned = async (translationId: string, learned: boolean): Promise<void> => {
+  const res = await utilFetch('/srs/learned', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ translationId, learned }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(typeof body?.message === 'string' ? body.message : 'Failed to update learned state');
+  }
 };
 
 export interface Example {

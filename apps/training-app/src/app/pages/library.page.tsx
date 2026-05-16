@@ -9,19 +9,21 @@ import {
   unenrollTranslation,
   importTranslations,
   deleteTranslation,
+  setTranslationLearned,
   TranslationData,
   SrsCard,
 } from '../api/srs.api';
 import { useNavigate } from 'react-router-dom';
-import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, Pencil, Sparkles, PenLine, Volume2 } from 'lucide-react';
+import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, Pencil, Sparkles, PenLine, Volume2, GraduationCap } from 'lucide-react';
 import { speak } from '../api/tts.api';
 import { useTranslationAdd } from '../contexts/translation-add.context';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { matchesAppLanguagePair, getLanguageLabel } from '../constants/language-options';
 import { useI18n } from '../i18n/i18n-context';
+import { formatReviewDateTime } from '../utils/format-review-datetime';
 
 export function LibraryPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [translations, setTranslations] = useState<TranslationData[]>([]);
   const [enrolledCards, setEnrolledCards] = useState<Map<string, SrsCard>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -32,6 +34,7 @@ export function LibraryPage() {
   const [importResult, setImportResult] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [learnedTogglingId, setLearnedTogglingId] = useState<string | null>(null);
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { open: openAddModal, openForEdit, subscribeChanged, refreshIndex } = useTranslationAdd();
@@ -94,6 +97,26 @@ export function LibraryPage() {
       console.error('Delete failed:', err);
     } finally {
       setDeletingId(null);
+    }
+  };
+
+  const handleSetLearned = async (id: string, learned: boolean) => {
+    setLearnedTogglingId(id);
+    try {
+      await setTranslationLearned(id, learned);
+      const cards = await fetchEnrolledCards();
+      setEnrolledCards(new Map(cards.map((c: SrsCard) => [c.translation._id, c])));
+      if (learned) {
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
+    } catch (err) {
+      console.error('Learned state update failed:', err);
+    } finally {
+      setLearnedTogglingId(null);
     }
   };
 
@@ -315,9 +338,19 @@ export function LibraryPage() {
       {filteredTranslations.map((row) => {
         const card = enrolledCards.get(row._id);
         const enrolled = !!card;
-        const isDue = enrolled && card.due_at <= Date.now();
+        const learned = enrolled && card && typeof card.learned_at === 'number';
+        const isDue = enrolled && card && !learned && card.due_at <= Date.now();
         return (
-          <Card key={row._id} className={enrolled ? 'border-primary/30 bg-primary/5' : ''}>
+          <Card
+            key={row._id}
+            className={
+              enrolled
+                ? learned
+                  ? 'border-emerald-400/35 bg-emerald-50/50 dark:bg-emerald-950/20'
+                  : 'border-primary/30 bg-primary/5'
+                : ''
+            }
+          >
             <CardContent
               className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-4"
               data-no-add-selection
@@ -333,7 +366,7 @@ export function LibraryPage() {
                   />
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 flex-wrap">
                     <span className="font-medium truncate">{row.original}</span>
                     <Button
                       variant="ghost"
@@ -344,6 +377,11 @@ export function LibraryPage() {
                     >
                       <Volume2 className="h-3 w-3" />
                     </Button>
+                    {learned && (
+                      <span className="inline-flex items-center gap-1 text-xs text-emerald-800 bg-emerald-100 dark:bg-emerald-900/40 dark:text-emerald-200 px-1.5 py-0.5 rounded-full shrink-0">
+                        <GraduationCap className="h-3 w-3" /> {t('library.learnedBadge')}
+                      </span>
+                    )}
                     {isDue && (
                       <span className="inline-flex items-center gap-1 text-xs text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded-full shrink-0">
                         <Clock className="h-3 w-3" /> Due
@@ -365,9 +403,47 @@ export function LibraryPage() {
                   <div className="text-xs text-muted-foreground mt-1">
                     {row.originalLanguage} → {row.translationLanguage}
                   </div>
+                  {enrolled && card && learned && typeof card.learned_at === 'number' && (
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {t('library.learnedOn', {
+                        datetime: formatReviewDateTime(card.learned_at, locale),
+                      })}
+                    </div>
+                  )}
+                  {enrolled && card && !learned && (
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {t('library.nextReview', {
+                        datetime: formatReviewDateTime(card.due_at, locale),
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="flex gap-1 shrink-0 justify-end">
+              <div className="flex flex-wrap gap-1 shrink-0 justify-end">
+                {enrolled && !learned && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 border-emerald-300 text-emerald-800 hover:bg-emerald-50 dark:text-emerald-200"
+                    onClick={() => handleSetLearned(row._id, true)}
+                    disabled={learnedTogglingId === row._id}
+                    title={t('grade.learnedTitle')}
+                  >
+                    <GraduationCap className="h-4 w-4" />
+                    {t('library.markLearned')}
+                  </Button>
+                )}
+                {enrolled && learned && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => handleSetLearned(row._id, false)}
+                    disabled={learnedTogglingId === row._id}
+                  >
+                    {t('library.resumeReviews')}
+                  </Button>
+                )}
                 <Button
                   variant={enrolled ? 'destructive' : 'default'}
                   size="sm"

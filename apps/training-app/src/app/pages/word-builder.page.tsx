@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Volume2, RotateCcw, Delete } from 'lucide-react';
-import { generateWordBuilder, reviewCard, Rating, WordBuilderGenerated } from '../api/srs.api';
+import { generateWordBuilder, reviewCard, setTranslationLearned, Rating, WordBuilderGenerated } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import { GradeButtons } from '../components/grade-buttons';
 import { useAppLevel } from '../hooks/use-app-level';
@@ -50,6 +50,7 @@ export function WordBuilderPage() {
   const [revealed, setRevealed] = useState(false);
   const [grade, setGrade] = useState<Rating | null>(null);
   const [grading, setGrading] = useState(false);
+  const [learned, setLearned] = useState(false);
 
   const view = useMemo(() => {
     if (!data) return null;
@@ -96,6 +97,7 @@ export function WordBuilderPage() {
     setChecked(false);
     setRevealed(false);
     setGrade(null);
+    setLearned(false);
     setPhase((p) => (p === 'success' ? 'playing' : p));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [direction]);
@@ -108,6 +110,7 @@ export function WordBuilderPage() {
     setChecked(false);
     setRevealed(false);
     setGrade(null);
+    setLearned(false);
     try {
       localStorage.setItem('word-builder-source', source);
       localStorage.setItem('word-builder-mode', mode);
@@ -504,8 +507,21 @@ export function WordBuilderPage() {
                       setGrading(false);
                     }
                   }}
-                  disabled={grading || grade !== null}
+                  onMarkLearned={async () => {
+                    if (!data.translationId) return;
+                    setGrading(true);
+                    try {
+                      await setTranslationLearned(data.translationId, true);
+                      setLearned(true);
+                    } catch (err) {
+                      setError((err as Error).message);
+                    } finally {
+                      setGrading(false);
+                    }
+                  }}
+                  disabled={grading || grade !== null || learned}
                   selected={grade ?? undefined}
+                  showMarkLearned={!learned}
                 />
               </div>
             )}

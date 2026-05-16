@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { fetchDueCards, fetchExamples, reviewCard, Rating, SrsCard, Example } from '../api/srs.api';
+import { fetchDueCards, fetchExamples, reviewCard, setTranslationLearned, Rating, SrsCard, Example } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import { BookOpen, Check, Volume2, ChevronLeft, ChevronRight, Volume1 } from 'lucide-react';
 import { GradeButtons } from '../components/grade-buttons';
@@ -174,6 +174,29 @@ export function StudyPage() {
     setGrading(false);
   };
 
+  const handleMarkLearned = async () => {
+    if (!current || grading) return;
+    setGrading(true);
+    try {
+      await setTranslationLearned(current.translation._id, true);
+    } catch (err) {
+      console.error('Failed to mark learned:', err);
+      setGrading(false);
+      return;
+    }
+
+    const newQueue = [...queue.slice(0, cardIndex), ...queue.slice(cardIndex + 1)];
+    if (newQueue.length === 0) {
+      await loadCards();
+    } else {
+      setQueue(newQueue);
+      setCardIndex(Math.min(cardIndex, newQueue.length - 1));
+    }
+    setRevealed(false);
+    setExamples([]);
+    setGrading(false);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (loading || !current) return;
@@ -275,13 +298,10 @@ export function StudyPage() {
               <Volume2 className="h-4 w-4" />
             </Button>
           </div>
-        </CardHeader>
-
-        <CardContent
-          className={`text-center flex flex-col items-center gap-4 flex-1 min-h-0 overflow-y-auto ${!revealed ? 'cursor-pointer' : ''}`}
-          onClick={!revealed ? handleReveal : undefined}
-        >
-          <div className={`transition-all duration-300 ${!revealed ? 'blur-md select-none' : ''}`}>
+          <div
+            className={`transition-all duration-300 pt-1 ${!revealed ? 'blur-md select-none cursor-pointer' : ''}`}
+            onClick={!revealed ? handleReveal : undefined}
+          >
             <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
               {current.translation.translationLanguage}
             </div>
@@ -297,7 +317,12 @@ export function StudyPage() {
               </Button>
             </div>
           </div>
+        </CardHeader>
 
+        <CardContent
+          className={`text-center flex flex-col items-center gap-4 flex-1 min-h-0 overflow-y-auto ${!revealed ? 'cursor-pointer' : ''}`}
+          onClick={!revealed ? handleReveal : undefined}
+        >
           <div className={`w-full border-t pt-3 transition-all duration-300 ${!revealed ? 'blur-md select-none' : ''}`}>
             <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
               {t('study.examplesSection')}
@@ -344,7 +369,13 @@ export function StudyPage() {
         </CardContent>
 
         <CardFooter className={`shrink-0 transition-opacity duration-300 ${revealed ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-          <GradeButtons onGrade={handleGrade} disabled={grading} showHotkeys />
+          <GradeButtons
+            onGrade={handleGrade}
+            onMarkLearned={handleMarkLearned}
+            disabled={grading}
+            showHotkeys
+            showMarkLearned
+          />
         </CardFooter>
       </Card>
     </div>

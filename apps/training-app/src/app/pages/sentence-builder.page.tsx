@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Volume2, RotateCcw } from 'lucide-react';
-import { generateSentenceBuilder, reviewCard, Rating, SentenceBuilderGenerated } from '../api/srs.api';
+import { generateSentenceBuilder, reviewCard, setTranslationLearned, Rating, SentenceBuilderGenerated } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import { GradeButtons } from '../components/grade-buttons';
 import { useAppLevel } from '../hooks/use-app-level';
@@ -58,6 +58,7 @@ export function SentenceBuilderPage() {
   const [checked, setChecked] = useState(false);
   const [grade, setGrade] = useState<Rating | null>(null);
   const [grading, setGrading] = useState(false);
+  const [learned, setLearned] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
   const handleGenerate = async () => {
@@ -66,6 +67,7 @@ export function SentenceBuilderPage() {
     setPlaced([]);
     setChecked(false);
     setGrade(null);
+    setLearned(false);
     setTyped('');
     setRevealed(false);
     try {
@@ -111,6 +113,7 @@ export function SentenceBuilderPage() {
     setTyped('');
     setChecked(false);
     setGrade(null);
+    setLearned(false);
     setRevealed(false);
     if (phase === 'success') setPhase('playing');
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -428,8 +431,21 @@ export function SentenceBuilderPage() {
                       setGrading(false);
                     }
                   }}
-                  disabled={grading || grade !== null}
+                  onMarkLearned={async () => {
+                    if (!data.translationId) return;
+                    setGrading(true);
+                    try {
+                      await setTranslationLearned(data.translationId, true);
+                      setLearned(true);
+                    } catch (err) {
+                      setError((err as Error).message);
+                    } finally {
+                      setGrading(false);
+                    }
+                  }}
+                  disabled={grading || grade !== null || learned}
                   selected={grade ?? undefined}
+                  showMarkLearned={!learned}
                 />
               </div>
             )}

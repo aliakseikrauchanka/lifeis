@@ -4,15 +4,24 @@ import { useI18n } from '../i18n/i18n-context';
 
 interface GradeButtonsProps {
   onGrade: (rating: Rating) => void;
+  onMarkLearned?: () => void;
   disabled?: boolean;
   showHotkeys?: boolean;
   selected?: Rating;
+  showMarkLearned?: boolean;
 }
 
-export function GradeButtons({ onGrade, disabled, showHotkeys, selected }: GradeButtonsProps) {
+export function GradeButtons({
+  onGrade,
+  onMarkLearned,
+  disabled,
+  showHotkeys,
+  selected,
+  showMarkLearned,
+}: GradeButtonsProps) {
   const { t } = useI18n();
   return (
-    <div className="flex justify-center gap-2">
+    <div className="flex flex-wrap justify-center gap-2">
       <Button
         variant={selected === 'again' ? 'destructive' : 'destructive'}
         size="sm"
@@ -67,6 +76,18 @@ export function GradeButtons({ onGrade, disabled, showHotkeys, selected }: Grade
           <kbd className="text-xs px-1 py-0.5 rounded bg-blue-100 border border-blue-300">4</kbd>
         )}
       </Button>
+      {showMarkLearned && onMarkLearned ? (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1 border-purple-300 text-purple-700 hover:bg-purple-50"
+          onClick={() => onMarkLearned()}
+          disabled={disabled}
+          title={t('grade.learnedTitle')}
+        >
+          {t('grade.learned')}
+        </Button>
+      ) : null}
     </div>
   );
 }

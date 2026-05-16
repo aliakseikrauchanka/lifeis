@@ -8,6 +8,7 @@ import {
   generateSentenceTraining,
   checkSentenceTraining,
   reviewCard,
+  setTranslationLearned,
   Rating,
   SentenceTrainingWord,
 } from '../api/srs.api';
@@ -66,6 +67,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
   const [corrected, setCorrected] = useState<string>('');
   const [grades, setGrades] = useState<Record<string, Rating>>({});
   const [grading, setGrading] = useState<string | null>(null);
+  const [learnedWords, setLearnedWords] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (autoTriggeredRef.current) return;
@@ -89,6 +91,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
     setMatchFeedback('');
     setCorrected('');
     setGrades({});
+    setLearnedWords({});
     setError(null);
   };
 
@@ -157,6 +160,18 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
     try {
       await reviewCard(translationId, rating);
       setGrades((prev) => ({ ...prev, [translationId]: rating }));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setGrading(null);
+    }
+  }, []);
+
+  const handleMarkLearned = useCallback(async (translationId: string) => {
+    setGrading(translationId);
+    try {
+      await setTranslationLearned(translationId, true);
+      setLearnedWords((prev) => ({ ...prev, [translationId]: true }));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -431,8 +446,10 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
                         <span className="text-sm font-medium min-w-[6rem]">{w.original}</span>
                         <GradeButtons
                           onGrade={(r) => handleGrade(w.translationId, r)}
-                          disabled={isGrading}
+                          onMarkLearned={() => handleMarkLearned(w.translationId)}
+                          disabled={isGrading || !!learnedWords[w.translationId]}
                           selected={graded}
+                          showMarkLearned={!learnedWords[w.translationId]}
                         />
                       </div>
                     );

@@ -23,6 +23,9 @@ const MAX_TRANSCRIPT_LENGTH = 2000;
 const CEFR_LEVELS = new Set(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']);
 const TRAINING_MODEL = 'deepseek-chat';
 
+/** Still in the SRS queue (MongoDB `null` matches missing field on legacy docs). */
+const MATCH_NOT_LEARNED = { learned_at: null } as const;
+
 /**
  * Builds a MongoDB $match filter constraining translations to those that are
  * between the user's native and training languages (in either direction).
@@ -129,7 +132,7 @@ export const getSrsRoutes = (client: MongoClient) => {
       const userId = res.locals.userId;
       const cards = await srsCollection
         .aggregate([
-          { $match: { owner_id: userId, due_at: { $lte: Date.now() } } },
+          { $match: { owner_id: userId, due_at: { $lte: Date.now() }, ...MATCH_NOT_LEARNED } },
           { $sort: { due_at: 1 } },
           { $limit: 50 },
           {
@@ -201,6 +204,11 @@ export const getSrsRoutes = (client: MongoClient) => {
       if (!card) {
         return res.status(404).json({ message: 'Card not found. Enroll the translation first.' });
       }
+      if (typeof card.learned_at === 'number') {
+        return res.status(400).json({
+          message: 'Card is marked learned. Resume reviews from the library to grade it again.',
+        });
+      }
 
       const now = Date.now();
       const updated = schedule(
@@ -232,6 +240,45 @@ export const getSrsRoutes = (client: MongoClient) => {
     } catch (error) {
       console.error('Error reviewing card:', error);
       res.status(500).json({ message: 'Error reviewing card' });
+    }
+  });
+
+  // POST /learned — mark enrolled card learned (excluded from due queue) or resume reviews
+  router.post('/learned', verifyAccessToken, async (req, res) => {
+    try {
+      const { translationId, learned } = req.body;
+      if (!translationId || typeof learned !== 'boolean') {
+        return res.status(400).json({ message: 'translationId and learned (boolean) are required' });
+      }
+
+      let objectId: ObjectId;
+      try {
+        objectId = new ObjectId(String(translationId));
+      } catch {
+        return res.status(400).json({ message: 'Invalid translationId' });
+      }
+
+      const userId = res.locals.userId;
+      const card = await srsCollection.findOne({ owner_id: userId, translation_id: objectId });
+      if (!card) {
+        return res.status(404).json({ message: 'Card not found. Enroll the translation first.' });
+      }
+
+      const now = Date.now();
+      await srsCollection.updateOne(
+        { _id: card._id },
+        {
+          $set: {
+            learned_at: learned ? now : null,
+            updated_at: now,
+          },
+        },
+      );
+
+      res.json({ translationId: objectId.toString(), learned_at: learned ? now : null });
+    } catch (error) {
+      console.error('Error updating learned state:', error);
+      res.status(500).json({ message: 'Error updating learned state' });
     }
   });
 
@@ -270,6 +317,7 @@ export const getSrsRoutes = (client: MongoClient) => {
             ease: 2.5,
             reps: 0,
             lapses: 0,
+            learned_at: null,
             created_at: now,
             updated_at: now,
           },
@@ -330,6 +378,7 @@ export const getSrsRoutes = (client: MongoClient) => {
               ease: 2.5,
               reps: 0,
               lapses: 0,
+              learned_at: null,
               created_at: now,
               updated_at: now,
             },
@@ -441,7 +490,7 @@ export const getSrsRoutes = (client: MongoClient) => {
         }
         const pairSuffix = formatLanguagePairSuffix(req.body?.nativeLanguage, req.body?.trainingLanguage);
         const pipeline: Record<string, unknown>[] = [
-          { $match: { owner_id: userId, due_at: { $lte: Date.now() } } },
+          { $match: { owner_id: userId, due_at: { $lte: Date.now() }, ...MATCH_NOT_LEARNED } },
           {
             $lookup: {
               from: 'translations',
@@ -639,7 +688,7 @@ No extra fields.`,
         // Sentence construction intentionally uses ONLY enrolled cards (not the full library).
         // We query translation_srs (enrolled cards), join translations for filtering/metadata.
         const pipeline: Record<string, unknown>[] = [
-          { $match: { owner_id: userId } },
+          { $match: { owner_id: userId, ...MATCH_NOT_LEARNED } },
           {
             $lookup: {
               from: 'translations',
@@ -786,7 +835,7 @@ No extra fields.`,
       if (source === 'library') {
         const langFilter = buildLanguagePairFilter(nativeLanguage, trainingLanguage);
         const pipeline: Record<string, unknown>[] = [
-          { $match: { owner_id: userId } },
+          { $match: { owner_id: userId, ...MATCH_NOT_LEARNED } },
           {
             $lookup: {
               from: 'translations',
@@ -905,7 +954,7 @@ No extra fields.`,
       if (source === 'library') {
         const langFilter = buildLanguagePairFilter(nativeLanguage, trainingLanguage);
         const pipeline: Record<string, unknown>[] = [
-          { $match: { owner_id: userId } },
+          { $match: { owner_id: userId, ...MATCH_NOT_LEARNED } },
           {
             $lookup: {
               from: 'translations',
