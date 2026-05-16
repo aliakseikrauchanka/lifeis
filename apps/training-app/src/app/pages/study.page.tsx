@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { fetchDueCards, fetchExamples, reviewCard, setTranslationLearned, Rating, SrsCard, Example } from '../api/srs.api';
+import { fetchDueCards, fetchExamples, reviewCard, setTranslationLearned, unenrollTranslation, Rating, SrsCard, Example } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import { BookOpen, Check, Volume2, ChevronLeft, ChevronRight, Volume1 } from 'lucide-react';
 import { GradeButtons } from '../components/grade-buttons';
@@ -197,6 +197,29 @@ export function StudyPage() {
     setGrading(false);
   };
 
+  const handleUnenroll = async () => {
+    if (!current || grading) return;
+    setGrading(true);
+    try {
+      await unenrollTranslation(current.translation._id);
+    } catch (err) {
+      console.error('Failed to unenroll:', err);
+      setGrading(false);
+      return;
+    }
+
+    const newQueue = [...queue.slice(0, cardIndex), ...queue.slice(cardIndex + 1)];
+    if (newQueue.length === 0) {
+      await loadCards();
+    } else {
+      setQueue(newQueue);
+      setCardIndex(Math.min(cardIndex, newQueue.length - 1));
+    }
+    setRevealed(false);
+    setExamples([]);
+    setGrading(false);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (loading || !current) return;
@@ -372,9 +395,11 @@ export function StudyPage() {
           <GradeButtons
             onGrade={handleGrade}
             onMarkLearned={handleMarkLearned}
+            onUnenroll={handleUnenroll}
             disabled={grading}
             showHotkeys
             showMarkLearned
+            showUnenroll
           />
         </CardFooter>
       </Card>

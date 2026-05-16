@@ -5,19 +5,23 @@ import { useI18n } from '../i18n/i18n-context';
 interface GradeButtonsProps {
   onGrade: (rating: Rating) => void;
   onMarkLearned?: () => void;
+  onUnenroll?: () => void;
   disabled?: boolean;
   showHotkeys?: boolean;
   selected?: Rating;
   showMarkLearned?: boolean;
+  showUnenroll?: boolean;
 }
 
 export function GradeButtons({
   onGrade,
   onMarkLearned,
+  onUnenroll,
   disabled,
   showHotkeys,
   selected,
   showMarkLearned,
+  showUnenroll,
 }: GradeButtonsProps) {
   const { t } = useI18n();
   return (
@@ -86,6 +90,18 @@ export function GradeButtons({
           title={t('grade.learnedTitle')}
         >
           {t('grade.learned')}
+        </Button>
+      ) : null}
+      {showUnenroll && onUnenroll ? (
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1 border-gray-300 text-gray-500 hover:bg-gray-50"
+          onClick={() => onUnenroll()}
+          disabled={disabled}
+          title={t('grade.unenrollTitle')}
+        >
+          {t('grade.unenroll')}
         </Button>
       ) : null}
     </div>

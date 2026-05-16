@@ -9,6 +9,7 @@ import {
   checkSentenceTraining,
   reviewCard,
   setTranslationLearned,
+  unenrollTranslation,
   Rating,
   SentenceTrainingWord,
 } from '../api/srs.api';
@@ -68,6 +69,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
   const [grades, setGrades] = useState<Record<string, Rating>>({});
   const [grading, setGrading] = useState<string | null>(null);
   const [learnedWords, setLearnedWords] = useState<Record<string, boolean>>({});
+  const [unenrolledWords, setUnenrolledWords] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (autoTriggeredRef.current) return;
@@ -92,6 +94,7 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
     setCorrected('');
     setGrades({});
     setLearnedWords({});
+    setUnenrolledWords({});
     setError(null);
   };
 
@@ -172,6 +175,18 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
     try {
       await setTranslationLearned(translationId, true);
       setLearnedWords((prev) => ({ ...prev, [translationId]: true }));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setGrading(null);
+    }
+  }, []);
+
+  const handleUnenrollWord = useCallback(async (translationId: string) => {
+    setGrading(translationId);
+    try {
+      await unenrollTranslation(translationId);
+      setUnenrolledWords((prev) => ({ ...prev, [translationId]: true }));
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -441,15 +456,18 @@ function SentenceTrainingBody({ onLanguageChange }: { onLanguageChange: (lang: s
                   {words.map((w) => {
                     const graded = grades[w.translationId];
                     const isGrading = grading === w.translationId;
+                    const isUnenrolled = !!unenrolledWords[w.translationId];
                     return (
                       <div key={w.translationId} className="flex items-center gap-3 flex-wrap">
                         <span className="text-sm font-medium min-w-[6rem]">{w.original}</span>
                         <GradeButtons
                           onGrade={(r) => handleGrade(w.translationId, r)}
                           onMarkLearned={() => handleMarkLearned(w.translationId)}
-                          disabled={isGrading || !!learnedWords[w.translationId]}
+                          onUnenroll={() => handleUnenrollWord(w.translationId)}
+                          disabled={isGrading || !!learnedWords[w.translationId] || isUnenrolled}
                           selected={graded}
-                          showMarkLearned={!learnedWords[w.translationId]}
+                          showMarkLearned={!learnedWords[w.translationId] && !isUnenrolled}
+                          showUnenroll={!isUnenrolled}
                         />
                       </div>
                     );

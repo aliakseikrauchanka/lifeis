@@ -6,9 +6,14 @@ import { Button } from '../components/ui/button';
 import { Volume2 } from 'lucide-react';
 import { SpeechInputButton } from '../components/speech-input-button';
 import { ClearableTextarea } from '../components/clearable-textarea';
+import { GradeButtons } from '../components/grade-buttons';
 import {
   generateSentenceConstruction,
   checkSentenceConstruction,
+  reviewCard,
+  setTranslationLearned,
+  unenrollTranslation,
+  Rating,
   SentenceTrainingWord,
 } from '../api/srs.api';
 import { speak } from '../api/tts.api';
@@ -53,6 +58,10 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
   const [improved, setImproved] = useState<string>('');
   const [usedWords, setUsedWords] = useState<string[]>([]);
   const [missingWords, setMissingWords] = useState<string[]>([]);
+  const [grades, setGrades] = useState<Record<string, Rating>>({});
+  const [grading, setGrading] = useState<string | null>(null);
+  const [learnedWords, setLearnedWords] = useState<Record<string, boolean>>({});
+  const [unenrolledWords, setUnenrolledWords] = useState<Record<string, boolean>>({});
 
   const resetCheck = () => {
     setGrammarFeedback('');
@@ -60,6 +69,9 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
     setImproved('');
     setUsedWords([]);
     setMissingWords([]);
+    setGrades({});
+    setLearnedWords({});
+    setUnenrolledWords({});
   };
 
   const handleGenerate = async (translationIds?: string[]) => {
@@ -122,6 +134,42 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
       setPhase('writing');
     }
   };
+
+  const handleGrade = useCallback(async (translationId: string, rating: Rating) => {
+    setGrading(translationId);
+    try {
+      await reviewCard(translationId, rating);
+      setGrades((prev) => ({ ...prev, [translationId]: rating }));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setGrading(null);
+    }
+  }, []);
+
+  const handleMarkLearned = useCallback(async (translationId: string) => {
+    setGrading(translationId);
+    try {
+      await setTranslationLearned(translationId, true);
+      setLearnedWords((prev) => ({ ...prev, [translationId]: true }));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setGrading(null);
+    }
+  }, []);
+
+  const handleUnenrollWord = useCallback(async (translationId: string) => {
+    setGrading(translationId);
+    try {
+      await unenrollTranslation(translationId);
+      setUnenrolledWords((prev) => ({ ...prev, [translationId]: true }));
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setGrading(null);
+    }
+  }, []);
 
   const wordIsUsed = (w: string) =>
     usedWords.some((u) => u.toLowerCase() === w.toLowerCase());
@@ -310,6 +358,29 @@ function SentenceConstructionBody({ onLanguageChange }: { onLanguageChange: (lan
                     </div>
                   </div>
                 )}
+
+                <div className="border-t pt-3 space-y-2">
+                  <div className="text-xs text-muted-foreground uppercase tracking-wide">{t('grade.howHard')}</div>
+                  {words.map((w) => {
+                    const graded = grades[w.translationId];
+                    const isGrading = grading === w.translationId;
+                    const isUnenrolled = !!unenrolledWords[w.translationId];
+                    return (
+                      <div key={w.translationId} className="flex items-center gap-3 flex-wrap">
+                        <span className="text-sm font-medium min-w-[6rem]">{w.original}</span>
+                        <GradeButtons
+                          onGrade={(r) => handleGrade(w.translationId, r)}
+                          onMarkLearned={() => handleMarkLearned(w.translationId)}
+                          onUnenroll={() => handleUnenrollWord(w.translationId)}
+                          disabled={isGrading || !!learnedWords[w.translationId] || isUnenrolled}
+                          selected={graded}
+                          showMarkLearned={!learnedWords[w.translationId] && !isUnenrolled}
+                          showUnenroll={!isUnenrolled}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </CardContent>
