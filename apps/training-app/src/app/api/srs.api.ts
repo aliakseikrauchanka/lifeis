@@ -8,6 +8,8 @@ export interface TranslationData {
   translationLanguage: string;
 }
 
+export type Rating = 'again' | 'hard' | 'good' | 'easy';
+
 export interface SrsCard {
   _id: string;
   translation_id: string;
@@ -17,14 +19,23 @@ export interface SrsCard {
   reps: number;
   lapses: number;
   learned_at?: number | null;
+  last_reviewed_at?: number | null;
+  last_rating?: Rating | null;
   translation: TranslationData;
 }
-
-export type Rating = 'again' | 'hard' | 'good' | 'easy';
 
 export const fetchDueCards = async (): Promise<SrsCard[]> => {
   const res = await utilFetch('/srs/due');
   if (!res.ok) throw new Error('Failed to fetch due cards');
+  const { cards } = await res.json();
+  return cards;
+};
+
+export const fetchTrainedToday = async (): Promise<SrsCard[]> => {
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  const res = await utilFetch(`/srs/trained-today?since=${since.getTime()}`);
+  if (!res.ok) throw new Error('Failed to fetch trained-today cards');
   const { cards } = await res.json();
   return cards;
 };

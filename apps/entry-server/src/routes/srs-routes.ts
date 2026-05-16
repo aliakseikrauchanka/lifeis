@@ -125,6 +125,7 @@ export const getSrsRoutes = (client: MongoClient) => {
   // Ensure indexes (idempotent)
   srsCollection.createIndex({ owner_id: 1, translation_id: 1 }, { unique: true });
   srsCollection.createIndex({ owner_id: 1, due_at: 1 });
+  srsCollection.createIndex({ owner_id: 1, last_reviewed_at: -1 });
 
   // GET /due — cards due for review
   router.get('/due', verifyAccessToken, async (req, res) => {
@@ -134,7 +135,7 @@ export const getSrsRoutes = (client: MongoClient) => {
         .aggregate([
           { $match: { owner_id: userId, due_at: { $lte: Date.now() }, ...MATCH_NOT_LEARNED } },
           { $sort: { due_at: 1 } },
-          { $limit: 50 },
+          { $limit: 100 },
           {
             $lookup: {
               from: 'translations',
@@ -151,6 +152,39 @@ export const getSrsRoutes = (client: MongoClient) => {
     } catch (error) {
       console.error('Error fetching due cards:', error);
       res.status(500).json({ message: 'Error fetching due cards' });
+    }
+  });
+
+  // GET /trained-today?since=<ms> — cards reviewed since the given timestamp (client passes start of local day)
+  router.get('/trained-today', verifyAccessToken, async (req, res) => {
+    try {
+      const userId = res.locals.userId;
+      const sinceRaw = req.query.since;
+      const since = typeof sinceRaw === 'string' ? Number(sinceRaw) : NaN;
+      if (!Number.isFinite(since) || since < 0 || since > Date.now() + 86_400_000) {
+        return res.status(400).json({ message: 'since must be a non-negative epoch-ms timestamp' });
+      }
+
+      const cards = await srsCollection
+        .aggregate([
+          { $match: { owner_id: userId, last_reviewed_at: { $gte: since } } },
+          { $sort: { last_reviewed_at: -1 } },
+          {
+            $lookup: {
+              from: 'translations',
+              localField: 'translation_id',
+              foreignField: '_id',
+              as: 'translation',
+            },
+          },
+          { $unwind: '$translation' },
+        ])
+        .toArray();
+
+      res.json({ cards });
+    } catch (error) {
+      console.error('Error fetching trained-today cards:', error);
+      res.status(500).json({ message: 'Error fetching trained-today cards' });
     }
   });
 
@@ -231,6 +265,8 @@ export const getSrsRoutes = (client: MongoClient) => {
             reps: updated.reps,
             lapses: updated.lapses,
             due_at: updated.due_at,
+            last_reviewed_at: now,
+            last_rating: rating,
             updated_at: now,
           },
         },
