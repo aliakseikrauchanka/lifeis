@@ -688,7 +688,7 @@ No extra fields.`,
         // Sentence construction intentionally uses ONLY enrolled cards (not the full library).
         // We query translation_srs (enrolled cards), join translations for filtering/metadata.
         const pipeline: Record<string, unknown>[] = [
-          { $match: { owner_id: userId, ...MATCH_NOT_LEARNED } },
+          { $match: { owner_id: userId, due_at: { $lte: Date.now() }, ...MATCH_NOT_LEARNED } },
           {
             $lookup: {
               from: 'translations',
@@ -835,7 +835,7 @@ No extra fields.`,
       if (source === 'library') {
         const langFilter = buildLanguagePairFilter(nativeLanguage, trainingLanguage);
         const pipeline: Record<string, unknown>[] = [
-          { $match: { owner_id: userId, ...MATCH_NOT_LEARNED } },
+          { $match: { owner_id: userId, due_at: { $lte: Date.now() }, ...MATCH_NOT_LEARNED } },
           {
             $lookup: {
               from: 'translations',
@@ -954,7 +954,7 @@ No extra fields.`,
       if (source === 'library') {
         const langFilter = buildLanguagePairFilter(nativeLanguage, trainingLanguage);
         const pipeline: Record<string, unknown>[] = [
-          { $match: { owner_id: userId, ...MATCH_NOT_LEARNED } },
+          { $match: { owner_id: userId, due_at: { $lte: Date.now() }, ...MATCH_NOT_LEARNED } },
           {
             $lookup: {
               from: 'translations',
