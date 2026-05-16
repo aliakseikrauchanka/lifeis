@@ -127,6 +127,11 @@
   min-width: 0;
 }
 
+.log-message {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .log-footer {
   display: flex;
   align-items: center;

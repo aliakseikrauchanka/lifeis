@@ -136,7 +136,7 @@ export const LogsPage = () => {
                     ) : (
                       <li key={item.log.id} className={css.logItem}>
                         <div className={css.logContent}>
-                          <div>{item.log.message}</div>
+                          <div className={css.logMessage}>{item.log.message}</div>
                           <div className={css.logFooter}>
                             <Chip label={item.log.basket_name} size="small" variant="outlined" />
                             <small>{new Date(item.log.timestamp).toLocaleString()}</small>
