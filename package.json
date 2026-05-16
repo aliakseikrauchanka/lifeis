@@ -7,8 +7,8 @@
     "start": "node ./dist/apps/entry-server/src/main.js",
     "build:telegram-bot": "npx nx run telegram-bot:build --configuration=production",
     "start:telegram-bot": "node ./dist/apps/telegram-bot/main.js",
-    "build:logs-mcp-server": "npx nx run logs-mcp-server:build --configuration=production",
-    "start:logs-mcp-server": "node ./dist/apps/logs-mcp-server/main.js"
+    "build:entry-mcp-server": "npx nx run entry-mcp-server:build --configuration=production",
+    "start:entry-mcp-server": "node ./dist/apps/entry-mcp-server/main.js"
   },
   "private": true,
   "engines": {

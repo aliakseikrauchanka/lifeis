@@ -1,15 +1,17 @@
+type AppId = 'logs' | 'training';
+
 export class ApiClient {
   constructor(
     private baseUrl: string,
     private accessToken: string,
   ) {}
 
-  private async request(method: string, path: string, body?: unknown) {
+  private async request(app: AppId, method: string, path: string, body?: unknown) {
     const res = await fetch(`${this.baseUrl}${path}`, {
       method,
       headers: {
         Authorization: `Bearer ${this.accessToken}`,
-        'x-app-id': 'logs',
+        'x-app-id': app,
         'Content-Type': 'application/json',
       },
       body: body ? JSON.stringify(body) : undefined,
@@ -24,7 +26,7 @@ export class ApiClient {
   }
 
   createLog(message: string, basket_id?: string) {
-    return this.request('POST', '/api/logs', { message, basket_id });
+    return this.request('logs', 'POST', '/api/logs', { message, basket_id });
   }
 
   listLogs(from?: string, to?: string, basket_id?: string) {
@@ -33,14 +35,18 @@ export class ApiClient {
     if (to) params.set('to', to);
     if (basket_id) params.set('basket_id', basket_id);
     const qs = params.toString();
-    return this.request('GET', `/api/logs${qs ? `?${qs}` : ''}`);
+    return this.request('logs', 'GET', `/api/logs${qs ? `?${qs}` : ''}`);
   }
 
   updateLog(id: string, message: string, basket_id?: string) {
-    return this.request('PATCH', `/api/logs/${id}`, { message, basket_id });
+    return this.request('logs', 'PATCH', `/api/logs/${id}`, { message, basket_id });
   }
 
   deleteLog(id: string) {
-    return this.request('DELETE', `/api/logs/${id}`);
+    return this.request('logs', 'DELETE', `/api/logs/${id}`);
+  }
+
+  trainedToday(since: number) {
+    return this.request('training', 'GET', `/api/srs/trained-today?since=${since}`);
   }
 }

@@ -73,11 +73,11 @@ services:
       - VITE_BE=${NGINX_DOMAIN}
       - VITE_CLIENT_ID=${TRAINING_CLIENT_ID}
 
-  logs-mcp-server:
+  entry-mcp-server:
     extends:
       file: docker-compose.base.yml
       service: nx-app-base
-    command: npx nx run logs-mcp-server:serve --host=0.0.0.0
+    command: npx nx run entry-mcp-server:serve --host=0.0.0.0
     ports:
       - ${MCP_PORT}:3000
     depends_on:

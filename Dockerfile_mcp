@@ -8,17 +8,17 @@ COPY nx.json ./
 RUN npm install --legacy-peer-deps
 
 # Copy source (app + libs + configs)
-COPY apps/logs-mcp-server ./apps/logs-mcp-server
+COPY apps/entry-mcp-server ./apps/entry-mcp-server
 COPY libs ./libs
 COPY tsconfig.base.json ./
 
 # Build
-RUN npx nx run logs-mcp-server:build --configuration=production --skip-nx-cache
+RUN npx nx run entry-mcp-server:build --configuration=production --skip-nx-cache
 
 # Install production deps for the built output
-WORKDIR /app/dist/apps/logs-mcp-server
+WORKDIR /app/dist/apps/entry-mcp-server
 RUN npm install --legacy-peer-deps --omit=dev
 
 WORKDIR /app
 
-CMD ["node", "./dist/apps/logs-mcp-server/main.js"]
+CMD ["node", "./dist/apps/entry-mcp-server/main.js"]

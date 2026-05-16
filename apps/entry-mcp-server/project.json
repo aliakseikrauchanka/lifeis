@@ -1,7 +1,7 @@
 {
-  "name": "logs-mcp-server",
+  "name": "entry-mcp-server",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/logs-mcp-server/src",
+  "sourceRoot": "apps/entry-mcp-server/src",
   "projectType": "application",
   "targets": {
     "build": {
@@ -10,12 +10,12 @@
       "defaultConfiguration": "production",
       "options": {
         "platform": "node",
-        "outputPath": "dist/apps/logs-mcp-server",
+        "outputPath": "dist/apps/entry-mcp-server",
         "format": ["cjs"],
         "bundle": true,
-        "main": "apps/logs-mcp-server/src/main.ts",
-        "tsConfig": "apps/logs-mcp-server/tsconfig.app.json",
-        "assets": ["apps/logs-mcp-server/src/assets"],
+        "main": "apps/entry-mcp-server/src/main.ts",
+        "tsConfig": "apps/entry-mcp-server/tsconfig.app.json",
+        "assets": ["apps/entry-mcp-server/src/assets"],
         "generatePackageJson": true,
         "esbuildOptions": {
           "sourcemap": true,
@@ -42,14 +42,14 @@
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
       "options": {
-        "buildTarget": "logs-mcp-server:build"
+        "buildTarget": "entry-mcp-server:build"
       },
       "configurations": {
         "development": {
-          "buildTarget": "logs-mcp-server:build:development"
+          "buildTarget": "entry-mcp-server:build:development"
         },
         "production": {
-          "buildTarget": "logs-mcp-server:build:production"
+          "buildTarget": "entry-mcp-server:build:production"
         }
       }
     }

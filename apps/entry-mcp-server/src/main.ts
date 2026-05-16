@@ -7,7 +7,6 @@ import express from 'express';
 
 const serviceApiKey = process.env.SERVICE_API_KEY;
 const backendUrl = process.env.LIFEIS_BACKEND_URL || 'http://localhost:4202';
-// const backendUrl = 'http://entry-server:3000';
 console.log('debug', 'backendUrl', backendUrl);
 const mcpAuthToken = process.env.MCP_AUTH_TOKEN;
 const port = parseInt(process.env.PORT || '3000', 10);
@@ -26,7 +25,7 @@ const api = new ApiClient(backendUrl, serviceApiKey);
 
 function createMcpServer() {
   const server = new McpServer({
-    name: 'lifeis-logs',
+    name: 'lifeis-entry',
     version: '1.0.0',
   });
 
@@ -80,6 +79,24 @@ function createMcpServer() {
     async ({ id }) => {
       const result = await api.deleteLog(id);
       return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+    },
+  );
+
+  server.tool(
+    'review_today_words',
+    "List the words the user has practiced today via SRS — i.e. flashcards reviewed since the given timestamp. Each result includes the SRS state and the joined translation (original word + translation). Use this to recap what the user has been working on today. Defaults to start of UTC day if `since` is omitted.",
+    {
+      since: z
+        .number()
+        .int()
+        .nonnegative()
+        .optional()
+        .describe('Epoch-ms cutoff; results have last_reviewed_at >= since. Defaults to start of UTC day.'),
+    },
+    async ({ since }) => {
+      const cutoff = since ?? Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
+      const result = await api.trainedToday(cutoff);
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     },
   );
 
