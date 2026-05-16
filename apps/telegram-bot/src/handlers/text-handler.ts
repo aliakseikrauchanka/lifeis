@@ -4,9 +4,9 @@ import { config } from '../config';
 import { tryConsume } from '../lib/daily-rate-limit';
 
 export async function handleText(ctx: Context) {
-  const msg = ctx.message;
+  const msg = ctx.message ?? ctx.channelPost;
   if (!msg || !('text' in msg) || typeof msg.text !== 'string') return;
-  if (msg.from?.is_bot) return;
+  if ('from' in msg && msg.from?.is_bot) return;
 
   const text = msg.text.trim();
   if (!text || text.startsWith('/')) return;

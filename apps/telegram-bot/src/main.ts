@@ -19,6 +19,7 @@ bot.on(message('document'), handleImage);
 bot.on(channelPost('document'), handleImage);
 
 bot.on(message('text'), handleText);
+bot.on(channelPost('text'), handleText);
 
 bot.launch({ dropPendingUpdates: true }).then(() => {
   console.log('[telegram-bot] Bot is running');
