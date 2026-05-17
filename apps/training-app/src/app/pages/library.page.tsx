@@ -164,6 +164,23 @@ export function LibraryPage() {
     .filter((t) => !enrolledCards.has(t._id))
     .map((t) => t._id);
 
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter') return;
+    const query = search.trim();
+    if (!query) return;
+    const queryLower = query.toLowerCase();
+    const match = languageFiltered.find(
+      (t) =>
+        t.original.toLowerCase() === queryLower ||
+        t.translation.toLowerCase() === queryLower,
+    );
+    if (match) {
+      startEditing(match);
+    } else {
+      openAddModal({ original: query });
+    }
+  };
+
   const handleEnrollAll = async () => {
     if (unenrolledIds.length === 0) return;
     setEnrollingAll(true);
@@ -257,6 +274,7 @@ export function LibraryPage() {
           placeholder={t('library.searchPlaceholder')}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
           className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-input bg-background"
         />
       </div>
