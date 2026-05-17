@@ -49,4 +49,18 @@ export class ApiClient {
   trainedToday(since: number) {
     return this.request('training', 'GET', `/api/srs/trained-today?since=${since}`);
   }
+
+  createTranslation(
+    original: string,
+    translation: string,
+    originalLanguage: string,
+    translationLanguage: string,
+  ) {
+    return this.request('training', 'POST', '/api/translations', {
+      original,
+      translation,
+      originalLanguage,
+      translationLanguage,
+    });
+  }
 }

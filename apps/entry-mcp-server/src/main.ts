@@ -83,6 +83,25 @@ function createMcpServer() {
   );
 
   server.tool(
+    'create_translation',
+    'Add a new word or phrase with its translation to the user library. Both languages must be valid app language codes.',
+    {
+      original: z.string().min(1).max(2000).describe('Original word or phrase'),
+      translation: z.string().min(1).max(2000).describe('Translation of the word or phrase'),
+      originalLanguage: z
+        .enum(['pl', 'ru-RU', 'en-US', 'de-DE', 'fr-FR', 'sr-RS', 'fi', 'es'])
+        .describe('Language code of the original text'),
+      translationLanguage: z
+        .enum(['pl', 'ru-RU', 'en-US', 'de-DE', 'fr-FR', 'sr-RS', 'fi', 'es'])
+        .describe('Language code of the translation'),
+    },
+    async ({ original, translation, originalLanguage, translationLanguage }) => {
+      const result = await api.createTranslation(original, translation, originalLanguage, translationLanguage);
+      return { content: [{ type: 'text', text: JSON.stringify(result) }] };
+    },
+  );
+
+  server.tool(
     'review_today_words',
     "List the words the user has practiced today via SRS — i.e. flashcards reviewed since the given timestamp. Each result includes the SRS state and the joined translation (original word + translation). Use this to recap what the user has been working on today. Defaults to start of UTC day if `since` is omitted.",
     {
