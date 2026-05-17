@@ -98,6 +98,19 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI) =
       }
 
       const userId = res.locals.userId;
+      const collection = client.db('lifeis').collection('translations');
+
+      const existing = await collection.findOne(
+        { owner_id: userId, original, originalLanguage, translationLanguage },
+        { collation: { locale: 'en', strength: 2 } },
+      );
+      if (existing) {
+        return res.status(409).json({
+          message: 'Translation already exists for this original and language pair',
+          existingId: existing._id,
+        });
+      }
+
       const doc: Omit<ITranslation, '_id'> = {
         original,
         translation,
@@ -107,7 +120,7 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI) =
         timestamp: Date.now(),
       };
 
-      const result = await client.db('lifeis').collection('translations').insertOne(doc);
+      const result = await collection.insertOne(doc);
       res.status(201).json(result);
     } catch (error) {
       console.error('Error creating translation:', error);
