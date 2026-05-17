@@ -12,7 +12,7 @@ import { SentenceBuilderPage } from './pages/sentence-builder.page';
 import { WordBuilderPage } from './pages/word-builder.page';
 import { ProfileMenu } from './components/profile-menu';
 import { HeaderAddButton } from './components/header-add-button';
-import { HeaderTrainedTodayButton } from './components/header-trained-today-button';
+import { HeaderTodayButton } from './components/header-today-button';
 import { DirectionToggle } from './components/direction-toggle';
 import { TranslationAddModal } from './components/translation-add-modal';
 import { SelectionAddButton } from './components/selection-add-button';
@@ -127,7 +127,7 @@ function TrainingShell({
                 <span className="hidden md:inline">{t('nav.library')}</span>
               </NavLink>
             )}
-            {isLoggedIn && <HeaderTrainedTodayButton />}
+            {isLoggedIn && <HeaderTodayButton />}
             {isLoggedIn && <HeaderAddButton />}
             {isLoggedIn && <DirectionToggle />}
             {isLoggedIn && <ProfileMenu />}

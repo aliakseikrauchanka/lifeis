@@ -50,6 +50,10 @@ export class ApiClient {
     return this.request('training', 'GET', `/api/srs/trained-today?since=${since}`);
   }
 
+  addedSince(since: number) {
+    return this.request('training', 'GET', `/api/translations/added-since?since=${since}`);
+  }
+
   createTranslation(
     original: string,
     translation: string,

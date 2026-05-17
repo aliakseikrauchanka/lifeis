@@ -68,6 +68,77 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI) =
     }
   });
 
+  // GET /added-since?since=<ms> — translations added since the given timestamp.
+  // Each item is joined with the user's srs collection to expose an `enrolled` flag.
+  // `since` defaults to start of UTC day if omitted; clamped to the last 180 days.
+  router.get('/added-since', verifyAccessToken, async (req, res) => {
+    try {
+      const userId = res.locals.userId;
+      const now = Date.now();
+      const MAX_WINDOW_MS = 180 * 86_400_000;
+      const MIN_SINCE = now - MAX_WINDOW_MS;
+      const MAX_SINCE = now + 86_400_000;
+
+      const sinceRaw = req.query.since;
+      let since: number;
+      if (sinceRaw === undefined) {
+        const d = new Date();
+        since = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+      } else {
+        const parsed = typeof sinceRaw === 'string' ? Number(sinceRaw) : NaN;
+        if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 0) {
+          return res
+            .status(400)
+            .json({ message: 'since must be an epoch-ms timestamp within the last 180 days' });
+        }
+        since = parsed;
+      }
+
+      if (since < MIN_SINCE || since > MAX_SINCE) {
+        return res
+          .status(400)
+          .json({ message: 'since must be an epoch-ms timestamp within the last 180 days' });
+      }
+
+      const translations = await client
+        .db('lifeis')
+        .collection('translations')
+        .aggregate([
+          { $match: { owner_id: userId, timestamp: { $gte: since } } },
+          {
+            $lookup: {
+              from: 'srs',
+              let: { tid: '$_id', oid: '$owner_id' },
+              pipeline: [
+                {
+                  $match: {
+                    $expr: {
+                      $and: [
+                        { $eq: ['$translation_id', '$$tid'] },
+                        { $eq: ['$owner_id', '$$oid'] },
+                      ],
+                    },
+                  },
+                },
+                { $limit: 1 },
+                { $project: { _id: 1 } },
+              ],
+              as: 'srs',
+            },
+          },
+          { $addFields: { enrolled: { $gt: [{ $size: '$srs' }, 0] } } },
+          { $project: { srs: 0 } },
+          { $sort: { timestamp: -1 } },
+        ])
+        .toArray();
+
+      res.json({ translations });
+    } catch (error) {
+      console.error('Error fetching added-since translations:', error);
+      res.status(500).json({ message: 'Error fetching added-since translations' });
+    }
+  });
+
   router.post('/', verifyAccessToken, async (req, res) => {
     try {
       const { original, translation, originalLanguage, translationLanguage } = req.body;

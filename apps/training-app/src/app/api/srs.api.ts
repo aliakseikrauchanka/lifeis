@@ -40,6 +40,20 @@ export const fetchTrainedToday = async (): Promise<SrsCard[]> => {
   return cards;
 };
 
+export interface AddedTranslation extends TranslationData {
+  timestamp: number;
+  enrolled: boolean;
+}
+
+export const fetchAddedToday = async (): Promise<AddedTranslation[]> => {
+  const since = new Date();
+  since.setHours(0, 0, 0, 0);
+  const res = await utilFetch(`/translations/added-since?since=${since.getTime()}`);
+  if (!res.ok) throw new Error('Failed to fetch added-since translations');
+  const { translations } = await res.json();
+  return translations;
+};
+
 export const fetchEnrolledCards = async (): Promise<SrsCard[]> => {
   const res = await utilFetch('/srs/enrolled');
   if (!res.ok) throw new Error('Failed to fetch enrolled cards');

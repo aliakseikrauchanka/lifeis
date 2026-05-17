@@ -102,6 +102,26 @@ function createMcpServer() {
   );
 
   server.tool(
+    'list_added_words',
+    "List translations the user added to the library since the given timestamp. Each item includes the translation fields and an `enrolled` flag indicating whether it's enrolled in SRS. Use this to recap what the user added today. Defaults to start of UTC day if `since` is omitted.",
+    {
+      since: z
+        .number()
+        .int()
+        .nonnegative()
+        .optional()
+        .describe(
+          'Epoch-ms cutoff; results have timestamp >= since. Defaults to start of UTC day. Server clamps to no older than 180 days.',
+        ),
+    },
+    async ({ since }) => {
+      const cutoff = since ?? Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), new Date().getUTCDate());
+      const result = await api.addedSince(cutoff);
+      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
     'review_today_words',
     "List the words the user has practiced today via SRS — i.e. flashcards reviewed since the given timestamp. Each result includes the SRS state and the joined translation (original word + translation). Use this to recap what the user has been working on today. Defaults to start of UTC day if `since` is omitted.",
     {
