@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeepgramFileSTTProvider, useAudioDevices, useSpeechToText } from '@lifeis/common-ui';
 import { ArrowUpDown, ChevronLeft, ChevronRight, Languages, Plus, Volume2, X } from 'lucide-react';
 import { Button } from './ui/button';
@@ -23,6 +23,10 @@ import { useI18n } from '../i18n/i18n-context';
 
 const ORIGINAL_REC_ID = 'global-add-original';
 const TRANSLATION_REC_ID = 'global-add-translation';
+
+function normalize(s: string): string {
+  return s.trim().toLocaleLowerCase();
+}
 
 const TRANSLATION_PROVIDERS = ['openai', 'deepseek', 'glosbe'] as const satisfies readonly TranslationProvider[];
 
@@ -88,7 +92,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   const { t } = useI18n();
   const { stopListening } = useSpeechToText();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
-  const { history, appendHistory } = useTranslationAdd();
+  const { history, appendHistory, findByOriginalOrTranslation } = useTranslationAdd();
   const [cursor, setCursor] = useState<number | null>(null);
   const [addForm, setAddForm] = useState(() => {
     const savedOrig = !isEdit ? localStorage.getItem('modal-orig-lang') : null;
@@ -144,6 +148,64 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     else if (recordingField === 'translation') onSttLanguageChange(addForm.translationLanguage);
     else onSttLanguageChange(undefined);
   }, [recordingField, addForm.originalLanguage, addForm.translationLanguage, onSttLanguageChange]);
+
+  const tryAutofillFromLibrary = useCallback(
+    (form: AddFormFields, direction: 'forward' | 'reverse' | 'both' = 'both'): AddFormFields => {
+      if (isEdit) return form;
+      const orig = form.original.trim();
+      const trans = form.translation.trim();
+      if ((direction === 'forward' || direction === 'both') && orig && !trans) {
+        const match = findByOriginalOrTranslation(orig);
+        if (
+          match &&
+          normalize(match.original) === normalize(orig) &&
+          match.originalLanguage === form.originalLanguage
+        ) {
+          return { ...form, translation: match.translation };
+        }
+      }
+      if ((direction === 'reverse' || direction === 'both') && trans && !orig) {
+        const match = findByOriginalOrTranslation(trans);
+        if (
+          match &&
+          normalize(match.translation) === normalize(trans) &&
+          match.translationLanguage === form.translationLanguage
+        ) {
+          return { ...form, original: match.original };
+        }
+      }
+      return form;
+    },
+    [isEdit, findByOriginalOrTranslation],
+  );
+
+  useEffect(() => {
+    if (isEdit) return;
+    setAddForm((prev) => tryAutofillFromLibrary(prev, 'both'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const isDuplicatePair = useMemo(() => {
+    if (isEdit) return false;
+    const orig = addForm.original.trim();
+    const trans = addForm.translation.trim();
+    if (!orig || !trans) return false;
+    const match = findByOriginalOrTranslation(orig);
+    if (!match) return false;
+    return (
+      normalize(match.original) === normalize(orig) &&
+      normalize(match.translation) === normalize(trans) &&
+      match.originalLanguage === addForm.originalLanguage &&
+      match.translationLanguage === addForm.translationLanguage
+    );
+  }, [
+    isEdit,
+    addForm.original,
+    addForm.translation,
+    addForm.originalLanguage,
+    addForm.translationLanguage,
+    findByOriginalOrTranslation,
+  ]);
 
   const handleAppendOriginal = useCallback((text: string) => {
     setAddForm((prev) => ({ ...prev, original: text }));
@@ -350,7 +412,11 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       type="text"
                       placeholder={t('modal.placeholderOriginal')}
                       value={addForm.original}
-                      onChange={(e) => setAddForm((prev) => ({ ...prev, original: e.target.value }))}
+                      onChange={(e) =>
+                        setAddForm((prev) =>
+                          tryAutofillFromLibrary({ ...prev, original: e.target.value }, 'forward'),
+                        )
+                      }
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' && !translating && !isEdit && translatePlan.ok) {
                           e.preventDefault();
@@ -444,7 +510,9 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       placeholder={t('modal.placeholderTranslation')}
                       value={addForm.translation}
                       onChange={(e) =>
-                        setAddForm((prev) => ({ ...prev, translation: e.target.value }))
+                        setAddForm((prev) =>
+                          tryAutofillFromLibrary({ ...prev, translation: e.target.value }, 'reverse'),
+                        )
                       }
                       onKeyDown={(e) => {
                         if (e.key !== 'Enter') return;
@@ -686,19 +754,29 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
           <Button size="sm" variant="ghost" onClick={onClose}>
             {t('modal.cancel')}
           </Button>
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saving || !addForm.original.trim() || !addForm.translation.trim()}
+          <span
+            title={isDuplicatePair ? 'Pair already exists in library' : undefined}
+            className="inline-block"
           >
-            {saving
-              ? isEdit
-                ? t('modal.saving')
-                : t('modal.adding')
-              : isEdit
-                ? t('modal.save')
-                : t('modal.add')}
-          </Button>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={
+                saving ||
+                !addForm.original.trim() ||
+                !addForm.translation.trim() ||
+                isDuplicatePair
+              }
+            >
+              {saving
+                ? isEdit
+                  ? t('modal.saving')
+                  : t('modal.adding')
+                : isEdit
+                  ? t('modal.save')
+                  : t('modal.add')}
+            </Button>
+          </span>
         </div>
       </div>
     </div>
