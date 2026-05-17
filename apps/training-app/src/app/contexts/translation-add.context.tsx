@@ -12,6 +12,13 @@ export interface TranslationAddPrefill {
 
 export type TranslationAddMode = 'add' | 'edit';
 
+export interface TranslationHistoryEntry {
+  original: string;
+  translation: string;
+  originalLanguage: string;
+  translationLanguage: string;
+}
+
 interface TranslationAddContextValue {
   isOpen: boolean;
   mode: TranslationAddMode;
@@ -25,6 +32,9 @@ interface TranslationAddContextValue {
   subscribeChanged: (fn: () => void) => () => void;
   /** Match when selected text equals stored original or stored translation (after normalize). */
   findByOriginalOrTranslation: (text: string) => TranslationData | undefined;
+  /** Session-scoped history of entries added via the Add button. Cleared on page reload. */
+  history: TranslationHistoryEntry[];
+  appendHistory: (entry: TranslationHistoryEntry) => void;
 }
 
 const TranslationAddContext = createContext<TranslationAddContextValue | null>(null);
@@ -38,6 +48,7 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<TranslationAddMode>('add');
   const [editId, setEditId] = useState<string | null>(null);
   const [prefill, setPrefill] = useState<TranslationAddPrefill | null>(null);
+  const [history, setHistory] = useState<TranslationHistoryEntry[]>([]);
   const subscribersRef = useRef(new Set<() => void>());
   const indexOriginalRef = useRef<Map<string, TranslationData>>(new Map());
   const indexTranslationRef = useRef<Map<string, TranslationData>>(new Map());
@@ -116,6 +127,10 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const appendHistory = useCallback((entry: TranslationHistoryEntry) => {
+    setHistory((prev) => [...prev, entry]);
+  }, []);
+
   const value = useMemo<TranslationAddContextValue>(
     () => ({
       isOpen,
@@ -129,6 +144,8 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
       refreshIndex,
       subscribeChanged,
       findByOriginalOrTranslation,
+      history,
+      appendHistory,
     }),
     [
       isOpen,
@@ -142,6 +159,8 @@ export function TranslationAddProvider({ children }: { children: ReactNode }) {
       refreshIndex,
       subscribeChanged,
       findByOriginalOrTranslation,
+      history,
+      appendHistory,
     ],
   );
 

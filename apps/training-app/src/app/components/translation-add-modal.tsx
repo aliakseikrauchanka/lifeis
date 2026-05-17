@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DeepgramFileSTTProvider, useAudioDevices, useSpeechToText } from '@lifeis/common-ui';
-import { ArrowUpDown, Languages, Volume2, X } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, Languages, Plus, Volume2, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { LanguagePairSelect } from './language-pair-select/language-pair-select';
 import { SpeechInputButton } from './speech-input-button';
@@ -16,6 +16,7 @@ import {
   useTranslationAdd,
   TranslationAddPrefill,
   TranslationAddMode,
+  TranslationHistoryEntry,
 } from '../contexts/translation-add.context';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { useI18n } from '../i18n/i18n-context';
@@ -49,8 +50,7 @@ type TranslatePlan =
       suggestionTarget: 'original' | 'translation';
     };
 
-function getTranslatePlan(form: AddFormFields, isEdit: boolean): TranslatePlan {
-  if (isEdit) return { ok: false };
+function getTranslatePlan(form: AddFormFields, _isEdit: boolean): TranslatePlan {
   const orig = form.original.trim();
   const trans = form.translation.trim();
   if (orig.length > 0) {
@@ -88,6 +88,8 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   const { t } = useI18n();
   const { stopListening } = useSpeechToText();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
+  const { history, appendHistory } = useTranslationAdd();
+  const [cursor, setCursor] = useState<number | null>(null);
   const [addForm, setAddForm] = useState(() => {
     const savedOrig = !isEdit ? localStorage.getItem('modal-orig-lang') : null;
     const savedTrans = !isEdit ? localStorage.getItem('modal-trans-lang') : null;
@@ -179,17 +181,76 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
           original: addForm.original.trim(),
           translation: addForm.translation.trim(),
         });
+        onChanged();
+        onClose();
       } else {
+        const entry: TranslationHistoryEntry = {
+          original: addForm.original.trim(),
+          translation: addForm.translation.trim(),
+          originalLanguage: addForm.originalLanguage,
+          translationLanguage: addForm.translationLanguage,
+        };
         await createTranslation(addForm);
+        appendHistory(entry);
+        setAddForm((prev) => ({ ...prev, original: '', translation: '' }));
+        setProviderResults(null);
+        setSuggestionTarget('translation');
+        setCursor(null);
+        onChanged();
+        originalInputRef.current?.focus();
       }
-      onChanged();
-      onClose();
     } catch (err) {
       console.error('Failed to save translation:', err);
     } finally {
       setSaving(false);
     }
   };
+
+  const handlePrev = useCallback(() => {
+    if (history.length === 0) return;
+    const next = cursor === null ? history.length - 1 : cursor - 1;
+    if (next < 0) return;
+    const entry = history[next];
+    setCursor(next);
+    setAddForm({
+      original: entry.original,
+      translation: entry.translation,
+      originalLanguage: entry.originalLanguage,
+      translationLanguage: entry.translationLanguage,
+    });
+    setProviderResults(null);
+    setSuggestionTarget('translation');
+  }, [cursor, history]);
+
+  const handleNext = useCallback(() => {
+    if (cursor === null) return;
+    const next = cursor + 1;
+    if (next >= history.length) {
+      setCursor(null);
+      setAddForm((prev) => ({ ...prev, original: '', translation: '' }));
+      setProviderResults(null);
+      setSuggestionTarget('translation');
+      return;
+    }
+    const entry = history[next];
+    setCursor(next);
+    setAddForm({
+      original: entry.original,
+      translation: entry.translation,
+      originalLanguage: entry.originalLanguage,
+      translationLanguage: entry.translationLanguage,
+    });
+    setProviderResults(null);
+    setSuggestionTarget('translation');
+  }, [cursor, history]);
+
+  const handleNewEntry = useCallback(() => {
+    setCursor(null);
+    setAddForm((prev) => ({ ...prev, original: '', translation: '' }));
+    setProviderResults(null);
+    setSuggestionTarget('translation');
+    originalInputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -226,10 +287,54 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
         aria-modal="true"
         aria-labelledby="add-translation-title"
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
-          <h3 id="add-translation-title" className="text-base font-semibold">
+        <div className="flex items-center justify-between px-4 py-3 border-b shrink-0 gap-2">
+          <h3 id="add-translation-title" className="text-base font-semibold shrink-0">
             {isEdit ? t('modal.editTranslation') : t('header.addTranslation')}
           </h3>
+          {!isEdit && history.length > 0 && (
+            <div className="flex items-center gap-1 ml-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={handlePrev}
+                disabled={cursor === 0}
+                title={t('modal.historyPrev')}
+                aria-label={t('modal.historyPrev')}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {cursor !== null && (
+                <span className="text-xs text-muted-foreground tabular-nums px-1" aria-live="polite">
+                  {cursor + 1} / {history.length}
+                </span>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0"
+                onClick={handleNext}
+                disabled={cursor === null}
+                title={t('modal.historyNext')}
+                aria-label={t('modal.historyNext')}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              {cursor !== null && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 px-2 ml-1"
+                  onClick={handleNewEntry}
+                  title={t('modal.historyNew')}
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="ml-1 text-xs">{t('modal.historyNew')}</span>
+                </Button>
+              )}
+            </div>
+          )}
+          <div className="flex-1" />
           <Button variant="ghost" size="sm" onClick={onClose} title={t('profile.close')}>
             <X className="h-4 w-4" />
           </Button>
@@ -303,7 +408,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       size="sm"
                       className="shrink-0 px-2 bg-violet-600 hover:bg-violet-700 text-white"
                       onClick={handleTranslate}
-                      disabled={isEdit || translating || !translatePlan.ok}
+                      disabled={translating || !translatePlan.ok}
                       title={t('modal.suggestTitle')}
                     >
                       <Languages className="h-4 w-4" />
