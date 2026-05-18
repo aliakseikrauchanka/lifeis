@@ -172,12 +172,12 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI) =
       const collection = client.db('lifeis').collection('translations');
 
       const existing = await collection.findOne(
-        { owner_id: userId, original, originalLanguage, translationLanguage },
+        { owner_id: userId, original, translation, originalLanguage, translationLanguage },
         { collation: { locale: 'en', strength: 2 } },
       );
       if (existing) {
         return res.status(409).json({
-          message: 'Translation already exists for this original and language pair',
+          message: 'Translation already exists for this original, translation, and language pair',
           existingId: existing._id,
         });
       }
