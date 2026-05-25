@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeepgramFileSTTProvider, useAudioDevices, useSpeechToText } from '@lifeis/common-ui';
-import { ArrowUpDown, ChevronLeft, ChevronRight, Languages, Plus, Volume2, X } from 'lucide-react';
+import { ArrowUpDown, Check, ChevronLeft, ChevronRight, Languages, Plus, Volume2, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { LanguagePairSelect } from './language-pair-select/language-pair-select';
 import { SpeechInputButton } from './speech-input-button';
 import {
   createTranslation,
   updateTranslation,
-  translateTextMulti,
+  translateText,
   TranslationProvider,
   ProviderTranslationResult,
 } from '../api/srs.api';
@@ -111,9 +111,10 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     localStorage.setItem('modal-trans-lang', addForm.translationLanguage);
   }, [isEdit, addForm.originalLanguage, addForm.translationLanguage]);
   const [saving, setSaving] = useState(false);
-  const [translating, setTranslating] = useState(false);
   const [providerResults, setProviderResults] =
-    useState<Record<TranslationProvider, ProviderTranslationResult> | null>(null);
+    useState<Partial<Record<TranslationProvider, ProviderTranslationResult>> | null>(null);
+  const [loadingProviders, setLoadingProviders] = useState<readonly TranslationProvider[]>([]);
+  const translating = loadingProviders.length > 0;
   const [activeProvider, setActiveProvider] = useState<TranslationProvider>('openai');
   /** Which input the suggestion chips apply to after the latest translate call */
   const [suggestionTarget, setSuggestionTarget] = useState<'original' | 'translation'>('translation');
@@ -214,24 +215,27 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     setAddForm((prev) => ({ ...prev, translation: text }));
   }, []);
 
-  const handleTranslate = async () => {
+  const handleTranslate = () => {
     const plan = getTranslatePlan(addForm, isEdit);
     if (!plan.ok) return;
 
-    setTranslating(true);
-    setProviderResults(null);
+    setProviderResults({});
     setSuggestionTarget(plan.suggestionTarget);
+    setLoadingProviders(TRANSLATION_PROVIDERS);
 
-    try {
-      const providers = await translateTextMulti(plan.sourceText, plan.targetLang, plan.sourceLang);
-      setProviderResults(providers);
-      const firstWithSuggestions = TRANSLATION_PROVIDERS.find((p) => providers[p]?.translations?.length > 0);
-      if (firstWithSuggestions) setActiveProvider(firstWithSuggestions);
-    } catch (err) {
-      console.error('Translation failed:', err);
-    } finally {
-      setTranslating(false);
-    }
+    TRANSLATION_PROVIDERS.forEach(async (p) => {
+      try {
+        const result = await translateText(plan.sourceText, plan.targetLang, plan.sourceLang, p);
+        setProviderResults((prev) => ({ ...(prev ?? {}), [p]: result }));
+      } catch (err) {
+        setProviderResults((prev) => ({
+          ...(prev ?? {}),
+          [p]: { translations: [], examples: [], error: (err as Error)?.message ?? 'failed' },
+        }));
+      } finally {
+        setLoadingProviders((prev) => prev.filter((x) => x !== p));
+      }
+    });
   };
 
   const handleSave = async () => {
@@ -601,7 +605,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 </Button>
               </div>
             </div>
-            {translating && (
+            {translating && !providerResults && (
               <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
                 <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
                 {t('modal.fetchingSuggestions')}
@@ -630,23 +634,28 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                     const label = PROVIDER_LABELS[p];
                     const count = r?.translations?.length ?? 0;
                     const isActive = activeProvider === p;
+                    const isLoading = loadingProviders.includes(p);
+                    const hasResults = !isLoading && !r?.error && count > 0;
                     return (
                       <button
                         key={p}
                         type="button"
                         onClick={() => setActiveProvider(p)}
                         className={
-                          'flex-1 px-3 py-2 text-sm font-medium border-b-2 transition-colors ' +
+                          'flex-1 px-3 py-2 text-sm font-medium border-b-2 transition-colors inline-flex items-center justify-center gap-1 ' +
                           (isActive
                             ? 'border-primary text-primary'
                             : 'border-transparent text-muted-foreground hover:text-foreground')
                         }
                       >
-                        {label}
-                        {r?.error ? (
-                          <span className="ml-1 text-xs text-red-600">!</span>
+                        {hasResults && <Check className="h-3.5 w-3.5" />}
+                        <span>{label}</span>
+                        {isLoading ? (
+                          <span className="inline-block animate-spin h-3 w-3 border-2 border-current border-t-transparent rounded-full align-middle" />
+                        ) : r?.error ? (
+                          <span className="text-xs text-red-600">!</span>
                         ) : (
-                          <span className="ml-1 text-xs text-muted-foreground">({count})</span>
+                          <span className="text-xs text-muted-foreground">({count})</span>
                         )}
                       </button>
                     );
@@ -655,7 +664,17 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 <div className="p-3 flex flex-col gap-3">
                   {(() => {
                     const r = providerResults[activeProvider];
-                    if (!r) return null;
+                    if (!r) {
+                      if (loadingProviders.includes(activeProvider)) {
+                        return (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                            {t('modal.fetchingSuggestions')}
+                          </div>
+                        );
+                      }
+                      return null;
+                    }
                     if (r.error) {
                       return (
                         <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: r.error })}</p>

@@ -404,58 +404,7 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI) =
   });
 
   router.post('/translate', verifyAccessToken, async (req, res) => {
-    const { text, targetLanguage, originalLanguage } = req.body;
-    if (!text || !targetLanguage) {
-      return res.status(400).json({ message: 'text and targetLanguage are required' });
-    }
-
-    // SECURITY FIX: Enforce a maximum length on the text to prevent token-stuffing.
-    if (typeof text !== 'string' || text.length > MAX_TEXT_LENGTH) {
-      return res.status(400).json({ message: `text must be a string of at most ${MAX_TEXT_LENGTH} characters` });
-    }
-
-    // SECURITY FIX: Validate targetLanguage and originalLanguage against the allowlist
-    // BEFORE interpolating them into the system prompt. These fields are directly
-    // concatenated into the prompt string (see content template below). An unvalidated
-    // value such as "en\n\nIgnore all prior instructions" would constitute a prompt
-    // injection attack (OWASP LLM Top 10 2025 — LLM01).
-    if (typeof targetLanguage !== 'string' || !ALLOWED_LANGUAGE_CODES.has(targetLanguage)) {
-      return res.status(400).json({ message: 'Invalid targetLanguage code' });
-    }
-    if (originalLanguage !== undefined) {
-      if (typeof originalLanguage !== 'string' || originalLanguage.length > MAX_LANG_CODE_LENGTH || !ALLOWED_LANGUAGE_CODES.has(originalLanguage)) {
-        return res.status(400).json({ message: 'Invalid originalLanguage code' });
-      }
-    }
-
-    try {
-      const completion = await openAiModel.chat.completions.create({
-        model: 'gpt-4o-mini',
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            // targetLanguage and originalLanguage are now guaranteed to be members of
-            // ALLOWED_LANGUAGE_CODES (e.g. "pl", "en-US") — safe to interpolate.
-            content: `You are a precise translator. Return a JSON object with:
-- "translations": array of exactly 3 distinct translation options for the given text into ${targetLanguage} (vary by formality, style, or synonyms)
-- "examples": array of exactly 3 objects, each with "original" (example sentence in the ${originalLanguage ?? 'original'} language) and "translated" (its translation in ${targetLanguage})
-No extra fields.`,
-          },
-          { role: 'user', content: text },
-        ],
-      });
-      const raw = completion.choices[0].message.content ?? '{}';
-      const parsed = JSON.parse(raw);
-      res.send({ translations: parsed.translations ?? [], examples: parsed.examples ?? [] });
-    } catch (error) {
-      console.error('Error translating text:', error);
-      res.status(500).json({ message: 'Error translating text' });
-    }
-  });
-
-  router.post('/translate-multi', verifyAccessToken, async (req, res) => {
-    const { text, targetLanguage, originalLanguage } = req.body;
+    const { text, targetLanguage, originalLanguage, provider } = req.body;
     if (!text || !targetLanguage) {
       return res.status(400).json({ message: 'text and targetLanguage are required' });
     }
@@ -473,6 +422,9 @@ No extra fields.`,
       ) {
         return res.status(400).json({ message: 'Invalid originalLanguage code' });
       }
+    }
+    if (provider !== 'openai' && provider !== 'deepseek' && provider !== 'glosbe') {
+      return res.status(400).json({ message: 'Invalid provider' });
     }
 
     const systemPrompt = `You are a precise translator. Return a JSON object with:
@@ -511,41 +463,34 @@ No extra fields.`;
       };
     };
 
-    const [openaiResult, deepseekResult, glosbeResult] = await Promise.allSettled([
-      callLLM(openAiModel, 'gpt-4o-mini'),
-      callLLM(deepSeek, 'deepseek-chat'),
-      (async () => {
-        const from = originalLanguage ? GLOSBE_LANG_MAP[originalLanguage] : undefined;
-        const to = GLOSBE_LANG_MAP[targetLanguage];
-        if (!from || !to) {
-          return { translations: [] as string[] };
-        }
-        const result = await getGlosbeTranslation(text, {
-          fromLang: from,
-          toLang: to,
-          maxRetries: 2,
-          requestDelay: 500,
-        });
-        return { translations: result.translations ?? [] };
-      })(),
-    ]);
-
-    const providers = {
-      openai:
-        openaiResult.status === 'fulfilled'
-          ? { ...openaiResult.value, error: null as string | null }
-          : { translations: [], examples: [], error: (openaiResult.reason as Error)?.message ?? 'failed' },
-      deepseek:
-        deepseekResult.status === 'fulfilled'
-          ? { ...deepseekResult.value, error: null as string | null }
-          : { translations: [], examples: [], error: (deepseekResult.reason as Error)?.message ?? 'failed' },
-      glosbe:
-        glosbeResult.status === 'fulfilled'
-          ? { translations: glosbeResult.value.translations, examples: [], error: null as string | null }
-          : { translations: [], examples: [], error: (glosbeResult.reason as Error)?.message ?? 'failed' },
-    };
-
-    res.json({ providers });
+    try {
+      if (provider === 'openai') {
+        const r = await callLLM(openAiModel, 'gpt-4o-mini');
+        return res.json({ ...r, error: null });
+      }
+      if (provider === 'deepseek') {
+        const r = await callLLM(deepSeek, 'deepseek-chat');
+        return res.json({ ...r, error: null });
+      }
+      const from = originalLanguage ? GLOSBE_LANG_MAP[originalLanguage] : undefined;
+      const to = GLOSBE_LANG_MAP[targetLanguage];
+      if (!from || !to) {
+        return res.json({ translations: [], examples: [], error: null });
+      }
+      const result = await getGlosbeTranslation(text, {
+        fromLang: from,
+        toLang: to,
+        maxRetries: 2,
+        requestDelay: 500,
+      });
+      return res.json({ translations: result.translations ?? [], examples: [], error: null });
+    } catch (err) {
+      return res.json({
+        translations: [],
+        examples: [],
+        error: (err as Error)?.message ?? 'failed',
+      });
+    }
   });
 
   router.post('/examples', verifyAccessToken, async (req, res) => {

@@ -156,16 +156,6 @@ export const deleteTranslation = async (translationId: string): Promise<void> =>
   if (!res.ok) throw new Error('Failed to delete translation');
 };
 
-export const translateText = async (text: string, targetLanguage: string, originalLanguage?: string): Promise<{ translations: string[] }> => {
-  const res = await utilFetch('/translations/translate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, targetLanguage, originalLanguage }),
-  });
-  if (!res.ok) throw new Error('Failed to translate');
-  return res.json();
-};
-
 export type TranslationProvider = 'openai' | 'deepseek' | 'glosbe';
 
 export interface ProviderTranslationResult {
@@ -174,19 +164,19 @@ export interface ProviderTranslationResult {
   error: string | null;
 }
 
-export const translateTextMulti = async (
+export const translateText = async (
   text: string,
   targetLanguage: string,
-  originalLanguage?: string,
-): Promise<Record<TranslationProvider, ProviderTranslationResult>> => {
-  const res = await utilFetch('/translations/translate-multi', {
+  originalLanguage: string | undefined,
+  provider: TranslationProvider,
+): Promise<ProviderTranslationResult> => {
+  const res = await utilFetch('/translations/translate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, targetLanguage, originalLanguage }),
+    body: JSON.stringify({ text, targetLanguage, originalLanguage, provider }),
   });
   if (!res.ok) throw new Error('Failed to translate');
-  const { providers } = await res.json();
-  return providers;
+  return res.json();
 };
 
 export const createTranslation = async (data: {
