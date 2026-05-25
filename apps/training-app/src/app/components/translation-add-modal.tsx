@@ -28,12 +28,13 @@ function normalize(s: string): string {
   return s.trim().toLocaleLowerCase();
 }
 
-const TRANSLATION_PROVIDERS = ['openai', 'deepseek', 'glosbe'] as const satisfies readonly TranslationProvider[];
+const TRANSLATION_PROVIDERS = ['openai', 'deepseek', 'glosbe', 'gemini'] as const satisfies readonly TranslationProvider[];
 
 const PROVIDER_LABELS: Record<TranslationProvider, string> = {
   openai: 'OpenAI',
   deepseek: 'DeepSeek',
   glosbe: 'Glosbe',
+  gemini: 'Gemini',
 };
 
 type AddFormFields = {
@@ -628,7 +629,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
             )}
             {providerResults && (
               <div className="rounded-md border">
-                <div className="flex border-b sticky top-0 bg-background rounded-t-md z-10">
+                <div className="flex flex-wrap border-b sticky top-0 bg-background rounded-t-md z-10">
                   {TRANSLATION_PROVIDERS.map((p) => {
                     const r = providerResults[p];
                     const label = PROVIDER_LABELS[p];
@@ -642,7 +643,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                         type="button"
                         onClick={() => setActiveProvider(p)}
                         className={
-                          'flex-1 px-3 py-2 text-sm font-medium border-b-2 transition-colors inline-flex items-center justify-center gap-1 ' +
+                          'flex-1 basis-[140px] px-3 py-2 text-sm font-medium border-b-2 transition-colors inline-flex items-center justify-center gap-1 ' +
                           (isActive
                             ? 'border-primary text-primary'
                             : 'border-transparent text-muted-foreground hover:text-foreground')

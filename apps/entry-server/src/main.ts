@@ -79,7 +79,7 @@ app.use('/api/openai', openaiRoutes);
 app.use('/api/deepgram', deepgramRoutes);
 app.use('/api/elevenlabs', elevenLabsRoutes);
 app.use('/api/baskets', getBasketRoutes(client));
-app.use('/api/translations', getTranslationRoutes(client, openAiModel));
+app.use('/api/translations', getTranslationRoutes(client, openAiModel, genAi));
 app.use('/api/srs', getSrsRoutes(client));
 app.use('/api/telegram', telegramRoutes);
 

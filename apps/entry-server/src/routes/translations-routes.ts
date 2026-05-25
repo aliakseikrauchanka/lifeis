@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { MongoClient, ObjectId } from 'mongodb';
 import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { ITranslation } from '../domain';
 import { deepSeek } from '../utils/deepseek';
@@ -27,7 +28,7 @@ const MAX_TEXT_LENGTH = 2000;
 const MAX_TRANSLATION_LENGTH = 2000;
 const MAX_LANG_CODE_LENGTH = 10;
 
-export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI) => {
+export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, genAi: GoogleGenerativeAI) => {
   const router = Router();
 
   router.get('/', verifyAccessToken, async (req, res) => {
@@ -423,7 +424,7 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI) =
         return res.status(400).json({ message: 'Invalid originalLanguage code' });
       }
     }
-    if (provider !== 'openai' && provider !== 'deepseek' && provider !== 'glosbe') {
+    if (provider !== 'openai' && provider !== 'deepseek' && provider !== 'glosbe' && provider !== 'gemini') {
       return res.status(400).json({ message: 'Invalid provider' });
     }
 
@@ -432,19 +433,9 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI) =
 - "examples": array of exactly 3 objects, each with "original" (example sentence in ${originalLanguage ?? 'original'} language) and "translated" (its translation in ${targetLanguage})
 No extra fields.`;
 
-    const callLLM = async (
-      client: OpenAI,
-      model: string,
-    ): Promise<{ translations: string[]; examples: Array<{ original: string; translated: string }> }> => {
-      const completion = await client.chat.completions.create({
-        model,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: text },
-        ],
-      });
-      const raw = completion.choices[0].message.content ?? '{}';
+    const parseTranslationJson = (
+      raw: string,
+    ): { translations: string[]; examples: Array<{ original: string; translated: string }> } => {
       const parsed = JSON.parse(raw);
       return {
         translations: Array.isArray(parsed.translations)
@@ -463,6 +454,21 @@ No extra fields.`;
       };
     };
 
+    const callLLM = async (
+      client: OpenAI,
+      model: string,
+    ): Promise<{ translations: string[]; examples: Array<{ original: string; translated: string }> }> => {
+      const completion = await client.chat.completions.create({
+        model,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: text },
+        ],
+      });
+      return parseTranslationJson(completion.choices[0].message.content ?? '{}');
+    };
+
     try {
       if (provider === 'openai') {
         const r = await callLLM(openAiModel, 'gpt-4o-mini');
@@ -470,6 +476,15 @@ No extra fields.`;
       }
       if (provider === 'deepseek') {
         const r = await callLLM(deepSeek, 'deepseek-chat');
+        return res.json({ ...r, error: null });
+      }
+      if (provider === 'gemini') {
+        const model = genAi.getGenerativeModel({
+          model: 'gemini-3.5-flash',
+          generationConfig: { responseMimeType: 'application/json' },
+        });
+        const result = await model.generateContent([systemPrompt, text]);
+        const r = parseTranslationJson(result.response.text() ?? '{}');
         return res.json({ ...r, error: null });
       }
       const from = originalLanguage ? GLOSBE_LANG_MAP[originalLanguage] : undefined;
