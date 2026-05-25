@@ -28,13 +28,14 @@ function normalize(s: string): string {
   return s.trim().toLocaleLowerCase();
 }
 
-const TRANSLATION_PROVIDERS = ['openai', 'deepseek', 'glosbe', 'gemini'] as const satisfies readonly TranslationProvider[];
+const TRANSLATION_PROVIDERS = ['openai', 'deepseek', 'glosbe', 'gemini', 'anthropic'] as const satisfies readonly TranslationProvider[];
 
 const PROVIDER_LABELS: Record<TranslationProvider, string> = {
   openai: 'OpenAI',
   deepseek: 'DeepSeek',
   glosbe: 'Glosbe',
   gemini: 'Gemini',
+  anthropic: 'Claude',
 };
 
 type AddFormFields = {

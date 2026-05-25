@@ -2,10 +2,13 @@ import { Router } from 'express';
 import { MongoClient, ObjectId } from 'mongodb';
 import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import Anthropic from '@anthropic-ai/sdk';
 import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { ITranslation } from '../domain';
 import { deepSeek } from '../utils/deepseek';
 import { getGlosbeTranslation } from '../utils/glosbe-scraper';
+
+const anthropic = new Anthropic();
 
 const GLOSBE_LANG_MAP: Record<string, string> = {
   pl: 'pl',
@@ -424,7 +427,13 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
         return res.status(400).json({ message: 'Invalid originalLanguage code' });
       }
     }
-    if (provider !== 'openai' && provider !== 'deepseek' && provider !== 'glosbe' && provider !== 'gemini') {
+    if (
+      provider !== 'openai' &&
+      provider !== 'deepseek' &&
+      provider !== 'glosbe' &&
+      provider !== 'gemini' &&
+      provider !== 'anthropic'
+    ) {
       return res.status(400).json({ message: 'Invalid provider' });
     }
 
@@ -485,6 +494,18 @@ No extra fields.`;
         });
         const result = await model.generateContent([systemPrompt, text]);
         const r = parseTranslationJson(result.response.text() ?? '{}');
+        return res.json({ ...r, error: null });
+      }
+      if (provider === 'anthropic') {
+        const result = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1024,
+          system: `${systemPrompt}\nRespond with only the JSON object, no surrounding prose or code fences.`,
+          messages: [{ role: 'user', content: text }],
+        });
+        const raw =
+          result.content.find((b): b is Anthropic.TextBlock => b.type === 'text')?.text ?? '{}';
+        const r = parseTranslationJson(raw);
         return res.json({ ...r, error: null });
       }
       const from = originalLanguage ? GLOSBE_LANG_MAP[originalLanguage] : undefined;
