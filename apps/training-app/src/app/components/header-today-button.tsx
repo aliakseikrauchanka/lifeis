@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { History, Volume2 } from 'lucide-react';
+import { Check, Copy, History, Volume2 } from 'lucide-react';
 import {
   AddedTranslation,
   fetchAddedToday,
@@ -45,6 +45,38 @@ function TabButton({
   return (
     <button type="button" onClick={onClick} className={cls}>
       {children}
+    </button>
+  );
+}
+
+function CopyButton({ onCopy, disabled }: { onCopy: () => void; disabled: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    },
+    [],
+  );
+
+  const handleClick = () => {
+    onCopy();
+    setCopied(true);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => setCopied(false), 1500);
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={disabled}
+      title={copied ? 'Copied' : 'Copy to clipboard'}
+      aria-label={copied ? 'Copied' : 'Copy to clipboard'}
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-violet-500/8 hover:text-violet-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+    >
+      {copied ? <Check className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
     </button>
   );
 }
@@ -218,6 +250,21 @@ export function HeaderTodayButton() {
     };
   }, [open]);
 
+  const copyableLines: string[] | null =
+    activeTab === 'trained'
+      ? cards?.map((c) => `${c.translation.original}\t${c.translation.translation}`) ?? null
+      : added?.map((t) => `${t.original}\t${t.translation}`) ?? null;
+
+  const copyDisabled = !copyableLines || copyableLines.length === 0;
+
+  const handleCopy = useCallback(() => {
+    if (!copyableLines || copyableLines.length === 0) return;
+    const text = copyableLines.join('\n');
+    navigator.clipboard.writeText(text).catch((err) => {
+      console.error('Failed to copy to clipboard:', err);
+    });
+  }, [copyableLines]);
+
   const trainedView = (
     <>
       {trainedLoading && (
@@ -297,6 +344,7 @@ export function HeaderTodayButton() {
               <TabButton active={activeTab === 'added'} onClick={() => setActiveTab('added')}>
                 Added{added ? <span className="ml-1 text-xs opacity-70">({added.length})</span> : null}
               </TabButton>
+              <CopyButton onCopy={handleCopy} disabled={copyDisabled} />
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
               {activeTab === 'trained' ? trainedView : addedView}
