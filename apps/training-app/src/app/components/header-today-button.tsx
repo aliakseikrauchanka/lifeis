@@ -23,6 +23,11 @@ const POPOVER_MAX_WIDTH = 320;
 
 type TabId = 'trained' | 'added';
 
+/** Lower ease = harder card; show hardest first. */
+function sortTrainedByHardestFirst(cards: SrsCard[]): SrsCard[] {
+  return [...cards].sort((a, b) => a.ease - b.ease);
+}
+
 function clampPopoverLeft(left: number, width: number, vw: number): number {
   const maxLeft = vw - POPOVER_MARGIN - width;
   return Math.max(POPOVER_MARGIN, Math.min(left, maxLeft));
@@ -211,7 +216,7 @@ export function HeaderTodayButton() {
     setTrainedLoading(true);
     setTrainedError(null);
     fetchTrainedToday()
-      .then(setCards)
+      .then((loaded) => setCards(sortTrainedByHardestFirst(loaded)))
       .catch((err) => {
         console.error('Failed to load trained-today cards:', err);
         setTrainedError('Failed to load');
