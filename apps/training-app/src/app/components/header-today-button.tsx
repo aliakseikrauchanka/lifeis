@@ -23,9 +23,14 @@ const POPOVER_MAX_WIDTH = 320;
 
 type TabId = 'trained' | 'added';
 
-/** Lower ease = harder card; show hardest first. */
+const RATING_PRIORITY: Record<Rating, number> = { again: 0, hard: 1, good: 2, easy: 3 };
+
 function sortTrainedByHardestFirst(cards: SrsCard[]): SrsCard[] {
-  return [...cards].sort((a, b) => a.ease - b.ease);
+  return [...cards].sort((a, b) => {
+    const pa = a.last_rating ? RATING_PRIORITY[a.last_rating] : 2;
+    const pb = b.last_rating ? RATING_PRIORITY[b.last_rating] : 2;
+    return pa !== pb ? pa - pb : a.ease - b.ease;
+  });
 }
 
 function clampPopoverLeft(left: number, width: number, vw: number): number {
