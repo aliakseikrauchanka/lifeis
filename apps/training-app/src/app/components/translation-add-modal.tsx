@@ -28,7 +28,7 @@ function normalize(s: string): string {
   return s.trim().toLocaleLowerCase();
 }
 
-const TRANSLATION_PROVIDERS = ['openai', 'deepseek', 'glosbe', 'gemini', 'anthropic'] as const satisfies readonly TranslationProvider[];
+const TRANSLATION_PROVIDERS = ['deepseek', 'glosbe', 'gemini', 'anthropic'] as const satisfies readonly TranslationProvider[];
 
 const PROVIDER_LABELS: Record<TranslationProvider, string> = {
   openai: 'OpenAI',
@@ -117,7 +117,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     useState<Partial<Record<TranslationProvider, ProviderTranslationResult>> | null>(null);
   const [loadingProviders, setLoadingProviders] = useState<readonly TranslationProvider[]>([]);
   const translating = loadingProviders.length > 0;
-  const [activeProvider, setActiveProvider] = useState<TranslationProvider>('openai');
+  const [activeProvider, setActiveProvider] = useState<TranslationProvider>('deepseek');
   /** Which input the suggestion chips apply to after the latest translate call */
   const [suggestionTarget, setSuggestionTarget] = useState<'original' | 'translation'>('translation');
   const [recordingField, setRecordingField] = useState<'original' | 'translation' | null>(null);
