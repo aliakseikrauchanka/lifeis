@@ -432,7 +432,8 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
       provider !== 'deepseek' &&
       provider !== 'glosbe' &&
       provider !== 'gemini' &&
-      provider !== 'anthropic'
+      provider !== 'anthropic' &&
+      provider !== 'claude-opus'
     ) {
       return res.status(400).json({ message: 'Invalid provider' });
     }
@@ -496,9 +497,9 @@ No extra fields.`;
         const r = parseTranslationJson(result.response.text() ?? '{}');
         return res.json({ ...r, error: null });
       }
-      if (provider === 'anthropic') {
+      if (provider === 'anthropic' || provider === 'claude-opus') {
         const result = await anthropic.messages.create({
-          model: 'claude-sonnet-4-6',
+          model: provider === 'claude-opus' ? 'claude-opus-4-8' : 'claude-sonnet-4-6',
           max_tokens: 1024,
           system: `${systemPrompt}\nRespond with only the JSON object, no surrounding prose or code fences.`,
           messages: [{ role: 'user', content: text }],

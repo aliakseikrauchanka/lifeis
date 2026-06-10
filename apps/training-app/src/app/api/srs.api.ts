@@ -156,7 +156,7 @@ export const deleteTranslation = async (translationId: string): Promise<void> =>
   if (!res.ok) throw new Error('Failed to delete translation');
 };
 
-export type TranslationProvider = 'openai' | 'deepseek' | 'glosbe' | 'gemini' | 'anthropic';
+export type TranslationProvider = 'openai' | 'deepseek' | 'glosbe' | 'gemini' | 'anthropic' | 'claude-opus';
 
 export interface ProviderTranslationResult {
   translations: string[];
