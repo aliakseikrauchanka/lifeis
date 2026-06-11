@@ -47,15 +47,31 @@ async function main() {
     console.log(`Backup written to ${backupFile}`);
 
     // 2. Compute normalized values and collect changed rows.
+    //    Rows whose original/translation are not strings (legacy/corrupt data) are
+    //    skipped and reported — never rewritten — so the migration only normalizes,
+    //    never corrupts.
     const changes: Array<{ id: unknown; original: string; translation: string }> = [];
-    const normalizedRows = rows.map((r) => {
-      const original = formatEntry(r.original ?? '');
-      const translation = formatEntry(r.translation ?? '');
+    const skippedNonString: unknown[] = [];
+    const normalizedRows: Array<TranslationDoc> = [];
+    for (const r of rows) {
+      if (typeof r.original !== 'string' || typeof r.translation !== 'string') {
+        skippedNonString.push(r._id);
+        continue;
+      }
+      const original = formatEntry(r.original);
+      const translation = formatEntry(r.translation);
       if (original !== r.original || translation !== r.translation) {
         changes.push({ id: r._id, original, translation });
       }
-      return { ...r, original, translation };
-    });
+      normalizedRows.push({ ...r, original, translation });
+    }
+    if (skippedNonString.length > 0) {
+      console.warn(
+        `Skipped ${skippedNonString.length} row(s) with non-string original/translation: ${skippedNonString
+          .map(String)
+          .join(', ')}`,
+      );
+    }
     console.log(`${changes.length} rows would change.`);
 
     // 3. Duplicate report on the normalized values. Key fields are joined with '|';
