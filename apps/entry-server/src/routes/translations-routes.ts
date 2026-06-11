@@ -238,22 +238,28 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
 
       const update: Record<string, string> = {};
       if (original) {
-        if (typeof original !== 'string' || original.length > MAX_TEXT_LENGTH) {
+        if (typeof original !== 'string') {
           return res.status(400).json({ message: `original must be a string of at most ${MAX_TEXT_LENGTH} characters` });
         }
         const formatted = formatEntry(original);
         if (formatted.length === 0) {
-          return res.status(400).json({ message: 'original must not be empty after formatting' });
+          return res.status(400).json({ message: 'original must not be empty after normalizing whitespace and punctuation' });
+        }
+        if (formatted.length > MAX_TEXT_LENGTH) {
+          return res.status(400).json({ message: `original must be a string of at most ${MAX_TEXT_LENGTH} characters` });
         }
         update.original = formatted;
       }
       if (translation) {
-        if (typeof translation !== 'string' || translation.length > MAX_TRANSLATION_LENGTH) {
+        if (typeof translation !== 'string') {
           return res.status(400).json({ message: `translation must be a string of at most ${MAX_TRANSLATION_LENGTH} characters` });
         }
         const formatted = formatEntry(translation);
         if (formatted.length === 0) {
-          return res.status(400).json({ message: 'translation must not be empty after formatting' });
+          return res.status(400).json({ message: 'translation must not be empty after normalizing whitespace and punctuation' });
+        }
+        if (formatted.length > MAX_TRANSLATION_LENGTH) {
+          return res.status(400).json({ message: `translation must be a string of at most ${MAX_TRANSLATION_LENGTH} characters` });
         }
         update.translation = formatted;
       }
