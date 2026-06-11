@@ -167,7 +167,7 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
       // Reject values that became empty after normalization (e.g. "." or whitespace).
       if (original.length === 0 || translation.length === 0) {
         return res.status(400).json({
-          message: 'original, translation, originalLanguage, and translationLanguage are required',
+          message: 'original and translation must not be empty after normalizing whitespace and punctuation',
         });
       }
 
