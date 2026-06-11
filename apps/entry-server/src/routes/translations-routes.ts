@@ -357,8 +357,12 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
           continue;
         }
 
-        const original = String(wordText).slice(0, MAX_TEXT_LENGTH);
-        const translation = String(translations[0]).slice(0, MAX_TRANSLATION_LENGTH);
+        const original = formatEntry(String(wordText).slice(0, MAX_TEXT_LENGTH));
+        const translation = formatEntry(String(translations[0]).slice(0, MAX_TRANSLATION_LENGTH));
+        if (original.length === 0 || translation.length === 0) {
+          skipped.push(wordText);
+          continue;
+        }
 
         docs.push({
           original,
