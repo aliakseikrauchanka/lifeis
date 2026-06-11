@@ -241,13 +241,21 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
         if (typeof original !== 'string' || original.length > MAX_TEXT_LENGTH) {
           return res.status(400).json({ message: `original must be a string of at most ${MAX_TEXT_LENGTH} characters` });
         }
-        update.original = original;
+        const formatted = formatEntry(original);
+        if (formatted.length === 0) {
+          return res.status(400).json({ message: 'original must not be empty after formatting' });
+        }
+        update.original = formatted;
       }
       if (translation) {
         if (typeof translation !== 'string' || translation.length > MAX_TRANSLATION_LENGTH) {
           return res.status(400).json({ message: `translation must be a string of at most ${MAX_TRANSLATION_LENGTH} characters` });
         }
-        update.translation = translation;
+        const formatted = formatEntry(translation);
+        if (formatted.length === 0) {
+          return res.status(400).json({ message: 'translation must not be empty after formatting' });
+        }
+        update.translation = formatted;
       }
 
       const userId = res.locals.userId;
