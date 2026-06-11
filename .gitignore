@@ -61,3 +61,6 @@ out
 vite.config.*.timestamp*
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
+
+# DB migration backups (translations normalization, etc.)
+/backups/
