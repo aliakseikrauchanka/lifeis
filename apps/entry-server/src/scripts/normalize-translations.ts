@@ -8,6 +8,7 @@
  * - Pass --apply to perform the bulk update of changed rows.
  * - Never deletes or merges rows; duplicates are reported only.
  *
+ * Run from the repo root (the backups/ dir is created relative to the current working directory).
  * Run (dry-run):  DB_URI=... npx ts-node apps/entry-server/src/scripts/normalize-translations.ts
  * Run (apply):    DB_URI=... npx ts-node apps/entry-server/src/scripts/normalize-translations.ts --apply
  */
@@ -57,7 +58,8 @@ async function main() {
     });
     console.log(`${changes.length} rows would change.`);
 
-    // 3. Duplicate report on the normalized values.
+    // 3. Duplicate report on the normalized values. Key fields are joined with '|';
+    //    field values are user-entered words / language codes where '|' is not expected.
     const groups = new Map<string, unknown[]>();
     for (const r of normalizedRows) {
       const key = [r.owner_id, r.original, r.translation, r.originalLanguage, r.translationLanguage].join('|');
