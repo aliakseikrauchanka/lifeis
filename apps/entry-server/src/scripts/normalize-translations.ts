@@ -9,8 +9,15 @@
  * - Never deletes or merges rows; duplicates are reported only.
  *
  * Run from the repo root (the backups/ dir is created relative to the current working directory).
- * Run (dry-run):  DB_URI=... npx ts-node apps/entry-server/src/scripts/normalize-translations.ts
- * Run (apply):    DB_URI=... npx ts-node apps/entry-server/src/scripts/normalize-translations.ts --apply
+ * The TS_NODE_COMPILER_OPTIONS override forces CommonJS so ts-node can load this .ts file
+ * (the repo's tsconfig uses module: es2020, which otherwise triggers ERR_UNKNOWN_FILE_EXTENSION).
+ *
+ * Run (dry-run):
+ *   TS_NODE_COMPILER_OPTIONS='{"module":"CommonJS","moduleResolution":"node"}' DB_URI=... \
+ *     npx ts-node apps/entry-server/src/scripts/normalize-translations.ts
+ * Run (apply):
+ *   TS_NODE_COMPILER_OPTIONS='{"module":"CommonJS","moduleResolution":"node"}' DB_URI=... \
+ *     npx ts-node apps/entry-server/src/scripts/normalize-translations.ts --apply
  */
 import { promises as fs } from 'fs';
 import * as path from 'path';
