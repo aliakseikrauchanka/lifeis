@@ -7,6 +7,7 @@ import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { ITranslation } from '../domain';
 import { deepSeek } from '../utils/deepseek';
 import { getGlosbeTranslation } from '../utils/glosbe-scraper';
+import { formatEntry } from '../helpers/format-entry';
 
 const anthropic = new Anthropic();
 
@@ -145,7 +146,8 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
 
   router.post('/', verifyAccessToken, async (req, res) => {
     try {
-      const { original, translation, originalLanguage, translationLanguage } = req.body;
+      let { original, translation } = req.body;
+      const { originalLanguage, translationLanguage } = req.body;
 
       if (!original || !translation || !originalLanguage || !translationLanguage) {
         return res.status(400).json({
@@ -153,12 +155,28 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
         });
       }
 
+      // Enforce string type before normalizing.
+      if (typeof original !== 'string' || typeof translation !== 'string') {
+        return res.status(400).json({ message: 'original and translation must be strings' });
+      }
+
+      // Normalize text before length/dedup checks so dedup compares normalized values.
+      original = formatEntry(original);
+      translation = formatEntry(translation);
+
+      // Reject values that became empty after normalization (e.g. "." or whitespace).
+      if (original.length === 0 || translation.length === 0) {
+        return res.status(400).json({
+          message: 'original, translation, originalLanguage, and translationLanguage are required',
+        });
+      }
+
       // SECURITY FIX: Enforce maximum field lengths to prevent storing excessively large
       // strings and to guard against token-stuffing if these values are later used in prompts.
-      if (typeof original !== 'string' || original.length > MAX_TEXT_LENGTH) {
+      if (original.length > MAX_TEXT_LENGTH) {
         return res.status(400).json({ message: `original must be a string of at most ${MAX_TEXT_LENGTH} characters` });
       }
-      if (typeof translation !== 'string' || translation.length > MAX_TRANSLATION_LENGTH) {
+      if (translation.length > MAX_TRANSLATION_LENGTH) {
         return res.status(400).json({ message: `translation must be a string of at most ${MAX_TRANSLATION_LENGTH} characters` });
       }
 
