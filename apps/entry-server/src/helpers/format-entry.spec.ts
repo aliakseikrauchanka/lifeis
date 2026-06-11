@@ -21,7 +21,13 @@ describe('formatEntry', () => {
 
   it('leaves the rest of the string untouched', () => {
     expect(formatEntry('USB cable')).toBe('USB cable');
+    // intentional: only the first char is uppercased; mid-string case is preserved
     expect(formatEntry('iPhone')).toBe('IPhone');
+  });
+
+  it('is idempotent', () => {
+    const once = formatEntry('  the dog runs.  ');
+    expect(formatEntry(once)).toBe(once);
   });
 
   it('handles multi-word sentences', () => {
