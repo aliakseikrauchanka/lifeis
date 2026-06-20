@@ -8,6 +8,7 @@ import { ITranslation } from '../domain';
 import { deepSeek } from '../utils/deepseek';
 import { getGlosbeTranslation } from '../utils/glosbe-scraper';
 import { formatEntry } from '../helpers/format-entry';
+import { buildImportDocs, importKey, splitNewAndDuplicates } from '../helpers/import-translations';
 
 const anthropic = new Anthropic();
 
@@ -313,7 +314,7 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
   // POST /import — bulk import translations from LLN JSON format
   router.post('/import', verifyAccessToken, async (req, res) => {
     try {
-      const { items } = req.body;
+      const { items, dryRun } = req.body;
       if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ message: 'items array is required' });
       }
@@ -321,62 +322,19 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
         return res.status(400).json({ message: 'Maximum 500 items per import' });
       }
 
-      // Map short LLN language codes to app codes
-      const LANG_MAP: Record<string, string> = {
-        pl: 'pl',
-        ru: 'ru-RU',
-        en: 'en-US',
-        de: 'de-DE',
-        fr: 'fr-FR',
-        sr: 'sr-RS',
-        fi: 'fi',
-        es: 'es',
-      };
-
       const userId = res.locals.userId;
       const now = Date.now();
-      const docs: Omit<ITranslation, '_id'>[] = [];
-      const skipped: string[] = [];
+      const { docs, skipped } = buildImportDocs(items, {
+        userId,
+        now,
+        allowedLanguageCodes: ALLOWED_LANGUAGE_CODES,
+        maxTextLength: MAX_TEXT_LENGTH,
+        maxTranslationLength: MAX_TRANSLATION_LENGTH,
+      });
 
-      for (const item of items) {
-        const wordText = item.word?.text;
-        const translations = item.wordTranslationsArr;
-        if (!wordText || !Array.isArray(translations) || translations.length === 0) {
-          skipped.push(item.key || 'unknown');
-          continue;
-        }
-
-        const originalLanguage = LANG_MAP[item.langCode_G];
-        const translationLanguage = LANG_MAP[item.translationLangCode_G];
-        if (!originalLanguage || !translationLanguage) {
-          skipped.push(wordText);
-          continue;
-        }
-        if (!ALLOWED_LANGUAGE_CODES.has(originalLanguage) || !ALLOWED_LANGUAGE_CODES.has(translationLanguage)) {
-          skipped.push(wordText);
-          continue;
-        }
-
-        const original = formatEntry(String(wordText).slice(0, MAX_TEXT_LENGTH));
-        const translation = formatEntry(String(translations[0]).slice(0, MAX_TRANSLATION_LENGTH));
-        if (original.length === 0 || translation.length === 0) {
-          skipped.push(wordText);
-          continue;
-        }
-
-        docs.push({
-          original,
-          translation,
-          originalLanguage,
-          translationLanguage,
-          owner_id: userId,
-          timestamp: now,
-        });
-      }
-
-      // Filter out translations that already exist for this user
-      let inserted = 0;
-      let duplicates = 0;
+      // Find which of these already exist for this user (dedup on normalized original + language pair).
+      let newDocs = docs;
+      let duplicateDocs: typeof docs = [];
       if (docs.length > 0) {
         const collection = client.db('lifeis').collection('translations');
         const existingTranslations = await collection
@@ -388,22 +346,42 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
           .toArray();
 
         const existingKeys = new Set(
-          existingTranslations.map((t) => `${t.original}|${t.originalLanguage}|${t.translationLanguage}`)
+          existingTranslations.map((t) =>
+            importKey({
+              original: t.original,
+              originalLanguage: t.originalLanguage,
+              translationLanguage: t.translationLanguage,
+            }),
+          ),
         );
 
-        const newDocs = docs.filter((d) => {
-          const key = `${d.original}|${d.originalLanguage}|${d.translationLanguage}`;
-          return !existingKeys.has(key);
-        });
-
-        duplicates = docs.length - newDocs.length;
-        if (newDocs.length > 0) {
-          const result = await collection.insertMany(newDocs);
-          inserted = result.insertedCount;
-        }
+        const split = splitNewAndDuplicates(docs, existingKeys);
+        newDocs = split.newDocs;
+        duplicateDocs = split.duplicates;
       }
 
-      res.status(201).json({ inserted, duplicates, skipped: skipped.length, total: items.length });
+      if (dryRun) {
+        return res.status(200).json({
+          total: items.length,
+          toImportCount: newDocs.length,
+          duplicates: duplicateDocs.map((d) => d.original),
+          skipped,
+        });
+      }
+
+      let inserted = 0;
+      if (newDocs.length > 0) {
+        const collection = client.db('lifeis').collection('translations');
+        const result = await collection.insertMany(newDocs);
+        inserted = result.insertedCount;
+      }
+
+      res.status(201).json({
+        inserted,
+        duplicates: duplicateDocs.length,
+        skipped: skipped.length,
+        total: items.length,
+      });
     } catch (error) {
       console.error('Error importing translations:', error);
       res.status(500).json({ message: 'Error importing translations' });
