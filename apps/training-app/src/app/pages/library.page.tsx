@@ -279,7 +279,7 @@ export function LibraryPage() {
           <Button
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            disabled={importing}
+            disabled={importing || !!preview}
             className="gap-1"
           >
             <Upload className="h-4 w-4" />
@@ -355,7 +355,7 @@ export function LibraryPage() {
             size="sm"
             variant="outline"
             onClick={() => fileInputRef.current?.click()}
-            disabled={importing}
+            disabled={importing || !!preview}
             className="gap-1"
           >
             <Upload className="h-4 w-4" />
