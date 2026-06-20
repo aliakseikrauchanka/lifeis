@@ -66,8 +66,8 @@ app.use(
     optionsSuccessStatus: 200,
   }),
 );
-app.use(json({ limit: '10mb' }));
-app.use(urlencoded({ extended: true, limit: '10mb' }));
+app.use(json({ limit: '20mb' }));
+app.use(urlencoded({ extended: true, limit: '20mb' }));
 app.use(helmet());
 
 app.use('/api/auth', authRoutes);

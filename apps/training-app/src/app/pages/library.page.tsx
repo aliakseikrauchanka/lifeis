@@ -207,7 +207,7 @@ export function LibraryPage() {
     setImporting(true);
     setImportResult(null);
     try {
-      const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+      const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
       if (file.size > MAX_FILE_SIZE_BYTES) throw new Error(`File too large (max ${MAX_FILE_SIZE_BYTES / 1024 / 1024} MB)`);
 
       const text = await file.text();
