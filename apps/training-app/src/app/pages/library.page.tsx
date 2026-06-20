@@ -24,6 +24,7 @@ import { matchesAppLanguagePair, getLanguageLabel } from '../constants/language-
 import { useI18n } from '../i18n/i18n-context';
 import { formatReviewDateTime } from '../utils/format-review-datetime';
 import { ImportPreviewDialog } from '../components/import-preview-dialog';
+import { slimImportItem } from '../utils/slim-import-items';
 
 export function LibraryPage() {
   const { t, locale } = useI18n();
@@ -217,8 +218,11 @@ export function LibraryPage() {
       const MAX_ITEMS = 500;
       if (items.length > MAX_ITEMS) throw new Error(`Too many items (max ${MAX_ITEMS})`);
 
-      const result = await previewImportTranslations(items);
-      setPendingItems(items);
+      // Strip each item to the few fields the importer needs (drops embedded
+      // base64 audio/thumbnails), so the upload payload stays small.
+      const slimItems = items.map(slimImportItem);
+      const result = await previewImportTranslations(slimItems);
+      setPendingItems(slimItems);
       setPreview(result);
     } catch (err) {
       console.error('Import preview failed:', err);

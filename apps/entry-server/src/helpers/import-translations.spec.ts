@@ -50,6 +50,30 @@ describe('buildImportDocs', () => {
     expect(skipped).toEqual(['kot']);
   });
 
+  it('prefers the carried label over the key when skipping a labelless-word item', () => {
+    const { skipped } = buildImportDocs(
+      [
+        {
+          key: 'PHRASE-YT|pl|abc123',
+          label: 'gdybyś się choć raz zawahała.',
+          wordTranslationsArr: ['колебалась'],
+          langCode_G: 'pl',
+          translationLangCode_G: 'ru',
+        },
+      ],
+      config,
+    );
+    expect(skipped).toEqual(['gdybyś się choć raz zawahała.']);
+  });
+
+  it('prefers the carried label over the word text when skipping for language', () => {
+    const { skipped } = buildImportDocs(
+      [{ ...validItem, label: 'kot (cat)', translationLangCode_G: 'xx' }],
+      config,
+    );
+    expect(skipped).toEqual(['kot (cat)']);
+  });
+
   it('truncates to the configured max lengths', () => {
     const longWord = 'a'.repeat(3000);
     const { docs } = buildImportDocs(

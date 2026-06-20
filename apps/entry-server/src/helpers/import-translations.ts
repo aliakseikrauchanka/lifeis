@@ -39,6 +39,7 @@ export function buildImportDocs(
   for (const raw of items) {
     const item = raw as {
       key?: string;
+      label?: string;
       word?: { text?: string };
       wordTranslationsArr?: unknown[];
       langCode_G?: string;
@@ -46,29 +47,33 @@ export function buildImportDocs(
     };
     const wordText = item.word?.text;
     const translations = item.wordTranslationsArr;
+    // Human-readable text for the skipped report. The client carries `label`
+    // (word text, or a phrase's subtitle text for word-less items); fall back to
+    // the word text, then the opaque key.
+    const label = item.label || wordText || item.key || 'unknown';
     if (!wordText || !Array.isArray(translations) || translations.length === 0) {
-      skipped.push(item.key || 'unknown');
+      skipped.push(label);
       continue;
     }
 
     const originalLanguage = LANG_MAP[item.langCode_G as string];
     const translationLanguage = LANG_MAP[item.translationLangCode_G as string];
     if (!originalLanguage || !translationLanguage) {
-      skipped.push(wordText);
+      skipped.push(label);
       continue;
     }
     if (
       !config.allowedLanguageCodes.has(originalLanguage) ||
       !config.allowedLanguageCodes.has(translationLanguage)
     ) {
-      skipped.push(wordText);
+      skipped.push(label);
       continue;
     }
 
     const original = formatEntry(String(wordText).slice(0, config.maxTextLength));
     const translation = formatEntry(String(translations[0]).slice(0, config.maxTranslationLength));
     if (original.length === 0 || translation.length === 0) {
-      skipped.push(wordText);
+      skipped.push(label);
       continue;
     }
 
