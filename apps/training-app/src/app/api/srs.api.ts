@@ -140,6 +140,23 @@ export const importTranslations = async (items: unknown[]): Promise<{ inserted: 
   return res.json();
 };
 
+export interface ImportPreviewResult {
+  total: number;
+  toImportCount: number;
+  duplicates: string[];
+  skipped: string[];
+}
+
+export const previewImportTranslations = async (items: unknown[]): Promise<ImportPreviewResult> => {
+  const res = await utilFetch('/translations/import', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ items, dryRun: true }),
+  });
+  if (!res.ok) throw new Error('Failed to preview import');
+  return res.json();
+};
+
 export const updateTranslation = async (translationId: string, data: { original?: string; translation?: string }): Promise<void> => {
   const res = await utilFetch(`/translations/${translationId}`, {
     method: 'PUT',
