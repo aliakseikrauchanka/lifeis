@@ -8,10 +8,12 @@ import {
   enrollTranslationsBatch,
   unenrollTranslation,
   importTranslations,
+  previewImportTranslations,
   deleteTranslation,
   setTranslationLearned,
   TranslationData,
   SrsCard,
+  ImportPreviewResult,
 } from '../api/srs.api';
 import { useNavigate } from 'react-router-dom';
 import { BookPlus, BookX, Clock, Upload, Trash2, Search, Plus, Pencil, Sparkles, PenLine, Volume2, GraduationCap } from 'lucide-react';
@@ -21,6 +23,7 @@ import { useAppLanguages } from '../hooks/use-app-languages';
 import { matchesAppLanguagePair, getLanguageLabel } from '../constants/language-options';
 import { useI18n } from '../i18n/i18n-context';
 import { formatReviewDateTime } from '../utils/format-review-datetime';
+import { ImportPreviewDialog } from '../components/import-preview-dialog';
 
 export function LibraryPage() {
   const { t, locale } = useI18n();
@@ -32,6 +35,9 @@ export function LibraryPage() {
   const [enrollingAll, setEnrollingAll] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<string | null>(null);
+  const [pendingItems, setPendingItems] = useState<unknown[] | null>(null);
+  const [preview, setPreview] = useState<ImportPreviewResult | null>(null);
+  const [confirmingImport, setConfirmingImport] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [learnedTogglingId, setLearnedTogglingId] = useState<string | null>(null);
@@ -211,17 +217,39 @@ export function LibraryPage() {
       const MAX_ITEMS = 500;
       if (items.length > MAX_ITEMS) throw new Error(`Too many items (max ${MAX_ITEMS})`);
 
-      const result = await importTranslations(items);
+      const result = await previewImportTranslations(items);
+      setPendingItems(items);
+      setPreview(result);
+    } catch (err) {
+      console.error('Import preview failed:', err);
+      setImportResult('Import failed. Check file format.');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!pendingItems) return;
+    setConfirmingImport(true);
+    try {
+      const result = await importTranslations(pendingItems);
       setImportResult(`Imported ${result.inserted} words (${result.skipped} skipped)`);
+      setPendingItems(null);
+      setPreview(null);
       await load();
       refreshIndex();
     } catch (err) {
       console.error('Import failed:', err);
       setImportResult('Import failed. Check file format.');
     } finally {
-      setImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      setConfirmingImport(false);
     }
+  };
+
+  const handleCancelImport = () => {
+    setPendingItems(null);
+    setPreview(null);
   };
 
   if (loading) {
@@ -260,6 +288,14 @@ export function LibraryPage() {
         </div>
         {importResult && (
           <p className="text-sm text-muted-foreground">{importResult}</p>
+        )}
+        {preview && (
+          <ImportPreviewDialog
+            preview={preview}
+            loading={confirmingImport}
+            onConfirm={handleConfirmImport}
+            onCancel={handleCancelImport}
+          />
         )}
       </div>
     );
@@ -493,6 +529,14 @@ export function LibraryPage() {
           </Card>
         );
       })}
+      {preview && (
+        <ImportPreviewDialog
+          preview={preview}
+          loading={confirmingImport}
+          onConfirm={handleConfirmImport}
+          onCancel={handleCancelImport}
+        />
+      )}
     </div>
   );
 }
