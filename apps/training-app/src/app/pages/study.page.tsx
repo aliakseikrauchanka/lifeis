@@ -94,9 +94,6 @@ export function StudyPage() {
 
   useEffect(() => {
     if (!current || loading) return;
-    if (autoSpeak) {
-      speak(current.translation.original, current.translation.originalLanguage);
-    }
     const ac = new AbortController();
 
     setLoadingExamples(true);
@@ -123,7 +120,6 @@ export function StudyPage() {
     current?.translation.original,
     current?.translation.originalLanguage,
     current?.translation.translationLanguage,
-    autoSpeak,
     loading,
   ]);
 
