@@ -9,6 +9,7 @@ import { deepSeek } from '../utils/deepseek';
 import { getGlosbeTranslation } from '../utils/glosbe-scraper';
 import { formatEntry } from '../helpers/format-entry';
 import { buildImportDocs, importKey, splitNewAndDuplicates } from '../helpers/import-translations';
+import { parseTranslationJson, ParsedTranslation } from '../helpers/parse-translation-json';
 
 const anthropic = new Anthropic();
 
@@ -452,36 +453,17 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
       return res.status(400).json({ message: 'Invalid provider' });
     }
 
-    const systemPrompt = `You are a precise translator. Return a JSON object with:
-- "translations": array of exactly 3 distinct translation options for the given text into ${targetLanguage} (vary by formality, style, or synonyms)
-- "examples": array of exactly 3 objects, each with "original" (example sentence in ${originalLanguage ?? 'original'} language) and "translated" (its translation in ${targetLanguage})
-No extra fields.`;
+    const systemPrompt = `You are a precise translator and language tutor. The user message is the SOURCE text written in ${originalLanguage ?? 'its original language'}. Return a JSON object with:
+- "translations": array of exactly 3 distinct translation options for the source text into ${targetLanguage} (vary by formality, style, or synonyms)
+- "examples": array of exactly 3 objects, each with "original" (example sentence in ${originalLanguage ?? 'the source language'}) and "translated" (its translation in ${targetLanguage})
+- "explanation": an object describing the SOURCE text in its own language, with:
+    - "partOfSpeech": short label, e.g. "noun (masculine, animate)" or "verb (imperfective)"
+    - "inflection": either null (for indeclinable words or multi-word sentences) or an object with "title" (e.g. "Declension" or "Conjugation"), "columns" (array of column headers, first usually ""), and "rows" (array of objects with "label" for the case/person and "cells" matching the columns)
+    - "note": a short usage note, or null
+- "correction": null if the source text has no spelling or grammar mistake. If it DOES contain a mistake, an object with "corrected" (the corrected source text), "what" (what was wrong), and "why" (why it is wrong).
+No extra fields. Respond with only the JSON object.`;
 
-    const parseTranslationJson = (
-      raw: string,
-    ): { translations: string[]; examples: Array<{ original: string; translated: string }> } => {
-      const parsed = JSON.parse(raw);
-      return {
-        translations: Array.isArray(parsed.translations)
-          ? parsed.translations.filter((x: unknown): x is string => typeof x === 'string').slice(0, 5)
-          : [],
-        examples: Array.isArray(parsed.examples)
-          ? parsed.examples
-              .filter(
-                (e: unknown): e is { original: string; translated: string } =>
-                  !!e &&
-                  typeof (e as { original?: unknown }).original === 'string' &&
-                  typeof (e as { translated?: unknown }).translated === 'string',
-              )
-              .slice(0, 5)
-          : [],
-      };
-    };
-
-    const callLLM = async (
-      client: OpenAI,
-      model: string,
-    ): Promise<{ translations: string[]; examples: Array<{ original: string; translated: string }> }> => {
+    const callLLM = async (client: OpenAI, model: string): Promise<ParsedTranslation> => {
       const completion = await client.chat.completions.create({
         model,
         response_format: { type: 'json_object' },
@@ -514,7 +496,7 @@ No extra fields.`;
       if (provider === 'anthropic' || provider === 'claude-opus') {
         const result = await anthropic.messages.create({
           model: provider === 'claude-opus' ? 'claude-opus-4-8' : 'claude-sonnet-4-6',
-          max_tokens: 1024,
+          max_tokens: 2048,
           system: `${systemPrompt}\nRespond with only the JSON object, no surrounding prose or code fences.`,
           messages: [{ role: 'user', content: text }],
         });
@@ -526,7 +508,7 @@ No extra fields.`;
       const from = originalLanguage ? GLOSBE_LANG_MAP[originalLanguage] : undefined;
       const to = GLOSBE_LANG_MAP[targetLanguage];
       if (!from || !to) {
-        return res.json({ translations: [], examples: [], error: null });
+        return res.json({ translations: [], examples: [], explanation: null, correction: null, error: null });
       }
       const result = await getGlosbeTranslation(text, {
         fromLang: from,
@@ -534,11 +516,13 @@ No extra fields.`;
         maxRetries: 2,
         requestDelay: 500,
       });
-      return res.json({ translations: result.translations ?? [], examples: [], error: null });
+      return res.json({ translations: result.translations ?? [], examples: [], explanation: null, correction: null, error: null });
     } catch (err) {
       return res.json({
         translations: [],
         examples: [],
+        explanation: null,
+        correction: null,
         error: (err as Error)?.message ?? 'failed',
       });
     }
