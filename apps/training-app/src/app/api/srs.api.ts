@@ -175,9 +175,29 @@ export const deleteTranslation = async (translationId: string): Promise<void> =>
 
 export type TranslationProvider = 'openai' | 'deepseek' | 'glosbe' | 'gemini' | 'anthropic' | 'claude-opus';
 
+export interface InflectionTable {
+  title: string;
+  columns: string[];
+  rows: { label: string; cells: string[] }[];
+}
+
+export interface ProviderExplanation {
+  partOfSpeech: string;
+  inflection: InflectionTable | null;
+  note: string | null;
+}
+
+export interface ProviderCorrection {
+  corrected: string;
+  what: string;
+  why: string;
+}
+
 export interface ProviderTranslationResult {
   translations: string[];
   examples: Example[];
+  explanation: ProviderExplanation | null;
+  correction: ProviderCorrection | null;
   error: string | null;
 }
 
