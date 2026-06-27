@@ -10,6 +10,8 @@ import {
   translateText,
   TranslationProvider,
   ProviderTranslationResult,
+  ProviderExplanation,
+  ProviderCorrection,
 } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import {
@@ -119,6 +121,8 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   const [loadingProviders, setLoadingProviders] = useState<readonly TranslationProvider[]>([]);
   const translating = loadingProviders.length > 0;
   const [activeProvider, setActiveProvider] = useState<TranslationProvider>('claude-opus');
+  const [activeContentTab, setActiveContentTab] =
+    useState<'translations' | 'explanation' | 'correction'>('translations');
   /** Which input the suggestion chips apply to after the latest translate call */
   const [suggestionTarget, setSuggestionTarget] = useState<'original' | 'translation'>('translation');
   const [recordingField, setRecordingField] = useState<'original' | 'translation' | null>(null);
@@ -224,6 +228,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
 
     setProviderResults({});
     setSuggestionTarget(plan.suggestionTarget);
+    setActiveContentTab('translations');
     setLoadingProviders(TRANSLATION_PROVIDERS);
 
     TRANSLATION_PROVIDERS.forEach(async (p) => {
@@ -264,6 +269,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
         setAddForm((prev) => ({ ...prev, original: '', translation: '' }));
         setProviderResults(null);
         setSuggestionTarget('translation');
+        setActiveContentTab('translations');
         setCursor(null);
         onChanged();
         originalInputRef.current?.focus();
@@ -289,6 +295,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     });
     setProviderResults(null);
     setSuggestionTarget('translation');
+    setActiveContentTab('translations');
   }, [cursor, history]);
 
   const handleNext = useCallback(() => {
@@ -299,6 +306,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       setAddForm((prev) => ({ ...prev, original: '', translation: '' }));
       setProviderResults(null);
       setSuggestionTarget('translation');
+      setActiveContentTab('translations');
       return;
     }
     const entry = history[next];
@@ -311,6 +319,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     });
     setProviderResults(null);
     setSuggestionTarget('translation');
+    setActiveContentTab('translations');
   }, [cursor, history]);
 
   const handleNewEntry = useCallback(() => {
@@ -318,6 +327,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     setAddForm((prev) => ({ ...prev, original: '', translation: '' }));
     setProviderResults(null);
     setSuggestionTarget('translation');
+    setActiveContentTab('translations');
     originalInputRef.current?.focus();
   }, []);
 
@@ -342,6 +352,102 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
         : { ...prev, original: opt },
     );
   };
+
+  const activeResult = providerResults?.[activeProvider];
+  const hasCorrection = !!activeResult?.correction;
+  const effectiveContentTab =
+    activeContentTab === 'correction' && !hasCorrection ? 'translations' : activeContentTab;
+  const correctionSourceField: 'original' | 'translation' =
+    suggestionTarget === 'translation' ? 'original' : 'translation';
+  const applyCorrection = (corrected: string) => {
+    setAddForm((prev) => ({ ...prev, [correctionSourceField]: corrected }));
+  };
+
+  const renderExplanation = (explanation: ProviderExplanation | null) => {
+    if (!explanation) {
+      return <p className="text-sm text-muted-foreground">{t('modal.explanationUnavailable')}</p>;
+    }
+    return (
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-xs font-medium text-muted-foreground uppercase">
+            {t('modal.partOfSpeech')}
+          </span>
+          <span className="text-sm">{explanation.partOfSpeech}</span>
+        </div>
+        {explanation.inflection && (
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground uppercase">
+              {explanation.inflection.title || t('modal.inflectionHeading')}
+            </span>
+            <div className="overflow-x-auto">
+              <table className="text-sm border-collapse">
+                <thead>
+                  <tr>
+                    {explanation.inflection.columns.map((c, i) => (
+                      <th key={`col-${i}`} className="text-left font-medium text-muted-foreground px-2 py-1 border-b">
+                        {c}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {explanation.inflection.rows.map((row, ri) => (
+                    <tr key={`row-${ri}`}>
+                      <td className="font-medium text-muted-foreground px-2 py-1 border-b">{row.label}</td>
+                      {row.cells.map((cell, ci) => (
+                        <td key={`cell-${ri}-${ci}`} className="px-2 py-1 border-b">
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        {explanation.note && (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-medium text-muted-foreground uppercase">{t('modal.usageNote')}</span>
+            <span className="text-sm text-muted-foreground">{explanation.note}</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderCorrection = (correction: ProviderCorrection) => (
+    <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <span className="text-xs font-medium text-muted-foreground uppercase">
+          {t('modal.correctionHeading')}
+        </span>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => applyCorrection(correction.corrected)}
+          className="self-start inline-flex items-center gap-2"
+          title={t('modal.applyCorrection')}
+        >
+          <Check className="h-3.5 w-3.5" />
+          <span>{correction.corrected}</span>
+        </Button>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <span className="text-xs font-medium text-muted-foreground uppercase">
+          {t('modal.correctionWhat')}
+        </span>
+        <span className="text-sm">{correction.what}</span>
+      </div>
+      <div className="flex flex-col gap-0.5">
+        <span className="text-xs font-medium text-muted-foreground uppercase">
+          {t('modal.correctionWhy')}
+        </span>
+        <span className="text-sm text-muted-foreground">{correction.why}</span>
+      </div>
+    </div>
+  );
 
   return (
     <div
@@ -664,9 +770,36 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                     );
                   })}
                 </div>
+                <div className="flex border-b">
+                  {(['translations', 'explanation', 'correction'] as const).map((tab) => {
+                    if (tab === 'correction' && !hasCorrection) return null;
+                    const label =
+                      tab === 'translations'
+                        ? t('modal.tabTranslations')
+                        : tab === 'explanation'
+                          ? t('modal.tabExplanation')
+                          : t('modal.tabCorrection');
+                    const isActive = effectiveContentTab === tab;
+                    return (
+                      <button
+                        key={tab}
+                        type="button"
+                        onClick={() => setActiveContentTab(tab)}
+                        className={
+                          'px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ' +
+                          (isActive
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground hover:text-foreground')
+                        }
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
                 <div className="p-3 flex flex-col gap-3">
                   {(() => {
-                    const r = providerResults[activeProvider];
+                    const r = activeResult;
                     if (!r) {
                       if (loadingProviders.includes(activeProvider)) {
                         return (
@@ -683,10 +816,17 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                         <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: r.error })}</p>
                       );
                     }
+
+                    if (effectiveContentTab === 'explanation') {
+                      return renderExplanation(r.explanation);
+                    }
+                    if (effectiveContentTab === 'correction' && r.correction) {
+                      return renderCorrection(r.correction);
+                    }
+
+                    // translations tab
                     if (r.translations.length === 0) {
-                      return (
-                        <p className="text-sm text-muted-foreground">{t('modal.noSuggestions')}</p>
-                      );
+                      return <p className="text-sm text-muted-foreground">{t('modal.noSuggestions')}</p>;
                     }
                     return (
                       <>
