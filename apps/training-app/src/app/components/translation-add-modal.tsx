@@ -804,19 +804,6 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
             )}
           </div>
           <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-2">
-            {!providerResults && !translating && translatePlan.ok && (
-              <div className="flex justify-center">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleTranslate}
-                  className="gap-2"
-                >
-                  <Languages className="h-4 w-4" />
-                  {t('modal.getExamples')}
-                </Button>
-              </div>
-            )}
             {providerResults && (
               <div className="rounded-md border">
                 <div className="flex flex-wrap border-b sticky top-0 bg-background rounded-t-md z-10">
