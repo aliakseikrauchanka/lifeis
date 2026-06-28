@@ -11,10 +11,24 @@ describe('parseTranslationJson', () => {
     expect(r.examples).toEqual([{ original: 'Mam kota', translated: 'I have a cat' }]);
   });
 
-  it('defaults to empty arrays for missing fields', () => {
+  it('defaults to empty arrays and null correction for missing fields', () => {
     const r = parseTranslationJson(JSON.stringify({}));
     expect(r.translations).toEqual([]);
     expect(r.examples).toEqual([]);
+    expect(r.correction).toBeNull();
+  });
+
+  it('parses an embedded correction', () => {
+    const raw = JSON.stringify({
+      translations: ['kot'],
+      examples: [],
+      correction: { corrected: 'kot', what: 'typo', why: 'extra letter' },
+    });
+    expect(parseTranslationJson(raw).correction).toEqual({
+      corrected: 'kot',
+      what: 'typo',
+      why: 'extra letter',
+    });
   });
 
   it('throws on invalid JSON', () => {
@@ -27,6 +41,7 @@ describe('parseExplanationJson', () => {
     const raw = JSON.stringify({
       explanation: {
         baseForm: 'kot',
+        meaning: 'a small domesticated feline animal',
         partOfSpeech: 'noun (masculine, animate)',
         inflection: {
           title: 'Declension',
@@ -41,6 +56,7 @@ describe('parseExplanationJson', () => {
     });
     expect(parseExplanationJson(raw)).toEqual({
       baseForm: 'kot',
+      meaning: 'a small domesticated feline animal',
       partOfSpeech: 'noun (masculine, animate)',
       inflection: {
         title: 'Declension',

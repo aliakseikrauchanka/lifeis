@@ -184,6 +184,8 @@ export interface InflectionTable {
 export interface ProviderExplanation {
   /** Dictionary / base form (lemma) of the looked-up word, in the source language. */
   baseForm: string | null;
+  /** A brief plain-language definition of the word, in the UI interface language. */
+  meaning: string | null;
   partOfSpeech: string;
   inflection: InflectionTable | null;
   note: string | null;
@@ -198,6 +200,7 @@ export interface ProviderCorrection {
 export interface ProviderTranslationResult {
   translations: string[];
   examples: Example[];
+  correction: ProviderCorrection | null;
   error: string | null;
 }
 
@@ -206,11 +209,12 @@ export const translateText = async (
   targetLanguage: string,
   originalLanguage: string | undefined,
   provider: TranslationProvider,
+  uiLanguage: string,
 ): Promise<ProviderTranslationResult> => {
   const res = await utilFetch('/translations/translate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, targetLanguage, originalLanguage, provider }),
+    body: JSON.stringify({ text, targetLanguage, originalLanguage, provider, uiLanguage }),
   });
   if (!res.ok) throw new Error('Failed to translate');
   return res.json();
@@ -231,23 +235,6 @@ export const explainWord = async (
   if (!res.ok) throw new Error('Failed to explain');
   const { explanation } = await res.json();
   return explanation ?? null;
-};
-
-/** On-demand spelling/grammar check. Resolves to null when no mistake was found. */
-export const correctText = async (
-  text: string,
-  language: string,
-  provider: TranslationProvider,
-  uiLanguage: string,
-): Promise<ProviderCorrection | null> => {
-  const res = await utilFetch('/translations/correct', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, language, provider, uiLanguage }),
-  });
-  if (!res.ok) throw new Error('Failed to check text');
-  const { correction } = await res.json();
-  return correction ?? null;
 };
 
 export const createTranslation = async (data: {

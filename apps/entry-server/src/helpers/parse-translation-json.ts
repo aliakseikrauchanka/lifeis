@@ -15,6 +15,8 @@ export interface InflectionTable {
 export interface ProviderExplanation {
   /** Dictionary / base form (lemma) of the looked-up word, in the source language. */
   baseForm: string | null;
+  /** A brief plain-language definition of the word, in the UI interface language. */
+  meaning: string | null;
   partOfSpeech: string;
   inflection: InflectionTable | null;
   note: string | null;
@@ -29,6 +31,7 @@ export interface ProviderCorrection {
 export interface ParsedTranslation {
   translations: string[];
   examples: Array<{ original: string; translated: string }>;
+  correction: ProviderCorrection | null;
 }
 
 const isStr = (x: unknown): x is string => typeof x === 'string';
@@ -64,10 +67,17 @@ function parseInflection(raw: unknown): InflectionTable | null {
 
 function parseExplanation(raw: unknown): ProviderExplanation | null {
   if (!raw || typeof raw !== 'object') return null;
-  const r = raw as { baseForm?: unknown; partOfSpeech?: unknown; inflection?: unknown; note?: unknown };
+  const r = raw as {
+    baseForm?: unknown;
+    meaning?: unknown;
+    partOfSpeech?: unknown;
+    inflection?: unknown;
+    note?: unknown;
+  };
   if (!isNonEmpty(r.partOfSpeech)) return null;
   return {
     baseForm: isNonEmpty(r.baseForm) ? truncate(r.baseForm, MAX_FIELD_LENGTH) : null,
+    meaning: isNonEmpty(r.meaning) ? truncate(r.meaning, MAX_FIELD_LENGTH) : null,
     partOfSpeech: truncate(r.partOfSpeech, MAX_FIELD_LENGTH),
     inflection: parseInflection(r.inflection),
     note: isStr(r.note) ? truncate(r.note, MAX_FIELD_LENGTH) : null,
@@ -102,6 +112,7 @@ export function parseTranslationJson(raw: string): ParsedTranslation {
           )
           .slice(0, MAX_EXAMPLES)
       : [],
+    correction: parseCorrection(parsed.correction),
   };
 }
 

@@ -34,6 +34,22 @@ original single-enriched-call design; the shipped behavior is:
 
 The remainder of this document is retained for history.
 
+## Revision 2026-06-28 (b) — correction merged into Translations, richer explanation
+
+- **Correction moved back into `/translate`** (BE merge): each provider's translate call
+  again returns `correction: { corrected, what, why } | null`, with what/why in the UI
+  language (so `/translate` now takes `uiLanguage`). The separate on-demand `/correct`
+  endpoint and `correctText` client are removed.
+- **Content tabs are now just Translations / Explanation.** The correction (when present)
+  renders as a highlighted block at the top of the **Translations** tab; clicking the
+  corrected text still replaces the source field without re-translating.
+- **Explanation gains a `meaning`** field — a brief plain-language definition in the UI
+  language — shown above part of speech.
+- **Inflection table reflects the base form's full paradigm.** When the looked-up word is
+  an inflected form, the explanation still declines/conjugates the dictionary (base) form
+  across all cases/persons.
+- Explanation remains on-demand via `/explain`.
+
 ## Goal
 
 When translations from different AI providers come back in the Add Translation modal,

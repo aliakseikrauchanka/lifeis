@@ -9,7 +9,6 @@ import {
   updateTranslation,
   translateText,
   explainWord,
-  correctText,
   TranslationProvider,
   ProviderTranslationResult,
   ProviderExplanation,
@@ -130,15 +129,12 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   const translating = loadingProviders.length > 0;
   const [activeProvider, setActiveProvider] = useState<TranslationProvider>('claude-opus');
   const [activeContentTab, setActiveContentTab] =
-    useState<'translations' | 'explanation' | 'correction'>('translations');
-  /** On-demand analysis caches, keyed by provider, for the most recent translated source. */
+    useState<'translations' | 'explanation'>('translations');
+  /** On-demand explanation cache, keyed by provider, for the most recent translated source. */
   const [explanations, setExplanations] = useState<
     Partial<Record<TranslationProvider, AsyncCell<ProviderExplanation | null>>>
   >({});
-  const [corrections, setCorrections] = useState<
-    Partial<Record<TranslationProvider, AsyncCell<ProviderCorrection | null>>>
-  >({});
-  /** The source text/language of the most recent translate, used by on-demand explain/correct. */
+  /** The source text/language of the most recent translate, used by on-demand explain. */
   const [lastSource, setLastSource] = useState<{ text: string; lang: string } | null>(null);
   /** Which input the suggestion chips apply to after the latest translate call */
   const [suggestionTarget, setSuggestionTarget] = useState<'original' | 'translation'>('translation');
@@ -245,7 +241,6 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     setSuggestionTarget('translation');
     setActiveContentTab('translations');
     setExplanations({});
-    setCorrections({});
     setLastSource(null);
   }, []);
 
@@ -257,18 +252,17 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     setSuggestionTarget(plan.suggestionTarget);
     setActiveContentTab('translations');
     setExplanations({});
-    setCorrections({});
     setLastSource({ text: plan.sourceText, lang: plan.sourceLang });
     setLoadingProviders(TRANSLATION_PROVIDERS);
 
     TRANSLATION_PROVIDERS.forEach(async (p) => {
       try {
-        const result = await translateText(plan.sourceText, plan.targetLang, plan.sourceLang, p);
+        const result = await translateText(plan.sourceText, plan.targetLang, plan.sourceLang, p, locale);
         setProviderResults((prev) => ({ ...(prev ?? {}), [p]: result }));
       } catch (err) {
         setProviderResults((prev) => ({
           ...(prev ?? {}),
-          [p]: { translations: [], examples: [], error: (err as Error)?.message ?? 'failed' },
+          [p]: { translations: [], examples: [], correction: null, error: (err as Error)?.message ?? 'failed' },
         }));
       } finally {
         setLoadingProviders((prev) => prev.filter((x) => x !== p));
@@ -374,20 +368,16 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   };
 
   const activeResult = providerResults?.[activeProvider];
-  // Glosbe is a dictionary scrape with no grammar analysis; its Correction tab is hidden.
-  const correctionAvailable = activeProvider !== 'glosbe';
-  const effectiveContentTab =
-    activeContentTab === 'correction' && !correctionAvailable ? 'translations' : activeContentTab;
   const correctionSourceField: 'original' | 'translation' =
     suggestionTarget === 'translation' ? 'original' : 'translation';
   const applyCorrection = (corrected: string) => {
     setAddForm((prev) => ({ ...prev, [correctionSourceField]: corrected }));
   };
 
-  // Fetch explanation/correction on demand when the user opens that tab for a provider (cached per provider).
+  // Fetch the explanation on demand when the user opens the Explanation tab for a provider (cached per provider).
   useEffect(() => {
     if (!lastSource || activeProvider === 'glosbe') return;
-    if (effectiveContentTab === 'explanation' && !explanations[activeProvider]) {
+    if (activeContentTab === 'explanation' && !explanations[activeProvider]) {
       setExplanations((p) => ({ ...p, [activeProvider]: { status: 'loading' } }));
       explainWord(lastSource.text, lastSource.lang, activeProvider, locale)
         .then((data) =>
@@ -400,20 +390,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
           })),
         );
     }
-    if (effectiveContentTab === 'correction' && !corrections[activeProvider]) {
-      setCorrections((p) => ({ ...p, [activeProvider]: { status: 'loading' } }));
-      correctText(lastSource.text, lastSource.lang, activeProvider, locale)
-        .then((data) =>
-          setCorrections((p) => ({ ...p, [activeProvider]: { status: 'done', data } })),
-        )
-        .catch((e) =>
-          setCorrections((p) => ({
-            ...p,
-            [activeProvider]: { status: 'error', error: (e as Error)?.message ?? 'failed' },
-          })),
-        );
-    }
-  }, [effectiveContentTab, activeProvider, lastSource, locale, explanations, corrections]);
+  }, [activeContentTab, activeProvider, lastSource, locale, explanations]);
 
   const renderExplanation = (explanation: ProviderExplanation | null) => {
     if (!explanation) {
@@ -440,6 +417,14 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 </Button>
               )}
             </div>
+          </div>
+        )}
+        {explanation.meaning && (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-medium text-muted-foreground uppercase">
+              {t('modal.meaning')}
+            </span>
+            <span className="text-sm">{explanation.meaning}</span>
           </div>
         )}
         <div className="flex flex-col gap-0.5">
@@ -539,18 +524,6 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       return <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: cell.error })}</p>;
     }
     return renderExplanation(cell.data);
-  };
-
-  const renderCorrectionPanel = () => {
-    const cell = corrections[activeProvider];
-    if (!cell || cell.status === 'loading') return analysisSpinner;
-    if (cell.status === 'error') {
-      return <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: cell.error })}</p>;
-    }
-    if (!cell.data) {
-      return <p className="text-sm text-muted-foreground">{t('modal.correctionNoMistakes')}</p>;
-    }
-    return renderCorrection(cell.data);
   };
 
   return (
@@ -874,15 +847,10 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   })}
                 </div>
                 <div className="flex border-b">
-                  {(['translations', 'explanation', 'correction'] as const).map((tab) => {
-                    if (tab === 'correction' && !correctionAvailable) return null;
+                  {(['translations', 'explanation'] as const).map((tab) => {
                     const label =
-                      tab === 'translations'
-                        ? t('modal.tabTranslations')
-                        : tab === 'explanation'
-                          ? t('modal.tabExplanation')
-                          : t('modal.tabCorrection');
-                    const isActive = effectiveContentTab === tab;
+                      tab === 'translations' ? t('modal.tabTranslations') : t('modal.tabExplanation');
+                    const isActive = activeContentTab === tab;
                     return (
                       <button
                         key={tab}
@@ -902,8 +870,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 </div>
                 <div className="p-3 flex flex-col gap-3">
                   {(() => {
-                    if (effectiveContentTab === 'explanation') return renderExplanationPanel();
-                    if (effectiveContentTab === 'correction') return renderCorrectionPanel();
+                    if (activeContentTab === 'explanation') return renderExplanationPanel();
 
                     // translations tab
                     const r = activeResult;
@@ -923,11 +890,17 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                         <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: r.error })}</p>
                       );
                     }
-                    if (r.translations.length === 0) {
+                    if (r.translations.length === 0 && !r.correction) {
                       return <p className="text-sm text-muted-foreground">{t('modal.noSuggestions')}</p>;
                     }
                     return (
                       <>
+                        {r.correction && (
+                          <div className="rounded-md border border-amber-300 bg-amber-50 p-2">
+                            {renderCorrection(r.correction)}
+                          </div>
+                        )}
+                        {r.translations.length > 0 && (
                         <div className="flex flex-col gap-1">
                           <span className="text-xs font-medium text-muted-foreground uppercase">
                             {t('modal.translationsHeading')}
@@ -965,6 +938,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                             ))}
                           </div>
                         </div>
+                        )}
                         {r.examples && r.examples.length > 0 && (
                           <div className="flex flex-col gap-1">
                             <span className="text-xs font-medium text-muted-foreground uppercase">

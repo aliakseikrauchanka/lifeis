@@ -9,11 +9,7 @@ import { deepSeek } from '../utils/deepseek';
 import { getGlosbeTranslation } from '../utils/glosbe-scraper';
 import { formatEntry } from '../helpers/format-entry';
 import { buildImportDocs, importKey, splitNewAndDuplicates } from '../helpers/import-translations';
-import {
-  parseTranslationJson,
-  parseExplanationJson,
-  parseCorrectionJson,
-} from '../helpers/parse-translation-json';
+import { parseTranslationJson, parseExplanationJson } from '../helpers/parse-translation-json';
 
 const anthropic = new Anthropic();
 
@@ -510,7 +506,7 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
   };
 
   router.post('/translate', verifyAccessToken, async (req, res) => {
-    const { text, targetLanguage, originalLanguage, provider } = req.body;
+    const { text, targetLanguage, originalLanguage, provider, uiLanguage } = req.body;
     if (!text || !targetLanguage) {
       return res.status(400).json({ message: 'text and targetLanguage are required' });
     }
@@ -532,10 +528,13 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
     if (typeof provider !== 'string' || !SUPPORTED_PROVIDERS.has(provider)) {
       return res.status(400).json({ message: 'Invalid provider' });
     }
+    // uiLanguage is not security-sensitive: only the mapped name is interpolated, unknown → English.
+    const uiLangName = (typeof uiLanguage === 'string' && UI_LANGUAGE_NAMES[uiLanguage]) || 'English';
 
-    const systemPrompt = `You are a precise translator. Return a JSON object with:
+    const systemPrompt = `You are a precise translator and proofreader. The given text is written in ${originalLanguage ?? 'its original language'}. Return a JSON object with:
 - "translations": array of exactly 3 distinct translation options for the given text into ${targetLanguage} (vary by formality, style, or synonyms)
 - "examples": array of exactly 3 objects, each with "original" (example sentence in ${originalLanguage ?? 'original'} language) and "translated" (its translation in ${targetLanguage})
+- "correction": null if the given text has no spelling or grammar mistake; otherwise an object {"corrected": the corrected text in ${originalLanguage ?? 'the original language'}, "what": what was wrong written in ${uiLangName}, "why": why it is wrong written in ${uiLangName}}
 No extra fields.`;
 
     try {
@@ -543,7 +542,7 @@ No extra fields.`;
         const from = originalLanguage ? GLOSBE_LANG_MAP[originalLanguage] : undefined;
         const to = GLOSBE_LANG_MAP[targetLanguage];
         if (!from || !to) {
-          return res.json({ translations: [], examples: [], error: null });
+          return res.json({ translations: [], examples: [], correction: null, error: null });
         }
         const result = await getGlosbeTranslation(text, {
           fromLang: from,
@@ -551,12 +550,12 @@ No extra fields.`;
           maxRetries: 2,
           requestDelay: 500,
         });
-        return res.json({ translations: result.translations ?? [], examples: [], error: null });
+        return res.json({ translations: result.translations ?? [], examples: [], correction: null, error: null });
       }
       const raw = await runLLMJson(provider, systemPrompt, text);
       return res.json({ ...parseTranslationJson(raw), error: null });
     } catch (err) {
-      return res.json({ translations: [], examples: [], error: (err as Error)?.message ?? 'failed' });
+      return res.json({ translations: [], examples: [], correction: null, error: (err as Error)?.message ?? 'failed' });
     }
   });
 
@@ -570,34 +569,17 @@ No extra fields.`;
 
     const systemPrompt = `You are a language tutor. The user message is a word or phrase written in ${v.language}. Return a JSON object with an "explanation" object:
 - "baseForm": the dictionary / base form (lemma) of the word in ${v.language} (e.g. nominative singular for nouns, infinitive for verbs); null for multi-word phrases
+- "meaning": a brief plain-language definition of the word (1-2 sentences) written in ${v.langName}
 - "partOfSpeech": a short label such as "noun (masculine, animate)" or "verb (imperfective)", written in ${v.langName}
-- "inflection": null for indeclinable words or multi-word phrases; otherwise an object with "title" (e.g. "Declension" or "Conjugation", written in ${v.langName}), "columns" (array of column headers, first usually "", written in ${v.langName}), and "rows" (array of objects with "label" for the case/person written in ${v.langName} and "cells" matching the columns)
+- "inflection": null for indeclinable words or multi-word phrases; otherwise the FULL paradigm of the BASE FORM (lemma) — if the given word is an inflected form, still decline/conjugate its base form across all cases/persons. An object with "title" (e.g. "Declension" or "Conjugation", written in ${v.langName}), "columns" (array of column headers, first usually "", written in ${v.langName}), and "rows" (array of objects with "label" for the case/person written in ${v.langName} and "cells" matching the columns)
 - "note": a short usage note written in ${v.langName}, or null
-Write ALL explanatory text (labels, titles, notes) in ${v.langName}, but keep the actual inflected word forms in the "cells" in ${v.language}. No extra fields.`;
+Write ALL explanatory text (meaning, labels, titles, notes) in ${v.langName}, but keep the actual inflected word forms in the "cells" in ${v.language}. No extra fields.`;
 
     try {
       const raw = await runLLMJson(v.provider, systemPrompt, v.text, 2048);
       return res.json({ explanation: parseExplanationJson(raw), error: null });
     } catch (err) {
       return res.json({ explanation: null, error: (err as Error)?.message ?? 'failed' });
-    }
-  });
-
-  // On-demand spelling/grammar check for a single word/phrase. correction is null when nothing is wrong.
-  router.post('/correct', verifyAccessToken, async (req, res) => {
-    const v = validateAnalysisRequest(req.body);
-    if ('error' in v) return res.status(v.error.status).json({ message: v.error.message });
-    if (v.provider === 'glosbe') {
-      return res.json({ correction: null, error: null });
-    }
-
-    const systemPrompt = `You are a meticulous ${v.language} proofreader. The user message is a word or phrase written in ${v.language}. If it has NO spelling or grammar mistake, return {"correction": null}. If it DOES contain a mistake, return {"correction": {"corrected": the corrected text in ${v.language}, "what": what was wrong written in ${v.langName}, "why": why it is wrong written in ${v.langName}}}. Keep "corrected" in ${v.language}; write "what" and "why" in ${v.langName}. No extra fields.`;
-
-    try {
-      const raw = await runLLMJson(v.provider, systemPrompt, v.text, 1024);
-      return res.json({ correction: parseCorrectionJson(raw), error: null });
-    } catch (err) {
-      return res.json({ correction: null, error: (err as Error)?.message ?? 'failed' });
     }
   });
 
