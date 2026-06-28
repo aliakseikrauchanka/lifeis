@@ -9,7 +9,11 @@ import { deepSeek } from '../utils/deepseek';
 import { getGlosbeTranslation } from '../utils/glosbe-scraper';
 import { formatEntry } from '../helpers/format-entry';
 import { buildImportDocs, importKey, splitNewAndDuplicates } from '../helpers/import-translations';
-import { parseTranslationJson, ParsedTranslation } from '../helpers/parse-translation-json';
+import {
+  parseTranslationJson,
+  parseExplanationJson,
+  parseCorrectionJson,
+} from '../helpers/parse-translation-json';
 
 const anthropic = new Anthropic();
 
@@ -33,6 +37,16 @@ const ALLOWED_LANGUAGE_CODES = new Set(['pl', 'ru-RU', 'en-US', 'de-DE', 'fr-FR'
 const MAX_TEXT_LENGTH = 2000;
 const MAX_TRANSLATION_LENGTH = 2000;
 const MAX_LANG_CODE_LENGTH = 10;
+
+// UI interface locales (from the training app) → human-readable language name used in prompts.
+// Only the mapped names are ever interpolated, so an unknown uiLanguage is injection-safe (falls back to English).
+const UI_LANGUAGE_NAMES: Record<string, string> = {
+  en: 'English',
+  ru: 'Russian',
+  pl: 'Polish',
+  es: 'Spanish',
+};
+const SUPPORTED_PROVIDERS = new Set(['openai', 'deepseek', 'glosbe', 'gemini', 'anthropic', 'claude-opus']);
 
 export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, genAi: GoogleGenerativeAI) => {
   const router = Router();
@@ -422,6 +436,79 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
     }
   });
 
+  /**
+   * Runs a JSON-returning prompt against the given LLM provider and returns the raw JSON string.
+   * Not for glosbe (a dictionary scrape) — callers handle that provider separately.
+   */
+  const runLLMJson = async (
+    provider: string,
+    systemPrompt: string,
+    userText: string,
+    maxTokens = 1024,
+  ): Promise<string> => {
+    if (provider === 'openai' || provider === 'deepseek') {
+      const client = provider === 'openai' ? openAiModel : deepSeek;
+      const model = provider === 'openai' ? 'gpt-4o-mini' : 'deepseek-chat';
+      const completion = await client.chat.completions.create({
+        model,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userText },
+        ],
+      });
+      return completion.choices[0].message.content ?? '{}';
+    }
+    if (provider === 'gemini') {
+      const model = genAi.getGenerativeModel({
+        model: 'gemini-3.5-flash',
+        generationConfig: { responseMimeType: 'application/json' },
+      });
+      const result = await model.generateContent([systemPrompt, userText]);
+      return result.response.text() ?? '{}';
+    }
+    // anthropic | claude-opus
+    const result = await anthropic.messages.create({
+      model: provider === 'claude-opus' ? 'claude-opus-4-8' : 'claude-sonnet-4-6',
+      max_tokens: maxTokens,
+      system: `${systemPrompt}\nRespond with only the JSON object, no surrounding prose or code fences.`,
+      messages: [{ role: 'user', content: userText }],
+    });
+    return result.content.find((b): b is Anthropic.TextBlock => b.type === 'text')?.text ?? '{}';
+  };
+
+  /**
+   * Validates the shared body of the on-demand /explain and /correct endpoints.
+   * Returns either an error (with HTTP status) or the validated, ready-to-use fields.
+   */
+  const validateAnalysisRequest = (
+    body: unknown,
+  ):
+    | { error: { status: number; message: string } }
+    | { text: string; language: string; provider: string; langName: string } => {
+    const { text, language, provider, uiLanguage } = (body ?? {}) as {
+      text?: unknown;
+      language?: unknown;
+      provider?: unknown;
+      uiLanguage?: unknown;
+    };
+    if (typeof text !== 'string' || text.trim().length === 0) {
+      return { error: { status: 400, message: 'text must be a non-empty string' } };
+    }
+    if (text.length > MAX_TEXT_LENGTH) {
+      return { error: { status: 400, message: `text must be at most ${MAX_TEXT_LENGTH} characters` } };
+    }
+    if (typeof language !== 'string' || !ALLOWED_LANGUAGE_CODES.has(language)) {
+      return { error: { status: 400, message: 'Invalid language code' } };
+    }
+    if (typeof provider !== 'string' || !SUPPORTED_PROVIDERS.has(provider)) {
+      return { error: { status: 400, message: 'Invalid provider' } };
+    }
+    // uiLanguage is not security-sensitive: only the mapped name is interpolated, unknown → English.
+    const langName = (typeof uiLanguage === 'string' && UI_LANGUAGE_NAMES[uiLanguage]) || 'English';
+    return { text, language, provider, langName };
+  };
+
   router.post('/translate', verifyAccessToken, async (req, res) => {
     const { text, targetLanguage, originalLanguage, provider } = req.body;
     if (!text || !targetLanguage) {
@@ -442,89 +529,74 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
         return res.status(400).json({ message: 'Invalid originalLanguage code' });
       }
     }
-    if (
-      provider !== 'openai' &&
-      provider !== 'deepseek' &&
-      provider !== 'glosbe' &&
-      provider !== 'gemini' &&
-      provider !== 'anthropic' &&
-      provider !== 'claude-opus'
-    ) {
+    if (typeof provider !== 'string' || !SUPPORTED_PROVIDERS.has(provider)) {
       return res.status(400).json({ message: 'Invalid provider' });
     }
 
-    const systemPrompt = `You are a precise translator and language tutor. The user message is the SOURCE text written in ${originalLanguage ?? 'its original language'}. Return a JSON object with:
-- "translations": array of exactly 3 distinct translation options for the source text into ${targetLanguage} (vary by formality, style, or synonyms)
-- "examples": array of exactly 3 objects, each with "original" (example sentence in ${originalLanguage ?? 'the source language'}) and "translated" (its translation in ${targetLanguage})
-- "explanation": an object describing the SOURCE text in its own language, with:
-    - "partOfSpeech": short label, e.g. "noun (masculine, animate)" or "verb (imperfective)"
-    - "inflection": either null (for indeclinable words or multi-word sentences) or an object with "title" (e.g. "Declension" or "Conjugation"), "columns" (array of column headers, first usually ""), and "rows" (array of objects with "label" for the case/person and "cells" matching the columns)
-    - "note": a short usage note, or null
-- "correction": null if the source text has no spelling or grammar mistake. If it DOES contain a mistake, an object with "corrected" (the corrected source text), "what" (what was wrong), and "why" (why it is wrong).
-No extra fields. Respond with only the JSON object.`;
-
-    const callLLM = async (client: OpenAI, model: string): Promise<ParsedTranslation> => {
-      const completion = await client.chat.completions.create({
-        model,
-        response_format: { type: 'json_object' },
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: text },
-        ],
-      });
-      return parseTranslationJson(completion.choices[0].message.content ?? '{}');
-    };
+    const systemPrompt = `You are a precise translator. Return a JSON object with:
+- "translations": array of exactly 3 distinct translation options for the given text into ${targetLanguage} (vary by formality, style, or synonyms)
+- "examples": array of exactly 3 objects, each with "original" (example sentence in ${originalLanguage ?? 'original'} language) and "translated" (its translation in ${targetLanguage})
+No extra fields.`;
 
     try {
-      if (provider === 'openai') {
-        const r = await callLLM(openAiModel, 'gpt-4o-mini');
-        return res.json({ ...r, error: null });
-      }
-      if (provider === 'deepseek') {
-        const r = await callLLM(deepSeek, 'deepseek-chat');
-        return res.json({ ...r, error: null });
-      }
-      if (provider === 'gemini') {
-        const model = genAi.getGenerativeModel({
-          model: 'gemini-3.5-flash',
-          generationConfig: { responseMimeType: 'application/json' },
+      if (provider === 'glosbe') {
+        const from = originalLanguage ? GLOSBE_LANG_MAP[originalLanguage] : undefined;
+        const to = GLOSBE_LANG_MAP[targetLanguage];
+        if (!from || !to) {
+          return res.json({ translations: [], examples: [], error: null });
+        }
+        const result = await getGlosbeTranslation(text, {
+          fromLang: from,
+          toLang: to,
+          maxRetries: 2,
+          requestDelay: 500,
         });
-        const result = await model.generateContent([systemPrompt, text]);
-        const r = parseTranslationJson(result.response.text() ?? '{}');
-        return res.json({ ...r, error: null });
+        return res.json({ translations: result.translations ?? [], examples: [], error: null });
       }
-      if (provider === 'anthropic' || provider === 'claude-opus') {
-        const result = await anthropic.messages.create({
-          model: provider === 'claude-opus' ? 'claude-opus-4-8' : 'claude-sonnet-4-6',
-          max_tokens: 2048,
-          system: `${systemPrompt}\nRespond with only the JSON object, no surrounding prose or code fences.`,
-          messages: [{ role: 'user', content: text }],
-        });
-        const raw =
-          result.content.find((b): b is Anthropic.TextBlock => b.type === 'text')?.text ?? '{}';
-        const r = parseTranslationJson(raw);
-        return res.json({ ...r, error: null });
-      }
-      const from = originalLanguage ? GLOSBE_LANG_MAP[originalLanguage] : undefined;
-      const to = GLOSBE_LANG_MAP[targetLanguage];
-      if (!from || !to) {
-        return res.json({ translations: [], examples: [], explanation: null, correction: null, error: null });
-      }
-      const result = await getGlosbeTranslation(text, {
-        fromLang: from,
-        toLang: to,
-        maxRetries: 2,
-        requestDelay: 500,
-      });
-      return res.json({ translations: result.translations ?? [], examples: [], explanation: null, correction: null, error: null });
+      const raw = await runLLMJson(provider, systemPrompt, text);
+      return res.json({ ...parseTranslationJson(raw), error: null });
     } catch (err) {
-      return res.json({
-        translations: [],
-        examples: [],
-        explanation: null,
-        correction: null,
-        error: (err as Error)?.message ?? 'failed',
-      });
+      return res.json({ translations: [], examples: [], error: (err as Error)?.message ?? 'failed' });
+    }
+  });
+
+  // On-demand grammar explanation for a single word/phrase, written in the UI interface language.
+  router.post('/explain', verifyAccessToken, async (req, res) => {
+    const v = validateAnalysisRequest(req.body);
+    if ('error' in v) return res.status(v.error.status).json({ message: v.error.message });
+    if (v.provider === 'glosbe') {
+      return res.json({ explanation: null, error: null });
+    }
+
+    const systemPrompt = `You are a language tutor. The user message is a word or phrase written in ${v.language}. Return a JSON object with an "explanation" object:
+- "partOfSpeech": a short label such as "noun (masculine, animate)" or "verb (imperfective)", written in ${v.langName}
+- "inflection": null for indeclinable words or multi-word phrases; otherwise an object with "title" (e.g. "Declension" or "Conjugation", written in ${v.langName}), "columns" (array of column headers, first usually "", written in ${v.langName}), and "rows" (array of objects with "label" for the case/person written in ${v.langName} and "cells" matching the columns)
+- "note": a short usage note written in ${v.langName}, or null
+Write ALL explanatory text (labels, titles, notes) in ${v.langName}, but keep the actual inflected word forms in the "cells" in ${v.language}. No extra fields.`;
+
+    try {
+      const raw = await runLLMJson(v.provider, systemPrompt, v.text, 2048);
+      return res.json({ explanation: parseExplanationJson(raw), error: null });
+    } catch (err) {
+      return res.json({ explanation: null, error: (err as Error)?.message ?? 'failed' });
+    }
+  });
+
+  // On-demand spelling/grammar check for a single word/phrase. correction is null when nothing is wrong.
+  router.post('/correct', verifyAccessToken, async (req, res) => {
+    const v = validateAnalysisRequest(req.body);
+    if ('error' in v) return res.status(v.error.status).json({ message: v.error.message });
+    if (v.provider === 'glosbe') {
+      return res.json({ correction: null, error: null });
+    }
+
+    const systemPrompt = `You are a meticulous ${v.language} proofreader. The user message is a word or phrase written in ${v.language}. If it has NO spelling or grammar mistake, return {"correction": null}. If it DOES contain a mistake, return {"correction": {"corrected": the corrected text in ${v.language}, "what": what was wrong written in ${v.langName}, "why": why it is wrong written in ${v.langName}}}. Keep "corrected" in ${v.language}; write "what" and "why" in ${v.langName}. No extra fields.`;
+
+    try {
+      const raw = await runLLMJson(v.provider, systemPrompt, v.text, 1024);
+      return res.json({ correction: parseCorrectionJson(raw), error: null });
+    } catch (err) {
+      return res.json({ correction: null, error: (err as Error)?.message ?? 'failed' });
     }
   });
 

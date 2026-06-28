@@ -196,8 +196,6 @@ export interface ProviderCorrection {
 export interface ProviderTranslationResult {
   translations: string[];
   examples: Example[];
-  explanation: ProviderExplanation | null;
-  correction: ProviderCorrection | null;
   error: string | null;
 }
 
@@ -214,6 +212,40 @@ export const translateText = async (
   });
   if (!res.ok) throw new Error('Failed to translate');
   return res.json();
+};
+
+/** On-demand grammar explanation for a source word/phrase, in the UI interface language. */
+export const explainWord = async (
+  text: string,
+  language: string,
+  provider: TranslationProvider,
+  uiLanguage: string,
+): Promise<ProviderExplanation | null> => {
+  const res = await utilFetch('/translations/explain', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, language, provider, uiLanguage }),
+  });
+  if (!res.ok) throw new Error('Failed to explain');
+  const { explanation } = await res.json();
+  return explanation ?? null;
+};
+
+/** On-demand spelling/grammar check. Resolves to null when no mistake was found. */
+export const correctText = async (
+  text: string,
+  language: string,
+  provider: TranslationProvider,
+  uiLanguage: string,
+): Promise<ProviderCorrection | null> => {
+  const res = await utilFetch('/translations/correct', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, language, provider, uiLanguage }),
+  });
+  if (!res.ok) throw new Error('Failed to check text');
+  const { correction } = await res.json();
+  return correction ?? null;
 };
 
 export const createTranslation = async (data: {

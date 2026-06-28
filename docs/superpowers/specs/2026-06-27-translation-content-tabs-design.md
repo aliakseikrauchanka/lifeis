@@ -4,6 +4,36 @@ Date: 2026-06-27
 App: training-app (frontend) + entry-server (backend)
 Component: `apps/training-app/src/app/components/translation-add-modal.tsx`, `apps/entry-server/src/routes/translations-routes.ts`
 
+## Revision 2026-06-28 — on-demand, UI-language (SUPERSEDES the single-call design below)
+
+After the first implementation, the approach changed. The sections below describe the
+original single-enriched-call design; the shipped behavior is:
+
+- **Explanation and Correction are fetched on demand**, not bundled into `/translate`.
+  `/translate` reverts to **lean** (translations + examples only). Two new endpoints:
+  - `POST /api/translations/explain` → `{ explanation: { partOfSpeech, inflection, note } | null }`
+  - `POST /api/translations/correct` → `{ correction: { corrected, what, why } | null }`
+    (`null` = no mistake found)
+  Each takes `{ text, language, provider, uiLanguage }`. The frontend fetches the active
+  provider's explanation/correction the first time that tab is opened and **caches per
+  provider** (`AsyncCell` with loading/error/done). Caches reset on translate/clear/navigate.
+- **Explanations are written in the UI interface language** (the Profile → Interface
+  Language setting, `useI18n().locale`, one of en/ru/pl/es → English/Russian/Polish/Spanish).
+  Meta-text (part of speech, table title, row labels, note, correction what/why) is in the
+  UI language; the inflected word forms in the table cells and `corrected` stay in the
+  source language.
+- **No settings toggle.** The feature is always available on demand; an earlier idea to
+  gate it behind a persisted training-app setting was dropped.
+- **Correction tab is always present** (except for Glosbe). Opening it fetches; "No
+  mistakes found." is shown when the model reports no mistake. Glosbe (a dictionary
+  scrape) shows the explanation empty state and hides the Correction tab.
+- Backend reuse: a shared `runLLMJson(provider, systemPrompt, userText)` helper dispatches
+  to the right model; `parseExplanationJson` / `parseCorrectionJson` validate/cap output.
+- Applying a correction replaces the source field (Original in forward mode, Translation
+  in reverse) without re-translating — **unchanged** from the original design.
+
+The remainder of this document is retained for history.
+
 ## Goal
 
 When translations from different AI providers come back in the Add Translation modal,

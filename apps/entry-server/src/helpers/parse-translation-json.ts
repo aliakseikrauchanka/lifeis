@@ -27,8 +27,6 @@ export interface ProviderCorrection {
 export interface ParsedTranslation {
   translations: string[];
   examples: Array<{ original: string; translated: string }>;
-  explanation: ProviderExplanation | null;
-  correction: ProviderCorrection | null;
 }
 
 const isStr = (x: unknown): x is string => typeof x === 'string';
@@ -84,6 +82,7 @@ function parseCorrection(raw: unknown): ProviderCorrection | null {
   };
 }
 
+/** Parses the lean `/translate` response: translation options and example sentences. */
 export function parseTranslationJson(raw: string): ParsedTranslation {
   const parsed = JSON.parse(raw);
   return {
@@ -100,7 +99,17 @@ export function parseTranslationJson(raw: string): ParsedTranslation {
           )
           .slice(0, MAX_EXAMPLES)
       : [],
-    explanation: parseExplanation(parsed.explanation),
-    correction: parseCorrection(parsed.correction),
   };
+}
+
+/** Parses the on-demand `/explain` response. Returns null when the JSON has no usable explanation. */
+export function parseExplanationJson(raw: string): ProviderExplanation | null {
+  const parsed = JSON.parse(raw);
+  return parseExplanation(parsed.explanation ?? parsed);
+}
+
+/** Parses the on-demand `/correct` response. Returns null when no mistake was reported. */
+export function parseCorrectionJson(raw: string): ProviderCorrection | null {
+  const parsed = JSON.parse(raw);
+  return parseCorrection(parsed.correction ?? parsed);
 }

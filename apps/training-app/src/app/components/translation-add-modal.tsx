@@ -8,6 +8,8 @@ import {
   createTranslation,
   updateTranslation,
   translateText,
+  explainWord,
+  correctText,
   TranslationProvider,
   ProviderTranslationResult,
   ProviderExplanation,
@@ -25,6 +27,12 @@ import { useI18n } from '../i18n/i18n-context';
 
 const ORIGINAL_REC_ID = 'global-add-original';
 const TRANSLATION_REC_ID = 'global-add-translation';
+
+/** State of an on-demand analysis fetch (explanation/correction), per provider. */
+type AsyncCell<T> =
+  | { status: 'loading' }
+  | { status: 'error'; error: string }
+  | { status: 'done'; data: T };
 
 function normalize(s: string): string {
   return s.trim().toLocaleLowerCase();
@@ -94,7 +102,7 @@ interface ModalBodyProps {
 
 function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageChange }: ModalBodyProps) {
   const isEdit = mode === 'edit';
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { stopListening } = useSpeechToText();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
   const { history, appendHistory, findByOriginalOrTranslation } = useTranslationAdd();
@@ -123,6 +131,15 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   const [activeProvider, setActiveProvider] = useState<TranslationProvider>('claude-opus');
   const [activeContentTab, setActiveContentTab] =
     useState<'translations' | 'explanation' | 'correction'>('translations');
+  /** On-demand analysis caches, keyed by provider, for the most recent translated source. */
+  const [explanations, setExplanations] = useState<
+    Partial<Record<TranslationProvider, AsyncCell<ProviderExplanation | null>>>
+  >({});
+  const [corrections, setCorrections] = useState<
+    Partial<Record<TranslationProvider, AsyncCell<ProviderCorrection | null>>>
+  >({});
+  /** The source text/language of the most recent translate, used by on-demand explain/correct. */
+  const [lastSource, setLastSource] = useState<{ text: string; lang: string } | null>(null);
   /** Which input the suggestion chips apply to after the latest translate call */
   const [suggestionTarget, setSuggestionTarget] = useState<'original' | 'translation'>('translation');
   const [recordingField, setRecordingField] = useState<'original' | 'translation' | null>(null);
@@ -222,6 +239,16 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     setAddForm((prev) => ({ ...prev, translation: text }));
   }, []);
 
+  /** Clears all results and on-demand analysis caches (used when navigating away from a result). */
+  const clearAnalysis = useCallback(() => {
+    setProviderResults(null);
+    setSuggestionTarget('translation');
+    setActiveContentTab('translations');
+    setExplanations({});
+    setCorrections({});
+    setLastSource(null);
+  }, []);
+
   const handleTranslate = () => {
     const plan = getTranslatePlan(addForm, isEdit);
     if (!plan.ok) return;
@@ -229,6 +256,9 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     setProviderResults({});
     setSuggestionTarget(plan.suggestionTarget);
     setActiveContentTab('translations');
+    setExplanations({});
+    setCorrections({});
+    setLastSource({ text: plan.sourceText, lang: plan.sourceLang });
     setLoadingProviders(TRANSLATION_PROVIDERS);
 
     TRANSLATION_PROVIDERS.forEach(async (p) => {
@@ -238,7 +268,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       } catch (err) {
         setProviderResults((prev) => ({
           ...(prev ?? {}),
-          [p]: { translations: [], examples: [], explanation: null, correction: null, error: (err as Error)?.message ?? 'failed' },
+          [p]: { translations: [], examples: [], error: (err as Error)?.message ?? 'failed' },
         }));
       } finally {
         setLoadingProviders((prev) => prev.filter((x) => x !== p));
@@ -267,9 +297,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
         await createTranslation(addForm);
         appendHistory(entry);
         setAddForm((prev) => ({ ...prev, original: '', translation: '' }));
-        setProviderResults(null);
-        setSuggestionTarget('translation');
-        setActiveContentTab('translations');
+        clearAnalysis();
         setCursor(null);
         onChanged();
         originalInputRef.current?.focus();
@@ -293,10 +321,8 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       originalLanguage: entry.originalLanguage,
       translationLanguage: entry.translationLanguage,
     });
-    setProviderResults(null);
-    setSuggestionTarget('translation');
-    setActiveContentTab('translations');
-  }, [cursor, history]);
+    clearAnalysis();
+  }, [cursor, history, clearAnalysis]);
 
   const handleNext = useCallback(() => {
     if (cursor === null) return;
@@ -304,9 +330,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     if (next >= history.length) {
       setCursor(null);
       setAddForm((prev) => ({ ...prev, original: '', translation: '' }));
-      setProviderResults(null);
-      setSuggestionTarget('translation');
-      setActiveContentTab('translations');
+      clearAnalysis();
       return;
     }
     const entry = history[next];
@@ -317,19 +341,15 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       originalLanguage: entry.originalLanguage,
       translationLanguage: entry.translationLanguage,
     });
-    setProviderResults(null);
-    setSuggestionTarget('translation');
-    setActiveContentTab('translations');
-  }, [cursor, history]);
+    clearAnalysis();
+  }, [cursor, history, clearAnalysis]);
 
   const handleNewEntry = useCallback(() => {
     setCursor(null);
     setAddForm((prev) => ({ ...prev, original: '', translation: '' }));
-    setProviderResults(null);
-    setSuggestionTarget('translation');
-    setActiveContentTab('translations');
+    clearAnalysis();
     originalInputRef.current?.focus();
-  }, []);
+  }, [clearAnalysis]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -354,14 +374,46 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   };
 
   const activeResult = providerResults?.[activeProvider];
-  const hasCorrection = !!activeResult?.correction;
+  // Glosbe is a dictionary scrape with no grammar analysis; its Correction tab is hidden.
+  const correctionAvailable = activeProvider !== 'glosbe';
   const effectiveContentTab =
-    activeContentTab === 'correction' && !hasCorrection ? 'translations' : activeContentTab;
+    activeContentTab === 'correction' && !correctionAvailable ? 'translations' : activeContentTab;
   const correctionSourceField: 'original' | 'translation' =
     suggestionTarget === 'translation' ? 'original' : 'translation';
   const applyCorrection = (corrected: string) => {
     setAddForm((prev) => ({ ...prev, [correctionSourceField]: corrected }));
   };
+
+  // Fetch explanation/correction on demand when the user opens that tab for a provider (cached per provider).
+  useEffect(() => {
+    if (!lastSource || activeProvider === 'glosbe') return;
+    if (effectiveContentTab === 'explanation' && !explanations[activeProvider]) {
+      setExplanations((p) => ({ ...p, [activeProvider]: { status: 'loading' } }));
+      explainWord(lastSource.text, lastSource.lang, activeProvider, locale)
+        .then((data) =>
+          setExplanations((p) => ({ ...p, [activeProvider]: { status: 'done', data } })),
+        )
+        .catch((e) =>
+          setExplanations((p) => ({
+            ...p,
+            [activeProvider]: { status: 'error', error: (e as Error)?.message ?? 'failed' },
+          })),
+        );
+    }
+    if (effectiveContentTab === 'correction' && !corrections[activeProvider]) {
+      setCorrections((p) => ({ ...p, [activeProvider]: { status: 'loading' } }));
+      correctText(lastSource.text, lastSource.lang, activeProvider, locale)
+        .then((data) =>
+          setCorrections((p) => ({ ...p, [activeProvider]: { status: 'done', data } })),
+        )
+        .catch((e) =>
+          setCorrections((p) => ({
+            ...p,
+            [activeProvider]: { status: 'error', error: (e as Error)?.message ?? 'failed' },
+          })),
+        );
+    }
+  }, [effectiveContentTab, activeProvider, lastSource, locale, explanations, corrections]);
 
   const renderExplanation = (explanation: ProviderExplanation | null) => {
     if (!explanation) {
@@ -448,6 +500,37 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       </div>
     </div>
   );
+
+  const analysisSpinner = (
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+      <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+      {t('modal.analyzing')}
+    </div>
+  );
+
+  const renderExplanationPanel = () => {
+    if (activeProvider === 'glosbe') {
+      return <p className="text-sm text-muted-foreground">{t('modal.explanationUnavailable')}</p>;
+    }
+    const cell = explanations[activeProvider];
+    if (!cell || cell.status === 'loading') return analysisSpinner;
+    if (cell.status === 'error') {
+      return <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: cell.error })}</p>;
+    }
+    return renderExplanation(cell.data);
+  };
+
+  const renderCorrectionPanel = () => {
+    const cell = corrections[activeProvider];
+    if (!cell || cell.status === 'loading') return analysisSpinner;
+    if (cell.status === 'error') {
+      return <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: cell.error })}</p>;
+    }
+    if (!cell.data) {
+      return <p className="text-sm text-muted-foreground">{t('modal.correctionNoMistakes')}</p>;
+    }
+    return renderCorrection(cell.data);
+  };
 
   return (
     <div
@@ -699,8 +782,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   size="sm"
                   className="shrink-0 px-2"
                   onClick={() => {
-                    setProviderResults(null);
-                    setSuggestionTarget('translation');
+                    clearAnalysis();
                     setAddForm((prev) => ({
                       ...prev,
                       originalLanguage: prev.translationLanguage,
@@ -772,7 +854,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 </div>
                 <div className="flex border-b">
                   {(['translations', 'explanation', 'correction'] as const).map((tab) => {
-                    if (tab === 'correction' && !hasCorrection) return null;
+                    if (tab === 'correction' && !correctionAvailable) return null;
                     const label =
                       tab === 'translations'
                         ? t('modal.tabTranslations')
@@ -799,6 +881,10 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 </div>
                 <div className="p-3 flex flex-col gap-3">
                   {(() => {
+                    if (effectiveContentTab === 'explanation') return renderExplanationPanel();
+                    if (effectiveContentTab === 'correction') return renderCorrectionPanel();
+
+                    // translations tab
                     const r = activeResult;
                     if (!r) {
                       if (loadingProviders.includes(activeProvider)) {
@@ -816,15 +902,6 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                         <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: r.error })}</p>
                       );
                     }
-
-                    if (effectiveContentTab === 'explanation') {
-                      return renderExplanation(r.explanation);
-                    }
-                    if (effectiveContentTab === 'correction' && r.correction) {
-                      return renderCorrection(r.correction);
-                    }
-
-                    // translations tab
                     if (r.translations.length === 0) {
                       return <p className="text-sm text-muted-foreground">{t('modal.noSuggestions')}</p>;
                     }
