@@ -660,15 +660,6 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                     )}
                   </div>
                   <div className="flex gap-1 flex-wrap sm:flex-nowrap">
-                    <Button
-                      size="sm"
-                      className="shrink-0 px-2 bg-violet-600 hover:bg-violet-700 text-white"
-                      onClick={handleTranslate}
-                      disabled={translating || !translatePlan.ok}
-                      title={t('modal.suggestTitle')}
-                    >
-                      <Languages className="h-4 w-4" />
-                    </Button>
                     <SpeechInputButton
                       id={ORIGINAL_REC_ID}
                       onAppend={handleAppendOriginal}
@@ -770,7 +761,16 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   </div>
                 </div>
               </div>
-              <div className="flex items-center shrink-0">
+              <div className="flex flex-col items-center justify-center gap-1 shrink-0">
+                <Button
+                  size="sm"
+                  className="shrink-0 px-2 bg-violet-600 hover:bg-violet-700 text-white"
+                  onClick={handleTranslate}
+                  disabled={translating || !translatePlan.ok}
+                  title={t('modal.suggestTitle')}
+                >
+                  <Languages className="h-4 w-4" />
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
