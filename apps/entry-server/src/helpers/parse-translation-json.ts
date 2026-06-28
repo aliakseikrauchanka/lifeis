@@ -13,6 +13,8 @@ export interface InflectionTable {
 }
 
 export interface ProviderExplanation {
+  /** Dictionary / base form (lemma) of the looked-up word, in the source language. */
+  baseForm: string | null;
   partOfSpeech: string;
   inflection: InflectionTable | null;
   note: string | null;
@@ -62,9 +64,10 @@ function parseInflection(raw: unknown): InflectionTable | null {
 
 function parseExplanation(raw: unknown): ProviderExplanation | null {
   if (!raw || typeof raw !== 'object') return null;
-  const r = raw as { partOfSpeech?: unknown; inflection?: unknown; note?: unknown };
+  const r = raw as { baseForm?: unknown; partOfSpeech?: unknown; inflection?: unknown; note?: unknown };
   if (!isNonEmpty(r.partOfSpeech)) return null;
   return {
+    baseForm: isNonEmpty(r.baseForm) ? truncate(r.baseForm, MAX_FIELD_LENGTH) : null,
     partOfSpeech: truncate(r.partOfSpeech, MAX_FIELD_LENGTH),
     inflection: parseInflection(r.inflection),
     note: isStr(r.note) ? truncate(r.note, MAX_FIELD_LENGTH) : null,

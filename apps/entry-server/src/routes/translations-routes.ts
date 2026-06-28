@@ -569,6 +569,7 @@ No extra fields.`;
     }
 
     const systemPrompt = `You are a language tutor. The user message is a word or phrase written in ${v.language}. Return a JSON object with an "explanation" object:
+- "baseForm": the dictionary / base form (lemma) of the word in ${v.language} (e.g. nominative singular for nouns, infinitive for verbs); null for multi-word phrases
 - "partOfSpeech": a short label such as "noun (masculine, animate)" or "verb (imperfective)", written in ${v.langName}
 - "inflection": null for indeclinable words or multi-word phrases; otherwise an object with "title" (e.g. "Declension" or "Conjugation", written in ${v.langName}), "columns" (array of column headers, first usually "", written in ${v.langName}), and "rows" (array of objects with "label" for the case/person written in ${v.langName} and "cells" matching the columns)
 - "note": a short usage note written in ${v.langName}, or null

@@ -182,6 +182,8 @@ export interface InflectionTable {
 }
 
 export interface ProviderExplanation {
+  /** Dictionary / base form (lemma) of the looked-up word, in the source language. */
+  baseForm: string | null;
   partOfSpeech: string;
   inflection: InflectionTable | null;
   note: string | null;

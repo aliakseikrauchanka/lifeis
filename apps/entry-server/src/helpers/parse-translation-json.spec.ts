@@ -26,6 +26,7 @@ describe('parseExplanationJson', () => {
   it('parses a structured explanation with an inflection table', () => {
     const raw = JSON.stringify({
       explanation: {
+        baseForm: 'kot',
         partOfSpeech: 'noun (masculine, animate)',
         inflection: {
           title: 'Declension',
@@ -39,6 +40,7 @@ describe('parseExplanationJson', () => {
       },
     });
     expect(parseExplanationJson(raw)).toEqual({
+      baseForm: 'kot',
       partOfSpeech: 'noun (masculine, animate)',
       inflection: {
         title: 'Declension',
@@ -50,6 +52,11 @@ describe('parseExplanationJson', () => {
       },
       note: 'Animate masculine: accusative = genitive.',
     });
+  });
+
+  it('defaults baseForm to null when absent', () => {
+    const raw = JSON.stringify({ explanation: { partOfSpeech: 'verb', inflection: null, note: null } });
+    expect(parseExplanationJson(raw)?.baseForm).toBeNull();
   });
 
   it('accepts the explanation object at the top level', () => {

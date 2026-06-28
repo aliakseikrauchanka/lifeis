@@ -421,6 +421,27 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     }
     return (
       <div className="flex flex-col gap-3">
+        {explanation.baseForm && (
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs font-medium text-muted-foreground uppercase">
+              {t('modal.baseForm')}
+            </span>
+            <div className="flex items-center gap-1">
+              <span className="text-sm font-medium">{explanation.baseForm}</span>
+              {lastSource && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0 shrink-0"
+                  onClick={() => speak(explanation.baseForm as string, lastSource.lang)}
+                  title={t('a11y.speak')}
+                >
+                  <Volume2 className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
         <div className="flex flex-col gap-0.5">
           <span className="text-xs font-medium text-muted-foreground uppercase">
             {t('modal.partOfSpeech')}
