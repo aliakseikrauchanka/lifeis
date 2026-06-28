@@ -594,6 +594,21 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
         <div className="flex flex-col flex-1 min-h-0">
           <div className="flex flex-col gap-2 p-4 pb-2 shrink-0">
             <div className="flex gap-2 items-stretch">
+              <div className="flex shrink-0">
+                <Button
+                  onClick={handleTranslate}
+                  disabled={translating || !translatePlan.ok}
+                  title={t('modal.suggestTitle')}
+                  aria-label={t('modal.suggestTitle')}
+                  className="group h-full w-12 flex-col gap-1 rounded-xl border border-violet-400/40 bg-gradient-to-b from-violet-500 to-violet-700 px-0 text-white shadow-sm transition-all hover:from-violet-500 hover:to-violet-800 hover:shadow-md hover:shadow-violet-500/20 active:scale-[0.97] focus-visible:ring-violet-500"
+                >
+                  {translating ? (
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  ) : (
+                    <Languages className="h-5 w-5 transition-transform group-hover:scale-110" />
+                  )}
+                </Button>
+              </div>
               <div className="flex flex-col gap-2 flex-1 min-w-0">
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
@@ -761,16 +776,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center gap-1 shrink-0">
-                <Button
-                  size="sm"
-                  className="shrink-0 px-2 bg-violet-600 hover:bg-violet-700 text-white"
-                  onClick={handleTranslate}
-                  disabled={translating || !translatePlan.ok}
-                  title={t('modal.suggestTitle')}
-                >
-                  <Languages className="h-4 w-4" />
-                </Button>
+              <div className="flex items-center shrink-0">
                 <Button
                   variant="ghost"
                   size="sm"
