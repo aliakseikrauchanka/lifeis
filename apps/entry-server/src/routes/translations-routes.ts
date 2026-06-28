@@ -7,6 +7,7 @@ import { verifyAccessToken } from '../middlewares/verify-access.middleware';
 import { ITranslation } from '../domain';
 import { deepSeek } from '../utils/deepseek';
 import { getGlosbeTranslation } from '../utils/glosbe-scraper';
+import { getPwnDictionaryEntry } from '../utils/sjp-pwn-scraper';
 import { formatEntry } from '../helpers/format-entry';
 import { buildImportDocs, importKey, splitNewAndDuplicates } from '../helpers/import-translations';
 import { parseTranslationJson, parseExplanationJson } from '../helpers/parse-translation-json';
@@ -581,6 +582,27 @@ Write ALL explanatory text (meaning, labels, titles, notes) in ${v.langName}, bu
       return res.json({ explanation: parseExplanationJson(raw), error: null });
     } catch (err) {
       return res.json({ explanation: null, error: (err as Error)?.message ?? 'failed' });
+    }
+  });
+
+  // Polish dictionary lookup scraped from sjp.pwn.pl. Provider-independent; Polish only.
+  router.post('/dictionary', verifyAccessToken, async (req, res) => {
+    const { text, language } = req.body ?? {};
+    if (typeof text !== 'string' || text.trim().length === 0) {
+      return res.status(400).json({ message: 'text must be a non-empty string' });
+    }
+    if (text.length > MAX_TEXT_LENGTH) {
+      return res.status(400).json({ message: `text must be at most ${MAX_TEXT_LENGTH} characters` });
+    }
+    if (language !== 'pl') {
+      return res.status(400).json({ message: 'Dictionary lookup is only available for Polish (pl)' });
+    }
+
+    try {
+      const entry = await getPwnDictionaryEntry(text.trim());
+      return res.json({ entry, error: null });
+    } catch (err) {
+      return res.json({ entry: null, error: (err as Error)?.message ?? 'failed' });
     }
   });
 

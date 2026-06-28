@@ -2,14 +2,21 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { fetchDueCards, fetchExamples, reviewCard, setTranslationLearned, unenrollTranslation, explainWord, Rating, SrsCard, Example, ProviderExplanation } from '../api/srs.api';
+import { fetchDueCards, fetchExamples, reviewCard, setTranslationLearned, unenrollTranslation, explainWord, lookupPwnDictionary, Rating, SrsCard, Example, ProviderExplanation, PwnDictionaryEntry } from '../api/srs.api';
 import { speak } from '../api/tts.api';
+import { WordExplanation } from '../components/word-explanation';
+import { PwnDictionaryView } from '../components/pwn-dictionary-view';
 import { BookOpen, Check, Volume2, ChevronLeft, ChevronRight, Volume1, Sparkles } from 'lucide-react';
 import { GradeButtons } from '../components/grade-buttons';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { useAppDirection } from '../hooks/use-app-direction';
 import { matchesAppLanguagePair } from '../constants/language-options';
 import { useI18n } from '../i18n/i18n-context';
+
+type PwnAsyncCell =
+  | { status: 'loading' }
+  | { status: 'error'; error: string }
+  | { status: 'done'; data: PwnDictionaryEntry | null };
 
 export function StudyPage() {
   const { t, locale } = useI18n();
@@ -23,6 +30,8 @@ export function StudyPage() {
   const [explained, setExplained] = useState(false);
   const [loadingExplanation, setLoadingExplanation] = useState(false);
   const [explanationError, setExplanationError] = useState<string | null>(null);
+  const [pwnEntry, setPwnEntry] = useState<PwnAsyncCell | null>(null);
+  const [activeExplainTab, setActiveExplainTab] = useState<'pwn' | 'llm'>('pwn');
   const [cardIndex, setCardIndex] = useState(0);
   const [autoSpeak, setAutoSpeak] = useState(() => localStorage.getItem('srs-auto-speak') === 'true');
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
@@ -43,6 +52,8 @@ export function StudyPage() {
         }
       : rawCurrent
     : undefined;
+
+  const isPolishWord = current?.translation.translationLanguage === 'pl';
 
   const loadCards = useCallback(async () => {
     setLoading(true);
@@ -104,6 +115,22 @@ export function StudyPage() {
     setExplained(false);
     setExplanationError(null);
     setLoadingExplanation(false);
+
+    // Reset to the PWN tab and (for Polish words only) prefetch the dictionary entry immediately.
+    setActiveExplainTab('pwn');
+    if (current.translation.translationLanguage === 'pl') {
+      const wordPl = current.translation.translation;
+      setPwnEntry({ status: 'loading' });
+      lookupPwnDictionary(wordPl)
+        .then((data) => {
+          if (!ac.signal.aborted) setPwnEntry({ status: 'done', data });
+        })
+        .catch((e) => {
+          if (!ac.signal.aborted) setPwnEntry({ status: 'error', error: (e as Error)?.message ?? 'failed' });
+        });
+    } else {
+      setPwnEntry(null);
+    }
 
     setLoadingExamples(true);
     setExamples([]);
@@ -411,116 +438,78 @@ export function StudyPage() {
             ) : null}
           </div>
           <div className={`w-full border-t pt-3 transition-all duration-300 ${!revealed ? 'blur-md select-none' : ''}`}>
-            {!explained && !loadingExplanation && !explanationError && (
-              <div className="flex justify-center">
-                <Button variant="outline" size="sm" className="gap-2" onClick={handleExplain}>
-                  <Sparkles className="h-4 w-4" />
-                  {t('study.explain')}
-                </Button>
+            {isPolishWord && (
+              <div className="flex border-b justify-center mb-3">
+                {(['pwn', 'llm'] as const).map((tab) => {
+                  const label = tab === 'pwn' ? t('modal.tabDictionary') : t('modal.tabExplanation');
+                  const isActive = activeExplainTab === tab;
+                  return (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setActiveExplainTab(tab)}
+                      className={
+                        'px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ' +
+                        (isActive
+                          ? 'border-primary text-primary'
+                          : 'border-transparent text-muted-foreground hover:text-foreground')
+                      }
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             )}
-            {loadingExplanation && (
-              <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                {t('modal.analyzing')}
-              </div>
-            )}
-            {explanationError && (
-              <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: explanationError })}</p>
-            )}
-            {explained && !loadingExplanation && !explanationError && !explanation && (
-              <p className="text-sm text-muted-foreground">{t('modal.explanationUnavailable')}</p>
-            )}
-            {explanation && (
-              <div className="flex flex-col gap-3 text-left">
-                {explanation.baseForm && (
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-medium text-muted-foreground uppercase">{t('modal.baseForm')}</span>
-                    <div className="flex items-center gap-1">
-                      <span className="text-sm font-medium">{explanation.baseForm}</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 w-7 p-0 rounded-full shrink-0"
-                        onClick={() => speak(explanation.baseForm as string, current.translation.translationLanguage)}
-                      >
-                        <Volume2 className="h-3 w-3" />
-                      </Button>
+            {isPolishWord && activeExplainTab === 'pwn' ? (
+              (() => {
+                if (!pwnEntry || pwnEntry.status === 'loading') {
+                  return (
+                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                      {t('modal.analyzing')}
                     </div>
+                  );
+                }
+                if (pwnEntry.status === 'error') {
+                  return (
+                    <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: pwnEntry.error })}</p>
+                  );
+                }
+                if (!pwnEntry.data) {
+                  return <p className="text-sm text-muted-foreground">{t('modal.pwnNotFound')}</p>;
+                }
+                return <PwnDictionaryView entry={pwnEntry.data} speakLang="pl" />;
+              })()
+            ) : (
+              <>
+                {!explained && !loadingExplanation && !explanationError && (
+                  <div className="flex justify-center">
+                    <Button variant="outline" size="sm" className="gap-2" onClick={handleExplain}>
+                      <Sparkles className="h-4 w-4" />
+                      {t('study.explain')}
+                    </Button>
                   </div>
                 )}
-                {explanation.meaning && (
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-medium text-muted-foreground uppercase">{t('modal.meaning')}</span>
-                    <span className="text-sm">{explanation.meaning}</span>
+                {loadingExplanation && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                    {t('modal.analyzing')}
                   </div>
                 )}
-                {explanation.synonyms && explanation.synonyms.length > 0 && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase">{t('modal.synonyms')}</span>
-                    <div className="flex flex-wrap gap-1">
-                      {explanation.synonyms.map((syn, i) => (
-                        <span
-                          key={`syn-${i}`}
-                          className="inline-flex items-center gap-1 rounded-md border bg-muted/40 px-2 py-1 text-sm"
-                        >
-                          <span>{syn}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 w-5 p-0 rounded-full shrink-0"
-                            onClick={() => speak(syn, current.translation.translationLanguage)}
-                          >
-                            <Volume2 className="h-3 w-3" />
-                          </Button>
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+                {explanationError && (
+                  <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: explanationError })}</p>
                 )}
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs font-medium text-muted-foreground uppercase">{t('modal.partOfSpeech')}</span>
-                  <span className="text-sm">{explanation.partOfSpeech}</span>
-                </div>
-                {explanation.inflection && (
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase">
-                      {explanation.inflection.title || t('modal.inflectionHeading')}
-                    </span>
-                    <div className="overflow-x-auto">
-                      <table className="text-sm border-collapse">
-                        <thead>
-                          <tr>
-                            {explanation.inflection.columns.map((c, i) => (
-                              <th key={`col-${i}`} className="text-left font-medium text-muted-foreground px-2 py-1 border-b">
-                                {c}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {explanation.inflection.rows.map((row, ri) => (
-                            <tr key={`row-${ri}`}>
-                              <td className="font-medium text-muted-foreground px-2 py-1 border-b">{row.label}</td>
-                              {row.cells.map((cell, ci) => (
-                                <td key={`cell-${ri}-${ci}`} className="px-2 py-1 border-b">
-                                  {cell}
-                                </td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
+                {explained && !loadingExplanation && !explanationError && !explanation && (
+                  <p className="text-sm text-muted-foreground">{t('modal.explanationUnavailable')}</p>
                 )}
-                {explanation.note && (
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-xs font-medium text-muted-foreground uppercase">{t('modal.usageNote')}</span>
-                    <span className="text-sm text-muted-foreground">{explanation.note}</span>
-                  </div>
+                {explanation && (
+                  <WordExplanation
+                    explanation={explanation}
+                    speakLang={current.translation.translationLanguage}
+                  />
                 )}
-              </div>
+              </>
             )}
           </div>
           <div className={`text-xs text-muted-foreground transition-opacity duration-300 ${revealed ? 'opacity-0' : ''}`}>

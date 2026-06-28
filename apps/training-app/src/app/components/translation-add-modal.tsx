@@ -4,15 +4,19 @@ import { ArrowUpDown, Check, ChevronLeft, ChevronRight, Languages, Plus, Volume2
 import { Button } from './ui/button';
 import { LanguagePairSelect } from './language-pair-select/language-pair-select';
 import { SpeechInputButton } from './speech-input-button';
+import { WordExplanation } from './word-explanation';
+import { PwnDictionaryView } from './pwn-dictionary-view';
 import {
   createTranslation,
   updateTranslation,
   translateText,
   explainWord,
+  lookupPwnDictionary,
   TranslationProvider,
   ProviderTranslationResult,
   ProviderExplanation,
   ProviderCorrection,
+  PwnDictionaryEntry,
 } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import {
@@ -32,6 +36,9 @@ type AsyncCell<T> =
   | { status: 'loading' }
   | { status: 'error'; error: string }
   | { status: 'done'; data: T };
+
+/** Content sub-tabs shown below the provider tabs. 'dictionary' appears only for Polish pairs. */
+type ContentTab = 'translations' | 'explanation' | 'dictionary';
 
 function normalize(s: string): string {
   return s.trim().toLocaleLowerCase();
@@ -128,8 +135,10 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   const [loadingProviders, setLoadingProviders] = useState<readonly TranslationProvider[]>([]);
   const translating = loadingProviders.length > 0;
   const [activeProvider, setActiveProvider] = useState<TranslationProvider>('claude-opus');
-  const [activeContentTab, setActiveContentTab] =
-    useState<'translations' | 'explanation'>('translations');
+  const [activeContentTab, setActiveContentTab] = useState<ContentTab>('translations');
+  /** On-demand PWN dictionary lookup, plus the Polish word it was fetched for. */
+  const [pwnEntry, setPwnEntry] = useState<AsyncCell<PwnDictionaryEntry | null> | null>(null);
+  const [pwnWord, setPwnWord] = useState<string | null>(null);
   /** On-demand explanation cache, keyed by provider, for the most recent translated source. */
   const [explanations, setExplanations] = useState<
     Partial<Record<TranslationProvider, AsyncCell<ProviderExplanation | null>>>
@@ -242,6 +251,8 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     setActiveContentTab('translations');
     setExplanations({});
     setLastSource(null);
+    setPwnEntry(null);
+    setPwnWord(null);
   }, []);
 
   const handleTranslate = () => {
@@ -374,6 +385,31 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     setAddForm((prev) => ({ ...prev, [correctionSourceField]: corrected }));
   };
 
+  // The Polish word in the pair (if any) — drives the provider-independent PWN dictionary tab.
+  const polishWord =
+    addForm.originalLanguage === 'pl'
+      ? addForm.original.trim()
+      : addForm.translationLanguage === 'pl'
+        ? addForm.translation.trim()
+        : '';
+  const hasPolish = polishWord.length > 0;
+
+  // If the pair stops having a Polish side, leave the dictionary tab.
+  useEffect(() => {
+    if (!hasPolish && activeContentTab === 'dictionary') setActiveContentTab('translations');
+  }, [hasPolish, activeContentTab]);
+
+  // Fetch the PWN dictionary entry on demand when the user opens the Dictionary tab (cached per word).
+  useEffect(() => {
+    if (activeContentTab !== 'dictionary' || !polishWord) return;
+    if (pwnWord === polishWord && pwnEntry) return; // already loading/loaded for this word
+    setPwnWord(polishWord);
+    setPwnEntry({ status: 'loading' });
+    lookupPwnDictionary(polishWord)
+      .then((data) => setPwnEntry({ status: 'done', data }))
+      .catch((e) => setPwnEntry({ status: 'error', error: (e as Error)?.message ?? 'failed' }));
+  }, [activeContentTab, polishWord, pwnWord, pwnEntry]);
+
   // Fetch the explanation on demand when the user opens the Explanation tab for a provider (cached per provider).
   useEffect(() => {
     if (!lastSource || activeProvider === 'glosbe') return;
@@ -396,111 +432,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     if (!explanation) {
       return <p className="text-sm text-muted-foreground">{t('modal.explanationUnavailable')}</p>;
     }
-    return (
-      <div className="flex flex-col gap-3">
-        {explanation.baseForm && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-medium text-muted-foreground uppercase">
-              {t('modal.baseForm')}
-            </span>
-            <div className="flex items-center gap-1">
-              <span className="text-sm font-medium">{explanation.baseForm}</span>
-              {lastSource && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 w-7 p-0 shrink-0"
-                  onClick={() => speak(explanation.baseForm as string, lastSource.lang)}
-                  title={t('a11y.speak')}
-                >
-                  <Volume2 className="h-3 w-3" />
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
-        {explanation.meaning && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-medium text-muted-foreground uppercase">
-              {t('modal.meaning')}
-            </span>
-            <span className="text-sm">{explanation.meaning}</span>
-          </div>
-        )}
-        {explanation.synonyms && explanation.synonyms.length > 0 && (
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground uppercase">
-              {t('modal.synonyms')}
-            </span>
-            <div className="flex flex-wrap gap-1">
-              {explanation.synonyms.map((syn, i) => (
-                <span
-                  key={`syn-${i}`}
-                  className="inline-flex items-center gap-1 rounded-md border bg-muted/40 px-2 py-1 text-sm"
-                >
-                  <span>{syn}</span>
-                  {lastSource && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-5 w-5 p-0 shrink-0"
-                      onClick={() => speak(syn, lastSource.lang)}
-                      title={t('a11y.speak')}
-                    >
-                      <Volume2 className="h-3 w-3" />
-                    </Button>
-                  )}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="flex flex-col gap-0.5">
-          <span className="text-xs font-medium text-muted-foreground uppercase">
-            {t('modal.partOfSpeech')}
-          </span>
-          <span className="text-sm">{explanation.partOfSpeech}</span>
-        </div>
-        {explanation.inflection && (
-          <div className="flex flex-col gap-1">
-            <span className="text-xs font-medium text-muted-foreground uppercase">
-              {explanation.inflection.title || t('modal.inflectionHeading')}
-            </span>
-            <div className="overflow-x-auto">
-              <table className="text-sm border-collapse">
-                <thead>
-                  <tr>
-                    {explanation.inflection.columns.map((c, i) => (
-                      <th key={`col-${i}`} className="text-left font-medium text-muted-foreground px-2 py-1 border-b">
-                        {c}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {explanation.inflection.rows.map((row, ri) => (
-                    <tr key={`row-${ri}`}>
-                      <td className="font-medium text-muted-foreground px-2 py-1 border-b">{row.label}</td>
-                      {row.cells.map((cell, ci) => (
-                        <td key={`cell-${ri}-${ci}`} className="px-2 py-1 border-b">
-                          {cell}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-        {explanation.note && (
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs font-medium text-muted-foreground uppercase">{t('modal.usageNote')}</span>
-            <span className="text-sm text-muted-foreground">{explanation.note}</span>
-          </div>
-        )}
-      </div>
-    );
+    return <WordExplanation explanation={explanation} speakLang={lastSource?.lang ?? ''} />;
   };
 
   const renderCorrection = (correction: ProviderCorrection) => (
@@ -552,6 +484,17 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       return <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: cell.error })}</p>;
     }
     return renderExplanation(cell.data);
+  };
+
+  const renderDictionaryPanel = () => {
+    if (!pwnEntry || pwnEntry.status === 'loading') return analysisSpinner;
+    if (pwnEntry.status === 'error') {
+      return <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: pwnEntry.error })}</p>;
+    }
+    if (!pwnEntry.data) {
+      return <p className="text-sm text-muted-foreground">{t('modal.pwnNotFound')}</p>;
+    }
+    return <PwnDictionaryView entry={pwnEntry.data} speakLang="pl" />;
   };
 
   return (
@@ -868,9 +811,16 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   })}
                 </div>
                 <div className="flex border-b">
-                  {(['translations', 'explanation'] as const).map((tab) => {
+                  {(hasPolish
+                    ? (['translations', 'explanation', 'dictionary'] as ContentTab[])
+                    : (['translations', 'explanation'] as ContentTab[])
+                  ).map((tab) => {
                     const label =
-                      tab === 'translations' ? t('modal.tabTranslations') : t('modal.tabExplanation');
+                      tab === 'translations'
+                        ? t('modal.tabTranslations')
+                        : tab === 'explanation'
+                          ? t('modal.tabExplanation')
+                          : t('modal.tabDictionary');
                     const isActive = activeContentTab === tab;
                     return (
                       <button
@@ -892,6 +842,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 <div className="p-3 flex flex-col gap-3">
                   {(() => {
                     if (activeContentTab === 'explanation') return renderExplanationPanel();
+                    if (activeContentTab === 'dictionary') return renderDictionaryPanel();
 
                     // translations tab
                     const r = activeResult;

@@ -239,6 +239,29 @@ export const explainWord = async (
   return explanation ?? null;
 };
 
+/** Authoritative Polish dictionary entry scraped from sjp.pwn.pl. */
+export interface PwnDictionaryEntry {
+  headword: string | null;
+  inflection: string | null;
+  definitions: string[];
+  synonyms: string[];
+  etymology: string | null;
+  examples: string[];
+  sourceUrl: string;
+}
+
+/** On-demand Polish dictionary lookup (sjp.pwn.pl). Returns null when the word isn't found. */
+export const lookupPwnDictionary = async (word: string): Promise<PwnDictionaryEntry | null> => {
+  const res = await utilFetch('/translations/dictionary', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: word, language: 'pl' }),
+  });
+  if (!res.ok) throw new Error('Failed to look up dictionary');
+  const { entry } = await res.json();
+  return entry ?? null;
+};
+
 export const createTranslation = async (data: {
   original: string;
   translation: string;
