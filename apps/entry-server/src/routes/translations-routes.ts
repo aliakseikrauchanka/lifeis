@@ -572,6 +572,7 @@ No extra fields.`;
 - "meaning": a brief plain-language definition of the word (1-2 sentences) written in ${v.langName}
 - "partOfSpeech": a short label such as "noun (masculine, animate)" or "verb (imperfective)", written in ${v.langName}
 - "inflection": null for indeclinable words or multi-word phrases; otherwise the FULL paradigm of the BASE FORM (lemma) — if the given word is an inflected form, still decline/conjugate its base form across all cases/persons. An object with "title" (e.g. "Declension" or "Conjugation", written in ${v.langName}), "columns" (array of column headers, first usually "", written in ${v.langName}), and "rows" (array of objects with "label" for the case/person written in ${v.langName} and "cells" matching the columns)
+- "synonyms": an array of up to 6 common synonyms or near-synonyms of the word in ${v.language} (the same language as the word); empty array if there are none
 - "note": a short usage note written in ${v.langName}, or null
 Write ALL explanatory text (meaning, labels, titles, notes) in ${v.langName}, but keep the actual inflected word forms in the "cells" in ${v.language}. No extra fields.`;
 

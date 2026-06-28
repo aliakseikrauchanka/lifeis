@@ -5,6 +5,7 @@ const MAX_ROWS = 20;
 const MAX_CELLS = 6;
 const MAX_TRANSLATIONS = 5;
 const MAX_EXAMPLES = 5;
+const MAX_SYNONYMS = 8;
 
 export interface InflectionTable {
   title: string;
@@ -19,6 +20,8 @@ export interface ProviderExplanation {
   meaning: string | null;
   partOfSpeech: string;
   inflection: InflectionTable | null;
+  /** Synonyms / near-synonyms of the word, in the word's own language. */
+  synonyms: string[] | null;
   note: string | null;
 }
 
@@ -72,14 +75,19 @@ function parseExplanation(raw: unknown): ProviderExplanation | null {
     meaning?: unknown;
     partOfSpeech?: unknown;
     inflection?: unknown;
+    synonyms?: unknown;
     note?: unknown;
   };
   if (!isNonEmpty(r.partOfSpeech)) return null;
+  const synonyms = Array.isArray(r.synonyms)
+    ? r.synonyms.filter(isNonEmpty).map((s) => truncate(s, MAX_FIELD_LENGTH)).slice(0, MAX_SYNONYMS)
+    : [];
   return {
     baseForm: isNonEmpty(r.baseForm) ? truncate(r.baseForm, MAX_FIELD_LENGTH) : null,
     meaning: isNonEmpty(r.meaning) ? truncate(r.meaning, MAX_FIELD_LENGTH) : null,
     partOfSpeech: truncate(r.partOfSpeech, MAX_FIELD_LENGTH),
     inflection: parseInflection(r.inflection),
+    synonyms: synonyms.length > 0 ? synonyms : null,
     note: isStr(r.note) ? truncate(r.note, MAX_FIELD_LENGTH) : null,
   };
 }

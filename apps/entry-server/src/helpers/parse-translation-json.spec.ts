@@ -51,6 +51,7 @@ describe('parseExplanationJson', () => {
             { label: 'Gen', cells: ['kota', 'kotów'] },
           ],
         },
+        synonyms: ['kociak', 'kotek'],
         note: 'Animate masculine: accusative = genitive.',
       },
     });
@@ -66,8 +67,29 @@ describe('parseExplanationJson', () => {
           { label: 'Gen', cells: ['kota', 'kotów'] },
         ],
       },
+      synonyms: ['kociak', 'kotek'],
       note: 'Animate masculine: accusative = genitive.',
     });
+  });
+
+  it('defaults synonyms to null when absent or empty', () => {
+    const absent = JSON.stringify({ explanation: { partOfSpeech: 'verb', inflection: null, note: null } });
+    expect(parseExplanationJson(absent)?.synonyms).toBeNull();
+    const empty = JSON.stringify({ explanation: { partOfSpeech: 'verb', synonyms: [], inflection: null, note: null } });
+    expect(parseExplanationJson(empty)?.synonyms).toBeNull();
+  });
+
+  it('filters non-strings from synonyms and caps the list', () => {
+    const raw = JSON.stringify({
+      explanation: {
+        partOfSpeech: 'noun',
+        synonyms: ['a', '', 2, 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i'],
+        inflection: null,
+        note: null,
+      },
+    });
+    const e = parseExplanationJson(raw);
+    expect(e?.synonyms).toEqual(['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']);
   });
 
   it('defaults baseForm to null when absent', () => {

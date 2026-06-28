@@ -188,6 +188,8 @@ export interface ProviderExplanation {
   meaning: string | null;
   partOfSpeech: string;
   inflection: InflectionTable | null;
+  /** Synonyms / near-synonyms of the word, in the word's own language. */
+  synonyms: string[] | null;
   note: string | null;
 }
 

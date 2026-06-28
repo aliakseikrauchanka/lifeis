@@ -427,6 +427,34 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
             <span className="text-sm">{explanation.meaning}</span>
           </div>
         )}
+        {explanation.synonyms && explanation.synonyms.length > 0 && (
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-medium text-muted-foreground uppercase">
+              {t('modal.synonyms')}
+            </span>
+            <div className="flex flex-wrap gap-1">
+              {explanation.synonyms.map((syn, i) => (
+                <span
+                  key={`syn-${i}`}
+                  className="inline-flex items-center gap-1 rounded-md border bg-muted/40 px-2 py-1 text-sm"
+                >
+                  <span>{syn}</span>
+                  {lastSource && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 w-5 p-0 shrink-0"
+                      onClick={() => speak(syn, lastSource.lang)}
+                      title={t('a11y.speak')}
+                    >
+                      <Volume2 className="h-3 w-3" />
+                    </Button>
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="flex flex-col gap-0.5">
           <span className="text-xs font-medium text-muted-foreground uppercase">
             {t('modal.partOfSpeech')}
