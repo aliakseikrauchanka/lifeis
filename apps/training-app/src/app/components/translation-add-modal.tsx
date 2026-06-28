@@ -238,7 +238,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       } catch (err) {
         setProviderResults((prev) => ({
           ...(prev ?? {}),
-          [p]: { translations: [], examples: [], error: (err as Error)?.message ?? 'failed' },
+          [p]: { translations: [], examples: [], explanation: null, correction: null, error: (err as Error)?.message ?? 'failed' },
         }));
       } finally {
         setLoadingProviders((prev) => prev.filter((x) => x !== p));
