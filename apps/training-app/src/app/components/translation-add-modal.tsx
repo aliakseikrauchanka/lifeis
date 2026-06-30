@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { DeepgramFileSTTProvider, useAudioDevices, useSpeechToText } from '@lifeis/common-ui';
-import { ArrowUpDown, Check, ChevronLeft, ChevronRight, Languages, Plus, Volume2, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Languages, Plus, Volume2, X } from 'lucide-react';
 import { Button } from './ui/button';
 import { LanguagePairSelect } from './language-pair-select/language-pair-select';
 import { SpeechInputButton } from './speech-input-button';
@@ -44,7 +44,20 @@ function normalize(s: string): string {
   return s.trim().toLocaleLowerCase();
 }
 
-const TRANSLATION_PROVIDERS = ['claude-opus', 'deepseek', 'glosbe', 'gemini', 'anthropic'] as const satisfies readonly TranslationProvider[];
+/**
+ * Standardize a translation/original value the same way the server does on save
+ * (see backend `formatEntry`): trim → strip one trailing period (not ? or !) →
+ * capitalize the first letter. Idempotent. Applied to model-provided suggestions
+ * so chips match what actually gets stored.
+ */
+function formatEntry(value: string): string {
+  let s = value.trim();
+  if (s.endsWith('.')) s = s.slice(0, -1).trimEnd();
+  if (s.length === 0) return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+const TRANSLATION_PROVIDERS = ['claude-opus', 'anthropic', 'gemini', 'deepseek', 'glosbe'] as const satisfies readonly TranslationProvider[];
 
 const PROVIDER_LABELS: Record<TranslationProvider, string> = {
   openai: 'OpenAI',
@@ -165,9 +178,9 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     else originalInputRef.current?.focus();
   }, [isEdit, prefill?.original, prefill?.translation]);
 
+  // Fetch translation suggestions + examples on open, for both add and edit.
   useEffect(() => {
-    if (isEdit) return;
-    if (getTranslatePlan(addForm, false).ok) {
+    if (getTranslatePlan(addForm, isEdit).ok) {
       handleTranslate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -410,10 +423,11 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       .catch((e) => setPwnEntry({ status: 'error', error: (e as Error)?.message ?? 'failed' }));
   }, [activeContentTab, polishWord, pwnWord, pwnEntry]);
 
-  // Fetch the explanation on demand when the user opens the Explanation tab for a provider (cached per provider).
+  // Fetch the explanation (incl. synonyms) when the user opens the Explanation tab — or eagerly while editing,
+  // so the synonyms are ready alongside the examples (cached per provider).
   useEffect(() => {
     if (!lastSource || activeProvider === 'glosbe') return;
-    if (activeContentTab === 'explanation' && !explanations[activeProvider]) {
+    if ((activeContentTab === 'explanation' || isEdit) && !explanations[activeProvider]) {
       setExplanations((p) => ({ ...p, [activeProvider]: { status: 'loading' } }));
       explainWord(lastSource.text, lastSource.lang, activeProvider, locale)
         .then((data) =>
@@ -426,7 +440,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
           })),
         );
     }
-  }, [activeContentTab, activeProvider, lastSource, locale, explanations]);
+  }, [activeContentTab, activeProvider, lastSource, locale, explanations, isEdit]);
 
   const renderExplanation = (explanation: ProviderExplanation | null) => {
     if (!explanation) {
@@ -499,13 +513,13 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-3"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
       <div
-        className="relative flex flex-col w-full max-w-2xl h-[85vh] max-h-[700px] bg-background rounded-lg shadow-lg border overflow-hidden"
+        className="relative flex flex-col w-full h-full bg-background rounded-lg shadow-lg border overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-translation-title"
@@ -571,7 +585,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   disabled={translating || !translatePlan.ok}
                   title={t('modal.suggestTitle')}
                   aria-label={t('modal.suggestTitle')}
-                  className="group h-full w-12 flex-col gap-1 rounded-xl border border-violet-400/40 bg-gradient-to-b from-violet-500 to-violet-700 px-0 text-white shadow-sm transition-all hover:from-violet-500 hover:to-violet-800 hover:shadow-md hover:shadow-violet-500/20 active:scale-[0.97] focus-visible:ring-violet-500"
+                  className="group h-full w-12 flex-col gap-1 rounded-xl border border-amber-400/40 bg-gradient-to-b from-amber-400 to-amber-600 px-0 text-white shadow-sm transition-all hover:from-amber-400 hover:to-amber-700 hover:shadow-md hover:shadow-amber-500/20 active:scale-[0.97] focus-visible:ring-amber-500"
                 >
                   {translating ? (
                     <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
@@ -581,8 +595,8 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                 </Button>
               </div>
               <div className="flex flex-col gap-2 flex-1 min-w-0">
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="relative flex-1">
+                <div className="flex flex-row gap-2 items-start">
+                  <div className="relative flex-1 min-w-0">
                     <input
                       ref={originalInputRef}
                       type="text"
@@ -645,7 +659,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-1 flex-wrap sm:flex-nowrap">
+                  <div className="flex gap-1 flex-nowrap shrink-0">
                     <SpeechInputButton
                       id={ORIGINAL_REC_ID}
                       onAppend={handleAppendOriginal}
@@ -669,8 +683,8 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                     />
                   </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <div className="relative flex-1">
+                <div className="flex flex-row gap-2 items-start">
+                  <div className="relative flex-1 min-w-0">
                     <input
                       ref={translationInputRef}
                       type="text"
@@ -722,7 +736,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                       </div>
                     )}
                   </div>
-                  <div className="flex gap-1 flex-wrap sm:flex-nowrap">
+                  <div className="flex gap-1 flex-nowrap shrink-0">
                     <SpeechInputButton
                       id={TRANSLATION_REC_ID}
                       onAppend={handleAppendTranslation}
@@ -747,25 +761,6 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                   </div>
                 </div>
               </div>
-              <div className="flex items-center shrink-0">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="shrink-0 px-2"
-                  onClick={() => {
-                    clearAnalysis();
-                    setAddForm((prev) => ({
-                      ...prev,
-                      originalLanguage: prev.translationLanguage,
-                      translationLanguage: prev.originalLanguage,
-                    }));
-                  }}
-                  disabled={isEdit}
-                  title={t('modal.swapLanguagesTitle')}
-                >
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
             {translating && !providerResults && (
               <div className="flex items-center justify-center gap-2 py-2 text-sm text-muted-foreground">
@@ -777,7 +772,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
           <div className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 pt-2">
             {providerResults && (
               <div className="rounded-md border">
-                <div className="flex flex-wrap border-b sticky top-0 bg-background rounded-t-md z-10">
+                <div className="flex flex-nowrap justify-between gap-1 px-1 border-b sticky top-0 bg-background rounded-t-md z-10 overflow-x-auto no-scrollbar">
                   {TRANSLATION_PROVIDERS.map((p) => {
                     const r = providerResults[p];
                     const label = PROVIDER_LABELS[p];
@@ -791,9 +786,9 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                         type="button"
                         onClick={() => setActiveProvider(p)}
                         className={
-                          'flex-1 basis-[140px] px-3 py-2 text-sm font-medium border-b-2 transition-colors inline-flex items-center justify-center gap-1 ' +
+                          'shrink-0 px-3 py-2 text-sm font-medium border-b-2 transition-colors inline-flex items-center justify-center gap-1 whitespace-nowrap ' +
                           (isActive
-                            ? 'border-primary text-primary'
+                            ? 'border-amber-500 text-amber-600'
                             : 'border-transparent text-muted-foreground hover:text-foreground')
                         }
                       >
@@ -830,7 +825,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                         className={
                           'px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ' +
                           (isActive
-                            ? 'border-primary text-primary'
+                            ? 'border-amber-500 text-amber-600'
                             : 'border-transparent text-muted-foreground hover:text-foreground')
                         }
                       >
@@ -878,13 +873,19 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                             {t('modal.translationsHeading')}
                           </span>
                           <div className="flex flex-wrap gap-1">
-                            {r.translations.map((opt, i) => (
+                            {r.translations.map((rawOpt, i) => {
+                              const opt = formatEntry(rawOpt);
+                              return (
                               <Button
                                 key={`${activeProvider}-t-${i}`}
                                 variant={suggestionSelected === opt ? 'default' : 'outline'}
                                 size="sm"
                                 onClick={() => applySuggestion(opt)}
-                                className="inline-flex items-center gap-2"
+                                className={`inline-flex items-center gap-2 ${
+                                  suggestionSelected === opt
+                                    ? 'bg-amber-500 text-white hover:bg-amber-600'
+                                    : ''
+                                }`}
                               >
                                 <span>{opt}</span>
                                 <span
@@ -907,7 +908,8 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
                                   <Volume2 className="h-3 w-3" />
                                 </span>
                               </Button>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                         )}
