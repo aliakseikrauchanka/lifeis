@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Volume2, RotateCcw, Delete, Sparkles } from 'lucide-react';
-import { generateWordBuilder, reviewCard, setTranslationLearned, unenrollTranslation, fetchExamples, explainWord, lookupPwnDictionary, Rating, WordBuilderGenerated, Example, ProviderExplanation, PwnDictionaryEntry } from '../api/srs.api';
+import { Volume2, RotateCcw, Delete } from 'lucide-react';
+import { generateWordBuilder, reviewCard, setTranslationLearned, unenrollTranslation, fetchExamples, Rating, WordBuilderGenerated, Example } from '../api/srs.api';
 import { speak } from '../api/tts.api';
-import { WordExplanation } from '../components/word-explanation';
-import { PwnDictionaryView } from '../components/pwn-dictionary-view';
+import { ExplanationTabs } from '../components/explanation-tabs';
 import { GradeButtons } from '../components/grade-buttons';
 import { useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
@@ -14,11 +13,6 @@ import { useI18n } from '../i18n/i18n-context';
 import { getLanguageLabel } from '../constants/language-options';
 
 type Phase = 'idle' | 'playing' | 'success';
-
-type PwnAsyncCell =
-  | { status: 'loading' }
-  | { status: 'error'; error: string }
-  | { status: 'done'; data: PwnDictionaryEntry | null };
 
 /** Compare/sort letters; NFC so precomposed ć matches c+combining and keys from the OS. */
 const normChar = (c: string) => c.normalize('NFC').toLowerCase();
@@ -32,7 +26,7 @@ function isAppleLikePlatform(): boolean {
 }
 
 export function WordBuilderPage() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const [level] = useAppLevel();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
   const [direction] = useAppDirection();
@@ -61,12 +55,6 @@ export function WordBuilderPage() {
   const [unenrolled, setUnenrolled] = useState(false);
   const [examples, setExamples] = useState<Example[]>([]);
   const [loadingExamples, setLoadingExamples] = useState(false);
-  const [explanation, setExplanation] = useState<ProviderExplanation | null>(null);
-  const [explained, setExplained] = useState(false);
-  const [loadingExplanation, setLoadingExplanation] = useState(false);
-  const [explanationError, setExplanationError] = useState<string | null>(null);
-  const [pwnEntry, setPwnEntry] = useState<PwnAsyncCell | null>(null);
-  const [activeExplainTab, setActiveExplainTab] = useState<'pwn' | 'llm'>('pwn');
 
   const view = useMemo(() => {
     if (!data) return null;
@@ -89,7 +77,6 @@ export function WordBuilderPage() {
   // The foreign vocabulary word being learned (training language), independent of direction.
   const foreignWord = data?.trainingText ?? '';
   const foreignLang = data?.originalLanguage ?? '';
-  const isPolishWord = foreignLang === 'pl';
 
   const nfcTargetText = useMemo(() => (view ? view.targetText.normalize('NFC') : ''), [view]);
 
@@ -125,32 +112,10 @@ export function WordBuilderPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [direction]);
 
-  // Load the same word information shown in Study (examples + PWN dictionary / explanation) once the word is solved.
+  // Load example sentences once the word is solved (PWN dictionary / explanation live in ExplanationTabs).
   useEffect(() => {
     if (phase !== 'success' || !data) return;
     const ac = new AbortController();
-
-    // Reset the explanation cell; the LLM explanation stays on-demand like in Study.
-    setExplanation(null);
-    setExplained(false);
-    setExplanationError(null);
-    setLoadingExplanation(false);
-    setActiveExplainTab('pwn');
-
-    // For Polish words, prefetch the authoritative PWN dictionary entry immediately.
-    if (data.originalLanguage === 'pl') {
-      setPwnEntry({ status: 'loading' });
-      lookupPwnDictionary(data.trainingText)
-        .then((entry) => {
-          if (!ac.signal.aborted) setPwnEntry({ status: 'done', data: entry });
-        })
-        .catch((e) => {
-          if (!ac.signal.aborted) setPwnEntry({ status: 'error', error: (e as Error)?.message ?? 'failed' });
-        });
-    } else {
-      setPwnEntry(null);
-    }
-
     setLoadingExamples(true);
     setExamples([]);
     fetchExamples(data.trainingText, data.originalLanguage, data.translationLanguage, {
@@ -168,21 +133,6 @@ export function WordBuilderPage() {
       });
     return () => ac.abort();
   }, [phase, data]);
-
-  const handleExplain = async () => {
-    if (!data || loadingExplanation) return;
-    setLoadingExplanation(true);
-    setExplanationError(null);
-    try {
-      const e = await explainWord(foreignWord, foreignLang, 'gemini', locale);
-      setExplanation(e);
-      setExplained(true);
-    } catch (err) {
-      setExplanationError((err as Error)?.message ?? 'failed');
-    } finally {
-      setLoadingExplanation(false);
-    }
-  };
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -589,74 +539,7 @@ export function WordBuilderPage() {
             )}
             {phase === 'success' && (
               <div className="border-t pt-3">
-                {isPolishWord && (
-                  <div className="flex border-b justify-center mb-3">
-                    {(['pwn', 'llm'] as const).map((tab) => {
-                      const label = tab === 'pwn' ? t('modal.tabDictionary') : t('modal.tabExplanation');
-                      const isActive = activeExplainTab === tab;
-                      return (
-                        <button
-                          key={tab}
-                          type="button"
-                          onClick={() => setActiveExplainTab(tab)}
-                          className={
-                            'px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ' +
-                            (isActive
-                              ? 'border-primary text-primary'
-                              : 'border-transparent text-muted-foreground hover:text-foreground')
-                          }
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-                {isPolishWord && activeExplainTab === 'pwn' ? (
-                  (() => {
-                    if (!pwnEntry || pwnEntry.status === 'loading') {
-                      return (
-                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                          <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                          {t('modal.analyzing')}
-                        </div>
-                      );
-                    }
-                    if (pwnEntry.status === 'error') {
-                      return (
-                        <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: pwnEntry.error })}</p>
-                      );
-                    }
-                    if (!pwnEntry.data) {
-                      return <p className="text-sm text-muted-foreground">{t('modal.pwnNotFound')}</p>;
-                    }
-                    return <PwnDictionaryView entry={pwnEntry.data} speakLang="pl" />;
-                  })()
-                ) : (
-                  <>
-                    {!explained && !loadingExplanation && !explanationError && (
-                      <div className="flex justify-center">
-                        <Button variant="outline" size="sm" className="gap-2" onClick={handleExplain}>
-                          <Sparkles className="h-4 w-4" />
-                          {t('study.explain')}
-                        </Button>
-                      </div>
-                    )}
-                    {loadingExplanation && (
-                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                        {t('modal.analyzing')}
-                      </div>
-                    )}
-                    {explanationError && (
-                      <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: explanationError })}</p>
-                    )}
-                    {explained && !loadingExplanation && !explanationError && !explanation && (
-                      <p className="text-sm text-muted-foreground">{t('modal.explanationUnavailable')}</p>
-                    )}
-                    {explanation && <WordExplanation explanation={explanation} speakLang={foreignLang} />}
-                  </>
-                )}
+                <ExplanationTabs word={foreignWord} language={foreignLang} />
               </div>
             )}
             {checked && phase !== 'success' && (

@@ -2,36 +2,24 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { fetchDueCards, fetchExamples, reviewCard, setTranslationLearned, unenrollTranslation, explainWord, lookupPwnDictionary, Rating, SrsCard, Example, ProviderExplanation, PwnDictionaryEntry } from '../api/srs.api';
+import { fetchDueCards, fetchExamples, reviewCard, setTranslationLearned, unenrollTranslation, Rating, SrsCard, Example } from '../api/srs.api';
 import { speak } from '../api/tts.api';
-import { WordExplanation } from '../components/word-explanation';
-import { PwnDictionaryView } from '../components/pwn-dictionary-view';
-import { BookOpen, Check, Volume2, ChevronLeft, ChevronRight, Volume1, Sparkles } from 'lucide-react';
+import { ExplanationTabs } from '../components/explanation-tabs';
+import { BookOpen, Check, Volume2, ChevronLeft, ChevronRight, Volume1 } from 'lucide-react';
 import { GradeButtons } from '../components/grade-buttons';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { useAppDirection } from '../hooks/use-app-direction';
 import { matchesAppLanguagePair } from '../constants/language-options';
 import { useI18n } from '../i18n/i18n-context';
 
-type PwnAsyncCell =
-  | { status: 'loading' }
-  | { status: 'error'; error: string }
-  | { status: 'done'; data: PwnDictionaryEntry | null };
-
 export function StudyPage() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const [queue, setQueue] = useState<SrsCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [revealed, setRevealed] = useState(false);
   const [grading, setGrading] = useState(false);
   const [examples, setExamples] = useState<Example[]>([]);
   const [loadingExamples, setLoadingExamples] = useState(false);
-  const [explanation, setExplanation] = useState<ProviderExplanation | null>(null);
-  const [explained, setExplained] = useState(false);
-  const [loadingExplanation, setLoadingExplanation] = useState(false);
-  const [explanationError, setExplanationError] = useState<string | null>(null);
-  const [pwnEntry, setPwnEntry] = useState<PwnAsyncCell | null>(null);
-  const [activeExplainTab, setActiveExplainTab] = useState<'pwn' | 'llm'>('pwn');
   const [cardIndex, setCardIndex] = useState(0);
   const [autoSpeak, setAutoSpeak] = useState(() => localStorage.getItem('srs-auto-speak') === 'true');
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
@@ -52,8 +40,6 @@ export function StudyPage() {
         }
       : rawCurrent
     : undefined;
-
-  const isPolishWord = current?.translation.translationLanguage === 'pl';
 
   const loadCards = useCallback(async () => {
     setLoading(true);
@@ -111,27 +97,6 @@ export function StudyPage() {
     if (!current || loading) return;
     const ac = new AbortController();
 
-    setExplanation(null);
-    setExplained(false);
-    setExplanationError(null);
-    setLoadingExplanation(false);
-
-    // Reset to the PWN tab and (for Polish words only) prefetch the dictionary entry immediately.
-    setActiveExplainTab('pwn');
-    if (current.translation.translationLanguage === 'pl') {
-      const wordPl = current.translation.translation;
-      setPwnEntry({ status: 'loading' });
-      lookupPwnDictionary(wordPl)
-        .then((data) => {
-          if (!ac.signal.aborted) setPwnEntry({ status: 'done', data });
-        })
-        .catch((e) => {
-          if (!ac.signal.aborted) setPwnEntry({ status: 'error', error: (e as Error)?.message ?? 'failed' });
-        });
-    } else {
-      setPwnEntry(null);
-    }
-
     setLoadingExamples(true);
     setExamples([]);
     fetchExamples(
@@ -164,26 +129,6 @@ export function StudyPage() {
     if (!current) return;
     if (autoSpeak) {
       speak(current.translation.translation, current.translation.translationLanguage);
-    }
-  };
-
-  const handleExplain = async () => {
-    if (!current || loadingExplanation) return;
-    setLoadingExplanation(true);
-    setExplanationError(null);
-    try {
-      const e = await explainWord(
-        current.translation.translation,
-        current.translation.translationLanguage,
-        'gemini',
-        locale,
-      );
-      setExplanation(e);
-      setExplained(true);
-    } catch (err) {
-      setExplanationError((err as Error)?.message ?? 'failed');
-    } finally {
-      setLoadingExplanation(false);
     }
   };
 
@@ -438,79 +383,11 @@ export function StudyPage() {
             ) : null}
           </div>
           <div className={`w-full border-t pt-3 transition-all duration-300 ${!revealed ? 'blur-md select-none' : ''}`}>
-            {isPolishWord && (
-              <div className="flex border-b justify-center mb-3">
-                {(['pwn', 'llm'] as const).map((tab) => {
-                  const label = tab === 'pwn' ? t('modal.tabDictionary') : t('modal.tabExplanation');
-                  const isActive = activeExplainTab === tab;
-                  return (
-                    <button
-                      key={tab}
-                      type="button"
-                      onClick={() => setActiveExplainTab(tab)}
-                      className={
-                        'px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ' +
-                        (isActive
-                          ? 'border-primary text-primary'
-                          : 'border-transparent text-muted-foreground hover:text-foreground')
-                      }
-                    >
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            {isPolishWord && activeExplainTab === 'pwn' ? (
-              (() => {
-                if (!pwnEntry || pwnEntry.status === 'loading') {
-                  return (
-                    <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                      <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                      {t('modal.analyzing')}
-                    </div>
-                  );
-                }
-                if (pwnEntry.status === 'error') {
-                  return (
-                    <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: pwnEntry.error })}</p>
-                  );
-                }
-                if (!pwnEntry.data) {
-                  return <p className="text-sm text-muted-foreground">{t('modal.pwnNotFound')}</p>;
-                }
-                return <PwnDictionaryView entry={pwnEntry.data} speakLang="pl" />;
-              })()
-            ) : (
-              <>
-                {!explained && !loadingExplanation && !explanationError && (
-                  <div className="flex justify-center">
-                    <Button variant="outline" size="sm" className="gap-2" onClick={handleExplain}>
-                      <Sparkles className="h-4 w-4" />
-                      {t('study.explain')}
-                    </Button>
-                  </div>
-                )}
-                {loadingExplanation && (
-                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                    <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                    {t('modal.analyzing')}
-                  </div>
-                )}
-                {explanationError && (
-                  <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: explanationError })}</p>
-                )}
-                {explained && !loadingExplanation && !explanationError && !explanation && (
-                  <p className="text-sm text-muted-foreground">{t('modal.explanationUnavailable')}</p>
-                )}
-                {explanation && (
-                  <WordExplanation
-                    explanation={explanation}
-                    speakLang={current.translation.translationLanguage}
-                  />
-                )}
-              </>
-            )}
+            <ExplanationTabs
+              word={current.translation.translation}
+              language={current.translation.translationLanguage}
+              active={revealed}
+            />
           </div>
           <div className={`text-xs text-muted-foreground transition-opacity duration-300 ${revealed ? 'opacity-0' : ''}`}>
             {t('study.pressRevealPrefix')}{' '}
