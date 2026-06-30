@@ -23,6 +23,12 @@ interface ExplanationTabsProps {
    * Defaults to true.
    */
   active?: boolean;
+  /**
+   * Force the explanation-only view: never show the PWN dictionary tab, and keep the
+   * LLM explanation strictly on-demand (button). Used where there is no single dictionary
+   * word, e.g. a full sentence in Sentence Builder.
+   */
+  explanationOnly?: boolean;
 }
 
 /**
@@ -32,10 +38,10 @@ interface ExplanationTabsProps {
  * is shown: the PWN entry is prefetched and the explanation is requested automatically when its
  * tab is opened. Otherwise only the explanation is shown, requested on demand via a button.
  */
-export function ExplanationTabs({ word, language, active = true }: ExplanationTabsProps) {
+export function ExplanationTabs({ word, language, active = true, explanationOnly = false }: ExplanationTabsProps) {
   const { t, locale } = useI18n();
   const [pwnEnabled] = usePwnEnabled();
-  const showTabs = pwnEnabled && language === 'pl';
+  const showTabs = !explanationOnly && pwnEnabled && language === 'pl';
 
   const [activeTab, setActiveTab] = useState<'pwn' | 'llm'>('pwn');
   const [pwnEntry, setPwnEntry] = useState<PwnAsyncCell | null>(null);

@@ -5,6 +5,7 @@ import { Volume2, RotateCcw } from 'lucide-react';
 import { generateSentenceBuilder, reviewCard, setTranslationLearned, unenrollTranslation, Rating, SentenceBuilderGenerated } from '../api/srs.api';
 import { speak } from '../api/tts.api';
 import { GradeButtons } from '../components/grade-buttons';
+import { ExplanationTabs } from '../components/explanation-tabs';
 import { useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { useAppDirection } from '../hooks/use-app-direction';
@@ -23,6 +24,8 @@ const tokenize = (s: string): string[] =>
     .split(/\s+/)
     .map((t) => t.replace(/^[.,!?;:"'«»„“”()\-]+|[.,!?;:"'«»„“”()\-]+$/g, ''))
     .filter((t) => t.length > 0);
+
+const LETTERS = 'abcdefghijklmnopqrstuvwxyz';
 
 const shuffleArray = <T,>(arr: T[]): T[] => {
   const out = [...arr];
@@ -132,6 +135,23 @@ export function SentenceBuilderPage() {
     setPlaced((prev) => [...prev, i]);
     setChecked(false);
   };
+
+  // In buttons mode, pressing a word tile's letter (A, B, C…) adds that word to the answer.
+  useEffect(() => {
+    if (phase !== 'playing' || mode !== 'buttons' || !view) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.altKey || e.ctrlKey || e.metaKey || e.key.length !== 1) return;
+      const el = document.activeElement as HTMLElement | null;
+      if (el && (el.tagName === 'TEXTAREA' || el.tagName === 'INPUT' || el.isContentEditable)) return;
+      const idx = LETTERS.indexOf(e.key.toLowerCase());
+      if (idx < 0 || idx >= view.shuffled.length || !availableIdx.includes(idx)) return;
+      e.preventDefault();
+      setPlaced((prev) => [...prev, idx]);
+      setChecked(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase, mode, view, availableIdx]);
 
   const handleRemove = (pos: number) => {
     setPlaced((prev) => prev.filter((_, i) => i !== pos));
@@ -313,9 +333,15 @@ export function SentenceBuilderPage() {
                         key={`avail-${i}`}
                         type="button"
                         onClick={() => handlePick(i)}
-                        className="px-3 py-1 rounded border border-input bg-background text-sm hover:bg-muted"
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded border border-input bg-background text-sm hover:bg-muted"
+                        title={i < LETTERS.length ? t('builder.pickWordHint', { key: LETTERS[i].toUpperCase() }) : undefined}
                       >
-                        {view.shuffled[i]}
+                        {i < LETTERS.length && (
+                          <kbd className="text-[10px] leading-none font-semibold px-1 py-0.5 rounded bg-violet-100 text-violet-700 border border-violet-300">
+                            {LETTERS[i].toUpperCase()}
+                          </kbd>
+                        )}
+                        <span>{view.shuffled[i]}</span>
                       </button>
                     ))}
                     {availableIdx.length === 0 && (
@@ -369,23 +395,28 @@ export function SentenceBuilderPage() {
                 <RotateCcw className="h-4 w-4 mr-1" />
                 Reset
               </Button>
-              {phase === 'success' && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => speak(view.targetText, view.targetLang)}
-                  title="Speak"
-                >
-                  <Volume2 className="h-4 w-4 mr-1" />
-                  Speak
-                </Button>
-              )}
             </div>
 
             {phase === 'success' && (
               <div className="border-t pt-3">
                 <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Target</div>
-                <p className="text-sm">{view.targetText}</p>
+                <div className="flex items-start gap-2">
+                  <p className="text-sm flex-1">{view.targetText}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 rounded-full shrink-0"
+                    onClick={() => speak(view.targetText, view.targetLang)}
+                    title="Speak"
+                  >
+                    <Volume2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            {phase === 'success' && (
+              <div className="border-t pt-3">
+                <ExplanationTabs word={view.targetText} language={view.targetLang} explanationOnly />
               </div>
             )}
             {checked && phase !== 'success' && (
