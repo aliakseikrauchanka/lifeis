@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Volume2, RotateCcw, Delete } from 'lucide-react';
-import { generateWordBuilder, reviewCard, setTranslationLearned, unenrollTranslation, Rating, WordBuilderGenerated } from '../api/srs.api';
+import { Volume2, RotateCcw, Delete, Sparkles } from 'lucide-react';
+import { generateWordBuilder, reviewCard, setTranslationLearned, unenrollTranslation, fetchExamples, explainWord, lookupPwnDictionary, Rating, WordBuilderGenerated, Example, ProviderExplanation, PwnDictionaryEntry } from '../api/srs.api';
 import { speak } from '../api/tts.api';
+import { WordExplanation } from '../components/word-explanation';
+import { PwnDictionaryView } from '../components/pwn-dictionary-view';
 import { GradeButtons } from '../components/grade-buttons';
 import { useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
@@ -12,6 +14,11 @@ import { useI18n } from '../i18n/i18n-context';
 import { getLanguageLabel } from '../constants/language-options';
 
 type Phase = 'idle' | 'playing' | 'success';
+
+type PwnAsyncCell =
+  | { status: 'loading' }
+  | { status: 'error'; error: string }
+  | { status: 'done'; data: PwnDictionaryEntry | null };
 
 /** Compare/sort letters; NFC so precomposed ć matches c+combining and keys from the OS. */
 const normChar = (c: string) => c.normalize('NFC').toLowerCase();
@@ -25,7 +32,7 @@ function isAppleLikePlatform(): boolean {
 }
 
 export function WordBuilderPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const [level] = useAppLevel();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
   const [direction] = useAppDirection();
@@ -52,6 +59,14 @@ export function WordBuilderPage() {
   const [grading, setGrading] = useState(false);
   const [learned, setLearned] = useState(false);
   const [unenrolled, setUnenrolled] = useState(false);
+  const [examples, setExamples] = useState<Example[]>([]);
+  const [loadingExamples, setLoadingExamples] = useState(false);
+  const [explanation, setExplanation] = useState<ProviderExplanation | null>(null);
+  const [explained, setExplained] = useState(false);
+  const [loadingExplanation, setLoadingExplanation] = useState(false);
+  const [explanationError, setExplanationError] = useState<string | null>(null);
+  const [pwnEntry, setPwnEntry] = useState<PwnAsyncCell | null>(null);
+  const [activeExplainTab, setActiveExplainTab] = useState<'pwn' | 'llm'>('pwn');
 
   const view = useMemo(() => {
     if (!data) return null;
@@ -70,6 +85,11 @@ export function WordBuilderPage() {
       targetLang: data.translationLanguage,
     };
   }, [data, direction]);
+
+  // The foreign vocabulary word being learned (training language), independent of direction.
+  const foreignWord = data?.trainingText ?? '';
+  const foreignLang = data?.originalLanguage ?? '';
+  const isPolishWord = foreignLang === 'pl';
 
   const nfcTargetText = useMemo(() => (view ? view.targetText.normalize('NFC') : ''), [view]);
 
@@ -100,9 +120,69 @@ export function WordBuilderPage() {
     setGrade(null);
     setLearned(false);
     setUnenrolled(false);
+    setExamples([]);
     setPhase((p) => (p === 'success' ? 'playing' : p));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [direction]);
+
+  // Load the same word information shown in Study (examples + PWN dictionary / explanation) once the word is solved.
+  useEffect(() => {
+    if (phase !== 'success' || !data) return;
+    const ac = new AbortController();
+
+    // Reset the explanation cell; the LLM explanation stays on-demand like in Study.
+    setExplanation(null);
+    setExplained(false);
+    setExplanationError(null);
+    setLoadingExplanation(false);
+    setActiveExplainTab('pwn');
+
+    // For Polish words, prefetch the authoritative PWN dictionary entry immediately.
+    if (data.originalLanguage === 'pl') {
+      setPwnEntry({ status: 'loading' });
+      lookupPwnDictionary(data.trainingText)
+        .then((entry) => {
+          if (!ac.signal.aborted) setPwnEntry({ status: 'done', data: entry });
+        })
+        .catch((e) => {
+          if (!ac.signal.aborted) setPwnEntry({ status: 'error', error: (e as Error)?.message ?? 'failed' });
+        });
+    } else {
+      setPwnEntry(null);
+    }
+
+    setLoadingExamples(true);
+    setExamples([]);
+    fetchExamples(data.trainingText, data.originalLanguage, data.translationLanguage, {
+      signal: ac.signal,
+      translation: data.nativeText,
+    })
+      .then((ex) => setExamples(ex))
+      .catch((err) => {
+        if ((err as Error).name === 'AbortError') return;
+        console.error('Failed to load examples:', err);
+        setExamples([]);
+      })
+      .finally(() => {
+        if (!ac.signal.aborted) setLoadingExamples(false);
+      });
+    return () => ac.abort();
+  }, [phase, data]);
+
+  const handleExplain = async () => {
+    if (!data || loadingExplanation) return;
+    setLoadingExplanation(true);
+    setExplanationError(null);
+    try {
+      const e = await explainWord(foreignWord, foreignLang, 'gemini', locale);
+      setExplanation(e);
+      setExplained(true);
+    } catch (err) {
+      setExplanationError((err as Error)?.message ?? 'failed');
+    } finally {
+      setLoadingExplanation(false);
+    }
+  };
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -114,6 +194,7 @@ export function WordBuilderPage() {
     setGrade(null);
     setLearned(false);
     setUnenrolled(false);
+    setExamples([]);
     try {
       localStorage.setItem('word-builder-source', source);
       localStorage.setItem('word-builder-mode', mode);
@@ -155,6 +236,7 @@ export function WordBuilderPage() {
     ).normalize('NFC');
     if (built.toLowerCase() === target.toLowerCase()) {
       setPhase('success');
+      speak(view.targetText, view.targetLang);
     }
   };
 
@@ -441,17 +523,6 @@ export function WordBuilderPage() {
                 <RotateCcw className="h-4 w-4 mr-1" />
                 {t('wordBuilder.reset')}
               </Button>
-              {phase === 'success' && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => speak(view.targetText, view.targetLang)}
-                  title={t('a11y.speak')}
-                >
-                  <Volume2 className="h-4 w-4 mr-1" />
-                  {t('wordBuilder.speak')}
-                </Button>
-              )}
             </div>
 
             {phase === 'success' && (
@@ -459,7 +530,133 @@ export function WordBuilderPage() {
                 <div className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
                   {t('wordBuilder.target')}
                 </div>
-                <p className="text-sm">{view.targetText}</p>
+                <div className="flex items-start gap-2">
+                  <p className="text-sm flex-1">{view.targetText}</p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0 rounded-full shrink-0"
+                    onClick={() => speak(view.targetText, view.targetLang)}
+                    title={t('a11y.speak')}
+                  >
+                    <Volume2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            )}
+            {phase === 'success' && (loadingExamples || examples.length > 0) && (
+              <div className="border-t pt-3">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">
+                  {t('wordBuilder.examplesSection')}
+                </div>
+                {loadingExamples ? (
+                  <div className="flex justify-center">
+                    <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {examples.map((ex, i) => (
+                      <div key={i} className="space-y-0.5">
+                        <div className="flex items-start gap-2">
+                          <span className="text-sm flex-1">{ex.original}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 rounded-full shrink-0"
+                            onClick={() => speak(ex.original, data.originalLanguage)}
+                            title={t('a11y.speak')}
+                          >
+                            <Volume2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-sm text-muted-foreground flex-1">{ex.translated}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 w-7 p-0 rounded-full shrink-0"
+                            onClick={() => speak(ex.translated, data.translationLanguage)}
+                            title={t('a11y.speak')}
+                          >
+                            <Volume2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+            {phase === 'success' && (
+              <div className="border-t pt-3">
+                {isPolishWord && (
+                  <div className="flex border-b justify-center mb-3">
+                    {(['pwn', 'llm'] as const).map((tab) => {
+                      const label = tab === 'pwn' ? t('modal.tabDictionary') : t('modal.tabExplanation');
+                      const isActive = activeExplainTab === tab;
+                      return (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => setActiveExplainTab(tab)}
+                          className={
+                            'px-3 py-1.5 text-xs font-medium border-b-2 transition-colors ' +
+                            (isActive
+                              ? 'border-primary text-primary'
+                              : 'border-transparent text-muted-foreground hover:text-foreground')
+                          }
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {isPolishWord && activeExplainTab === 'pwn' ? (
+                  (() => {
+                    if (!pwnEntry || pwnEntry.status === 'loading') {
+                      return (
+                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                          <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                          {t('modal.analyzing')}
+                        </div>
+                      );
+                    }
+                    if (pwnEntry.status === 'error') {
+                      return (
+                        <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: pwnEntry.error })}</p>
+                      );
+                    }
+                    if (!pwnEntry.data) {
+                      return <p className="text-sm text-muted-foreground">{t('modal.pwnNotFound')}</p>;
+                    }
+                    return <PwnDictionaryView entry={pwnEntry.data} speakLang="pl" />;
+                  })()
+                ) : (
+                  <>
+                    {!explained && !loadingExplanation && !explanationError && (
+                      <div className="flex justify-center">
+                        <Button variant="outline" size="sm" className="gap-2" onClick={handleExplain}>
+                          <Sparkles className="h-4 w-4" />
+                          {t('study.explain')}
+                        </Button>
+                      </div>
+                    )}
+                    {loadingExplanation && (
+                      <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                        {t('modal.analyzing')}
+                      </div>
+                    )}
+                    {explanationError && (
+                      <p className="text-sm text-red-600">{t('modal.errorWithReason', { message: explanationError })}</p>
+                    )}
+                    {explained && !loadingExplanation && !explanationError && !explanation && (
+                      <p className="text-sm text-muted-foreground">{t('modal.explanationUnavailable')}</p>
+                    )}
+                    {explanation && <WordExplanation explanation={explanation} speakLang={foreignLang} />}
+                  </>
+                )}
               </div>
             )}
             {checked && phase !== 'success' && (
@@ -504,6 +701,7 @@ export function WordBuilderPage() {
                     try {
                       await reviewCard(data.translationId, r);
                       setGrade(r);
+                      await handleGenerate();
                     } catch (err) {
                       setError((err as Error).message);
                     } finally {
