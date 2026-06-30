@@ -279,6 +279,14 @@ const SpeechToTextContextProvider: React.FC<SpeechToTextContextProviderProps> = 
     (id: string) => {
       recordingSessionIdRef.current = id;
       setActiveId(id);
+      // Start each recording session from a clean slate so a previous session's
+      // transcript (or a word the user has since removed) is never re-applied.
+      setCaption((prev) => ({ ...prev, [id]: [] }));
+      setRecordedBlobs((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
       startMicrophone();
     },
     [startMicrophone],
