@@ -282,7 +282,7 @@ export function StudyPage() {
           onClick={goToPrev}
           title={t('study.prev')}
           aria-label={t('study.prev')}
-          className="absolute left-1 sm:-left-12 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center h-9 w-9 rounded-full bg-background/70 backdrop-blur border shadow-sm text-violet-700 hover:text-violet-900 hover:bg-background transition-colors"
+          className="absolute left-1 sm:-left-12 top-20 -translate-y-1/2 z-10 flex items-center justify-center h-9 w-9 rounded-full bg-background/70 backdrop-blur border shadow-sm text-violet-700 hover:text-violet-900 hover:bg-background transition-colors"
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -291,7 +291,7 @@ export function StudyPage() {
           onClick={goToNext}
           title={t('study.next')}
           aria-label={t('study.next')}
-          className="absolute right-1 sm:-right-12 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center h-9 w-9 rounded-full bg-background/70 backdrop-blur border shadow-sm text-violet-700 hover:text-violet-900 hover:bg-background transition-colors"
+          className="absolute right-1 sm:-right-12 top-20 -translate-y-1/2 z-10 flex items-center justify-center h-9 w-9 rounded-full bg-background/70 backdrop-blur border shadow-sm text-violet-700 hover:text-violet-900 hover:bg-background transition-colors"
         >
           <ChevronRight className="h-5 w-5" />
         </button>
