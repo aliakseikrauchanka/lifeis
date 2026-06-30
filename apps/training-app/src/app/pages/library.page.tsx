@@ -40,6 +40,7 @@ export function LibraryPage() {
   const [preview, setPreview] = useState<ImportPreviewResult | null>(null);
   const [confirmingImport, setConfirmingImport] = useState(false);
   const [search, setSearch] = useState('');
+  const [enrollmentFilter, setEnrollmentFilter] = useState<'all' | 'unenrolled'>('all');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [learnedTogglingId, setLearnedTogglingId] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -139,13 +140,17 @@ export function LibraryPage() {
   const languageFiltered = translations.filter((t) =>
     matchesAppLanguagePair(t, nativeLanguage, trainingLanguage),
   );
+  const enrollmentFiltered =
+    enrollmentFilter === 'unenrolled'
+      ? languageFiltered.filter((t) => !enrolledCards.has(t._id))
+      : languageFiltered;
   const searchLower = search.toLowerCase();
   const filteredTranslations = search
-    ? languageFiltered.filter((t) =>
+    ? enrollmentFiltered.filter((t) =>
         t.original.toLowerCase().includes(searchLower) ||
         t.translation.toLowerCase().includes(searchLower)
       )
-    : languageFiltered;
+    : enrollmentFiltered;
   const hiddenByLanguageCount = translations.length - languageFiltered.length;
 
   const toggleSelected = (id: string) => {
@@ -318,15 +323,44 @@ export function LibraryPage() {
           className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-input bg-background"
         />
       </div>
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-xs text-muted-foreground uppercase tracking-wide">
+          {t('library.filterLabel')}
+        </span>
+        <div className="inline-flex rounded border border-input overflow-hidden">
+          <button
+            type="button"
+            className={`px-2 py-1 text-sm ${
+              enrollmentFilter === 'all'
+                ? 'bg-violet-600 text-white'
+                : 'bg-background text-foreground hover:bg-muted'
+            }`}
+            onClick={() => setEnrollmentFilter('all')}
+          >
+            {t('library.filterAll')}
+          </button>
+          <button
+            type="button"
+            className={`px-2 py-1 text-sm border-l border-input ${
+              enrollmentFilter === 'unenrolled'
+                ? 'bg-violet-600 text-white'
+                : 'bg-background text-foreground hover:bg-muted'
+            }`}
+            onClick={() => setEnrollmentFilter('unenrolled')}
+          >
+            {t('library.filterUnenrolled')}
+          </button>
+        </div>
+      </div>
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
         <div className="flex flex-col">
           <h2 className="text-lg font-semibold whitespace-nowrap">
             {search
               ? t('library.countFiltered', {
                   filtered: filteredTranslations.length,
-                  total: languageFiltered.length,
+                  total: enrollmentFiltered.length,
                 })
-              : t('library.countTranslations', { count: languageFiltered.length })}
+              : t('library.countTranslations', { count: enrollmentFiltered.length })}
           </h2>
           {hiddenByLanguageCount > 0 && (
             <span className="text-xs text-muted-foreground">

@@ -26,6 +26,7 @@ import {
   TranslationHistoryEntry,
 } from '../contexts/translation-add.context';
 import { useAppLanguages } from '../hooks/use-app-languages';
+import { matchesAppLanguagePair } from '../constants/language-options';
 import { useI18n } from '../i18n/i18n-context';
 
 const ORIGINAL_REC_ID = 'global-add-original';
@@ -178,9 +179,15 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     else originalInputRef.current?.focus();
   }, [isEdit, prefill?.original, prefill?.translation]);
 
-  // Fetch translation suggestions + examples on open, for both add and edit.
+  // Fetch translation suggestions + examples on open, for both add and edit — but only when the
+  // entry is in the currently selected from→to language pair, so we never request other-language words.
   useEffect(() => {
-    if (getTranslatePlan(addForm, isEdit).ok) {
+    const matchesPair = matchesAppLanguagePair(
+      { originalLanguage: addForm.originalLanguage, translationLanguage: addForm.translationLanguage },
+      nativeLanguage,
+      trainingLanguage,
+    );
+    if (matchesPair && getTranslatePlan(addForm, isEdit).ok) {
       handleTranslate();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -378,6 +385,12 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   }, [onClose]);
 
   const translatePlan = getTranslatePlan(addForm, isEdit);
+  // True when the entry is in the selected from→to pair; gates automatic model requests.
+  const pairMatchesSelected = matchesAppLanguagePair(
+    { originalLanguage: addForm.originalLanguage, translationLanguage: addForm.translationLanguage },
+    nativeLanguage,
+    trainingLanguage,
+  );
   const suggestionSpeakLang =
     suggestionTarget === 'translation' ? addForm.translationLanguage : addForm.originalLanguage;
   const suggestionSelected =
@@ -427,7 +440,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   // so the synonyms are ready alongside the examples (cached per provider).
   useEffect(() => {
     if (!lastSource || activeProvider === 'glosbe') return;
-    if ((activeContentTab === 'explanation' || isEdit) && !explanations[activeProvider]) {
+    if ((activeContentTab === 'explanation' || (isEdit && pairMatchesSelected)) && !explanations[activeProvider]) {
       setExplanations((p) => ({ ...p, [activeProvider]: { status: 'loading' } }));
       explainWord(lastSource.text, lastSource.lang, activeProvider, locale)
         .then((data) =>
@@ -440,7 +453,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
           })),
         );
     }
-  }, [activeContentTab, activeProvider, lastSource, locale, explanations, isEdit]);
+  }, [activeContentTab, activeProvider, lastSource, locale, explanations, isEdit, pairMatchesSelected]);
 
   const renderExplanation = (explanation: ProviderExplanation | null) => {
     if (!explanation) {

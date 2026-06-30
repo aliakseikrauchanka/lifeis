@@ -49,9 +49,6 @@ export function TrainingMenu() {
 
   return (
     <div ref={containerRef} className="relative flex items-center gap-1">
-      <span className="text-xs font-medium text-violet-400 uppercase tracking-wide">
-        {t('nav.training')}
-      </span>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

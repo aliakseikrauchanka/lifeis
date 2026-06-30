@@ -275,8 +275,8 @@ export function StudyPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-2 sm:p-4">
-      <div className="relative w-full max-w-md h-[calc(100vh-3.5rem)]">
+    <div className="flex flex-col items-center h-full min-h-0 p-2 sm:p-4">
+      <div className="relative w-full max-w-md flex-1 min-h-0">
         <button
           type="button"
           onClick={goToPrev}
