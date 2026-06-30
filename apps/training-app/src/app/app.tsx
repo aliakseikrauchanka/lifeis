@@ -3,7 +3,7 @@ import { AudioDevicesProvider, UserSession, init, isUserLoggedIn } from '@lifeis
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { CONFIG } from '../config';
 import { useEffect, useState } from 'react';
-import { BookOpen, Brain, PenLine, Blocks, Type, Library as LibraryIcon } from 'lucide-react';
+import { Library as LibraryIcon } from 'lucide-react';
 import { StudyPage } from './pages/study.page';
 import { LibraryPage } from './pages/library.page';
 import { SentenceTrainingPage } from './pages/sentence-training.page';
@@ -11,6 +11,7 @@ import { SentenceConstructionPage } from './pages/sentence-construction.page';
 import { SentenceBuilderPage } from './pages/sentence-builder.page';
 import { WordBuilderPage } from './pages/word-builder.page';
 import { ProfileMenu } from './components/profile-menu';
+import { TrainingMenu } from './components/training-menu';
 import { HeaderAddButton } from './components/header-add-button';
 import { HeaderTodayButton } from './components/header-today-button';
 import { DirectionToggle } from './components/direction-toggle';
@@ -35,81 +36,7 @@ function TrainingShell({
     <>
       <div className="flex flex-col h-full">
         <header className="flex items-center gap-2 bg-gradient-to-r from-violet-50 to-purple-50 px-3 py-1 border-b border-black/5 shadow-sm">
-          {isLoggedIn && (
-            <nav className="flex items-center gap-1">
-              <NavLink
-                to="/"
-                end
-                title={t('nav.study')}
-                className={({ isActive }) =>
-                  `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
-                    isActive
-                      ? 'text-violet-900 bg-violet-500/12'
-                      : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
-                  }`
-                }
-              >
-                <BookOpen className="h-4 w-4 md:hidden" />
-                <span className="hidden md:inline">{t('nav.study')}</span>
-              </NavLink>
-              <NavLink
-                to="/sentence-training"
-                title={t('nav.sentenceTraining')}
-                className={({ isActive }) =>
-                  `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
-                    isActive
-                      ? 'text-violet-900 bg-violet-500/12'
-                      : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
-                  }`
-                }
-              >
-                <Brain className="h-4 w-4 md:hidden" />
-                <span className="hidden md:inline">{t('nav.sentenceTraining')}</span>
-              </NavLink>
-              <NavLink
-                to="/sentence-construction"
-                title={t('nav.sentenceConstruction')}
-                className={({ isActive }) =>
-                  `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
-                    isActive
-                      ? 'text-violet-900 bg-violet-500/12'
-                      : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
-                  }`
-                }
-              >
-                <PenLine className="h-4 w-4 md:hidden" />
-                <span className="hidden md:inline">{t('nav.sentenceConstruction')}</span>
-              </NavLink>
-              <NavLink
-                to="/sentence-builder"
-                title={t('nav.sentenceBuilder')}
-                className={({ isActive }) =>
-                  `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
-                    isActive
-                      ? 'text-violet-900 bg-violet-500/12'
-                      : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
-                  }`
-                }
-              >
-                <Blocks className="h-4 w-4 md:hidden" />
-                <span className="hidden md:inline">{t('nav.sentenceBuilder')}</span>
-              </NavLink>
-              <NavLink
-                to="/word-builder"
-                title={t('nav.wordBuilder')}
-                className={({ isActive }) =>
-                  `px-2 md:px-3 py-1 rounded-lg text-sm font-semibold transition-colors inline-flex items-center gap-1 ${
-                    isActive
-                      ? 'text-violet-900 bg-violet-500/12'
-                      : 'text-violet-700 hover:text-violet-900 hover:bg-violet-500/8'
-                  }`
-                }
-              >
-                <Type className="h-4 w-4 md:hidden" />
-                <span className="hidden md:inline">{t('nav.wordBuilder')}</span>
-              </NavLink>
-            </nav>
-          )}
+          {isLoggedIn && <TrainingMenu />}
           <div className="ml-auto flex items-center gap-1">
             {isLoggedIn && (
               <NavLink
@@ -127,8 +54,8 @@ function TrainingShell({
                 <span className="hidden md:inline">{t('nav.library')}</span>
               </NavLink>
             )}
-            {isLoggedIn && <HeaderTodayButton />}
             {isLoggedIn && <HeaderAddButton />}
+            {isLoggedIn && <HeaderTodayButton />}
             {isLoggedIn && <DirectionToggle />}
             {isLoggedIn && <ProfileMenu />}
             <UserSession

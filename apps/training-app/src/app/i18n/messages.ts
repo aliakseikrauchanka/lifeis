@@ -1,6 +1,7 @@
 import type { InterfaceLocale } from './interface-locale';
 
 export const en = {
+  'nav.training': 'Training',
   'nav.study': 'Study',
   'nav.sentenceTraining': 'Sentence Training',
   'nav.sentenceConstruction': 'Sentence Construction',
@@ -168,6 +169,7 @@ export const en = {
 export type MessageKey = keyof typeof en;
 
 const ru: Record<MessageKey, string> = {
+  'nav.training': 'Тренировка',
   'nav.study': 'Карточки',
   'nav.sentenceTraining': 'Фразы',
   'nav.sentenceConstruction': 'Конструктор',
@@ -334,6 +336,7 @@ const ru: Record<MessageKey, string> = {
 };
 
 const pl: Record<MessageKey, string> = {
+  'nav.training': 'Trening',
   'nav.study': 'Nauka',
   'nav.sentenceTraining': 'Trening zdań',
   'nav.sentenceConstruction': 'Tworzenie zdań',
@@ -500,6 +503,7 @@ const pl: Record<MessageKey, string> = {
 };
 
 const es: Record<MessageKey, string> = {
+  'nav.training': 'Entrenamiento',
   'nav.study': 'Estudio',
   'nav.sentenceTraining': 'Frases',
   'nav.sentenceConstruction': 'Construcción',

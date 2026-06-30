@@ -12,7 +12,7 @@ export function HeaderAddButton() {
       onClick={() => open()}
       title={label}
       aria-label={label}
-      className="flex items-center justify-center h-7 w-7 rounded-lg text-violet-700 hover:text-violet-900 hover:bg-violet-500/8 transition-colors"
+      className="flex items-center justify-center h-7 w-7 rounded-lg bg-amber-400/80 text-white hover:bg-amber-500 transition-colors"
     >
       <Plus className="h-4 w-4" />
     </button>
