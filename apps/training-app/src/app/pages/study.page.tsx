@@ -275,35 +275,47 @@ export function StudyPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-full p-4">
-      <div className="flex items-center gap-2 sm:gap-4 mb-2 sm:mb-4">
-        <Button variant="ghost" size="sm" onClick={goToPrev} className="gap-1">
-          <ChevronLeft className="h-4 w-4" />
-          <kbd className="text-xs px-1.5 py-0.5 rounded bg-muted border">←</kbd>
-        </Button>
-        <div className="text-sm text-muted-foreground">
-          {queue.length === 1
-            ? t('study.progressSingular', { current: cardIndex + 1, total: queue.length })
-            : t('study.progressPlural', { current: cardIndex + 1, total: queue.length })}
-        </div>
-        <Button variant="ghost" size="sm" onClick={goToNext} className="gap-1">
-          <kbd className="text-xs px-1.5 py-0.5 rounded bg-muted border">→</kbd>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={autoSpeak ? 'default' : 'outline'}
-          size="sm"
-          onClick={toggleAutoSpeak}
-          className="gap-1 ml-2"
-          title={t('study.autoTitle')}
+    <div className="flex flex-col items-center justify-center h-full p-2 sm:p-4">
+      <div className="relative w-full max-w-md h-[calc(100vh-3.5rem)]">
+        <button
+          type="button"
+          onClick={goToPrev}
+          title={t('study.prev')}
+          aria-label={t('study.prev')}
+          className="absolute left-1 sm:-left-12 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center h-9 w-9 rounded-full bg-background/70 backdrop-blur border shadow-sm text-violet-700 hover:text-violet-900 hover:bg-background transition-colors"
         >
-          <Volume1 className="h-4 w-4" />
-          {t('study.auto')}
-        </Button>
-      </div>
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={goToNext}
+          title={t('study.next')}
+          aria-label={t('study.next')}
+          className="absolute right-1 sm:-right-12 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center h-9 w-9 rounded-full bg-background/70 backdrop-blur border shadow-sm text-violet-700 hover:text-violet-900 hover:bg-background transition-colors"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
 
-      <Card className="w-full max-w-md h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
-        <CardHeader className="text-center shrink-0 !p-3 !pb-1 !space-y-0.5">
+        <Card className="w-full h-full flex flex-col overflow-hidden">
+        <CardHeader className="relative text-center shrink-0 !p-3 !pb-1 !space-y-0.5">
+          <div className="absolute left-3 top-2 text-xs text-muted-foreground">
+            {queue.length === 1
+              ? t('study.progressSingular', { current: cardIndex + 1, total: queue.length })
+              : t('study.progressPlural', { current: cardIndex + 1, total: queue.length })}
+          </div>
+          <button
+            type="button"
+            onClick={toggleAutoSpeak}
+            title={t('study.autoTitle')}
+            aria-label={t('study.autoTitle')}
+            className={`absolute right-2 top-2 flex items-center justify-center h-7 w-7 rounded-lg transition-colors ${
+              autoSpeak
+                ? 'bg-violet-600 text-white hover:bg-violet-700'
+                : 'text-violet-700 hover:bg-violet-500/8'
+            }`}
+          >
+            <Volume1 className="h-4 w-4" />
+          </button>
           <div className="text-xs text-muted-foreground uppercase tracking-wide">
             {current.translation.originalLanguage}
           </div>
@@ -406,7 +418,8 @@ export function StudyPage() {
             showUnenroll
           />
         </CardFooter>
-      </Card>
+        </Card>
+      </div>
     </div>
   );
 }

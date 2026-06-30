@@ -140,7 +140,7 @@ export function ExplanationTabs({ word, language, active = true }: ExplanationTa
   return (
     <div>
       {showTabs && (
-        <div className="flex border-b justify-center mb-3">
+        <div className="sticky top-0 z-10 flex border-b justify-center mb-3 bg-background -mt-3 pt-3">
           {(['pwn', 'llm'] as const).map((tab) => {
             const label = tab === 'pwn' ? t('modal.tabDictionary') : t('modal.tabExplanation');
             const isActive = activeTab === tab;
