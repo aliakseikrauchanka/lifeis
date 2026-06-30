@@ -135,7 +135,6 @@ export const getSrsRoutes = (client: MongoClient) => {
         .aggregate([
           { $match: { owner_id: userId, due_at: { $lte: Date.now() }, ...MATCH_NOT_LEARNED } },
           { $sort: { due_at: 1 } },
-          { $limit: 100 },
           {
             $lookup: {
               from: 'translations',
