@@ -1,0 +1,209 @@
+---
+import { getLatestPublishedEdition } from '../lib/read';
+const edition = await getLatestPublishedEdition();
+---
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>News Digest</title>
+    <style is:global>
+      :root {
+        --bg: #f4f4f5;
+        --card: #ffffff;
+        --ink: #18181b;
+        --body: #27272a;
+        --muted: #71717a;
+        --line: #e4e4e7;
+        --chip: #f4f4f5;
+        --serif: "Iowan Old Style", Georgia, "Times New Roman", serif;
+        color-scheme: light dark;
+      }
+      * { box-sizing: border-box; }
+      body { font-family: system-ui, -apple-system, sans-serif; margin: 0; background: var(--bg); color: var(--body); }
+      main { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+      /* Brand */
+      .brand { display: flex; align-items: center; justify-content: center; gap: .55rem; padding: .5rem 0 1.4rem; }
+      .brand .mark {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 26px; height: 26px; border-radius: 999px; flex: none;
+        border: 1.5px solid var(--ink); color: var(--ink);
+        font-family: var(--serif); font-style: italic; font-weight: 700; font-size: .95rem; line-height: 1;
+      }
+      .brand h1 {
+        margin: 0; font-family: var(--serif); font-weight: 400;
+        font-size: 1.5rem; letter-spacing: .04em; text-transform: uppercase; color: var(--ink);
+      }
+      .brand h1 b { font-weight: 700; }
+
+      /* Toolbar: category tabs + languages */
+      .toolbar {
+        display: flex; flex-wrap: wrap; gap: .75rem; align-items: center;
+        justify-content: space-between;
+        background: var(--card); border-radius: 14px; padding: .55rem .7rem;
+        box-shadow: 0 1px 2px rgba(0,0,0,.05); margin-bottom: 1.4rem;
+      }
+      .tabs { display: flex; flex-wrap: wrap; gap: .15rem; }
+      .tabs button, .langs button {
+        border: 0; background: transparent; cursor: pointer; font: inherit;
+        color: var(--ink); padding: .4rem .8rem; border-radius: 999px;
+        transition: background .15s ease, color .15s ease;
+      }
+      .tabs button { font-weight: 600; }
+      .tabs button:hover, .langs button:hover { background: #ececee; }
+      .tabs button[aria-pressed="true"], .langs button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+      .langs { display: flex; gap: .1rem; }
+      .langs button { font-size: .8rem; font-weight: 600; letter-spacing: .03em; padding: .35rem .6rem; }
+
+      /* Edition heading */
+      .edition { font-family: var(--serif); font-weight: 400; font-size: 1.55rem; color: var(--ink); margin: 0 0 .4rem; }
+
+      /* Section divider */
+      .section-head { display: flex; align-items: center; gap: 1rem; margin: 1.8rem 0 1rem; color: var(--muted); }
+      .section-head::before, .section-head::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+      .section-head span {
+        font-family: var(--serif); font-weight: 700; font-size: .82rem;
+        letter-spacing: .16em; text-transform: uppercase; white-space: nowrap;
+      }
+
+      /* Story cards */
+      article {
+        background: var(--card); border-radius: 14px; padding: 1.1rem 1.2rem 1rem;
+        margin-bottom: .85rem; box-shadow: 0 1px 2px rgba(0,0,0,.05);
+      }
+      article h2 { margin: 0 0 .55rem; font-size: 1.08rem; line-height: 1.35; color: var(--ink); font-weight: 700; }
+      article p { margin: 0 0 .65rem; line-height: 1.55; }
+      article p:last-of-type { margin-bottom: .9rem; }
+
+      .foot { display: flex; align-items: center; }
+      .source {
+        display: inline-flex; align-items: center; gap: .4rem;
+        background: var(--chip); border: 1px solid var(--line); color: var(--muted);
+        font-size: .72rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase;
+        padding: .32rem .6rem; border-radius: 9px; text-decoration: none;
+        transition: background .15s ease, color .15s ease;
+      }
+      .source:hover { background: #ececee; color: var(--ink); }
+      .source svg { width: 12px; height: 12px; }
+
+      .meta { margin-top: 1.6rem; font-size: .8rem; color: var(--muted); text-align: center; }
+
+      .empty { text-align: center; padding: 4rem 1rem; color: var(--muted); }
+      .empty h1 { font-family: var(--serif); font-weight: 400; color: var(--ink); }
+
+      a:focus-visible, button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+      @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header class="brand">
+        <span class="mark">i</span><h1><b>News</b> Digest</h1>
+      </header>
+      {edition ? (
+        <>
+          <nav class="toolbar">
+            <div class="tabs" id="tabs"></div>
+            <div class="langs" id="langs">
+              <button data-lang="en">EN</button>
+              <button data-lang="pl">PL</button>
+              <button data-lang="ru">RU</button>
+            </div>
+          </nav>
+          <h2 class="edition" id="edition"></h2>
+          <div class="section-head" id="section-head"><span></span></div>
+          <div id="stories"></div>
+          <footer class="meta" id="meta"></footer>
+          <script type="application/json" id="edition-data" set:html={JSON.stringify(edition)}></script>
+        </>
+      ) : (
+        <div class="empty">
+          <h1>No edition yet</h1>
+          <p>Today’s digest is being prepared. Please check back soon.</p>
+        </div>
+      )}
+    </main>
+
+    <script is:inline>
+      const el = document.getElementById('edition-data');
+      if (el) {
+        const data = JSON.parse(el.textContent);
+        const cats = data.categories;
+        const LANGS = ['en', 'pl', 'ru'];
+        const EDITION_LABEL = { en: 'Edition', pl: 'Wydanie', ru: 'Выпуск' };
+        const UPDATED_LABEL = { en: 'Updated', pl: 'Zaktualizowano', ru: 'Обновлено' };
+        const ARROW =
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" ' +
+          'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+          '<path d="M7 17L17 7M9 7h8v8"/></svg>';
+
+        const params = new URLSearchParams(location.search);
+        let lang = params.get('lang') || localStorage.getItem('news-lang')
+          || (navigator.language || 'pl').slice(0, 2);
+        if (!LANGS.includes(lang)) lang = 'pl';
+        let active = (location.hash || '#' + (cats[0]?.slug || '')).slice(1);
+        if (!cats.some((c) => c.slug === active)) active = cats[0]?.slug;
+
+        const tabsEl = document.getElementById('tabs');
+        const storiesEl = document.getElementById('stories');
+        const editionEl = document.getElementById('edition');
+        const sectionEl = document.querySelector('#section-head span');
+        const metaEl = document.getElementById('meta');
+        const langsEl = document.getElementById('langs');
+
+        function render() {
+          tabsEl.innerHTML = '';
+          cats.forEach((c) => {
+            const b = document.createElement('button');
+            b.textContent = c.labels[lang];
+            b.setAttribute('aria-pressed', String(c.slug === active));
+            b.onclick = () => { active = c.slug; location.hash = c.slug; render(); };
+            tabsEl.appendChild(b);
+          });
+          langsEl.querySelectorAll('button').forEach((b) =>
+            b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+
+          const cat = cats.find((c) => c.slug === active);
+          editionEl.textContent = (EDITION_LABEL[lang] || EDITION_LABEL.en) + ' · ' + data.editionDate;
+          sectionEl.textContent = cat ? cat.labels[lang] : '';
+
+          storiesEl.innerHTML = '';
+          (cat?.stories || []).forEach((s) => {
+            const article = document.createElement('article');
+            const t = s.translations[lang];
+            const h = document.createElement('h2'); h.textContent = t.headline;
+            article.appendChild(h);
+            t.body.split('\n\n').forEach((para) => {
+              const p = document.createElement('p'); p.textContent = para; article.appendChild(p);
+            });
+            const foot = document.createElement('div'); foot.className = 'foot';
+            const link = document.createElement('a'); link.className = 'source';
+            link.href = s.sourceUrl; link.target = '_blank'; link.rel = 'noopener';
+            const name = document.createElement('span'); name.textContent = s.sourceName;
+            link.appendChild(name);
+            link.insertAdjacentHTML('beforeend', ARROW);
+            foot.appendChild(link);
+            article.appendChild(foot);
+            storiesEl.appendChild(article);
+          });
+
+          metaEl.textContent = data.publishedAt
+            ? (UPDATED_LABEL[lang] || UPDATED_LABEL.en) + ' ' + new Date(data.publishedAt).toLocaleString()
+            : '';
+        }
+
+        langsEl.querySelectorAll('button').forEach((b) => {
+          b.onclick = () => {
+            lang = b.dataset.lang;
+            localStorage.setItem('news-lang', lang);
+            const p = new URLSearchParams(location.search); p.set('lang', lang);
+            history.replaceState(null, '', location.pathname + '?' + p.toString() + location.hash);
+            render();
+          };
+        });
+        render();
+      }
+    </script>
+  </body>
+</html>

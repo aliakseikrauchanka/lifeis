@@ -1,0 +1,6 @@
+{
+  "name": "@lifeis/news-app",
+  "version": "0.0.0",
+  "type": "module",
+  "private": true
+}

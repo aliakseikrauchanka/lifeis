@@ -64,3 +64,5 @@ vite.config.*.timestamp*
 
 # DB migration backups (translations normalization, etc.)
 /backups/
+.vercel
+.env*

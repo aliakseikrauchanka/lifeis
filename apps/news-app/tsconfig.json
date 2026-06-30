@@ -1,0 +1,8 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "types": ["astro/client"],
+    "strictNullChecks": true
+  },
+  "include": ["src", "scripts", "test", "drizzle.config.ts", "astro.config.mjs"]
+}

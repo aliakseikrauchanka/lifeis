@@ -1,0 +1,46 @@
+{
+  "name": "news-app",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/news-app/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": { "command": "astro dev", "cwd": "apps/news-app" }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{projectRoot}/dist"],
+      "options": { "command": "astro build", "cwd": "apps/news-app" }
+    },
+    "generate": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsx scripts/generate.ts", "cwd": "apps/news-app" }
+    },
+    "db:migrate": {
+      "executor": "nx:run-commands",
+      "options": { "command": "drizzle-kit migrate", "cwd": "apps/news-app" }
+    },
+    "db:generate": {
+      "executor": "nx:run-commands",
+      "options": { "command": "drizzle-kit generate", "cwd": "apps/news-app" }
+    },
+    "db:seed": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsx src/db/seed.ts", "cwd": "apps/news-app" }
+    },
+    "logs": {
+      "executor": "nx:run-commands",
+      "options": { "command": "tsx scripts/logs.ts", "cwd": "apps/news-app" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "vitest run", "cwd": "apps/news-app" }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"]
+    }
+  }
+}

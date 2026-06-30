@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>Reuters World</title>
+  <item>
+    <title>Sample headline one</title>
+    <description>First summary text.</description>
+    <link>https://reuters.com/world/article-one</link>
+    <pubDate>Sat, 28 Jun 2026 09:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Sample headline two</title>
+    <description>Second summary text.</description>
+    <link>https://reuters.com/world/article-two</link>
+    <pubDate>Sat, 28 Jun 2026 10:00:00 GMT</pubDate>
+  </item>
+</channel></rss>

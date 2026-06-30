@@ -1,0 +1,5 @@
+{
+  "installCommand": "cd ../.. && npm install",
+  "buildCommand": "cd ../.. && npx nx build news-app",
+  "crons": [{ "path": "/api/cron/generate", "schedule": "0 0 * * *" }]
+}

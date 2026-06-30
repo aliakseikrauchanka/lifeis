@@ -105,5 +105,18 @@ services:
   #     - BE_URL=https://lifeis-production.up.railway.app
   #     - TRANSCRIPTION_LANGUAGE=ru
 
+  news-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=news
+      - POSTGRES_PASSWORD=news
+      - POSTGRES_DB=news
+    ports:
+      - '5433:5432'
+    volumes:
+      - news-db-data:/var/lib/postgresql/data
+
 volumes:
   mono-node-modules: null
+  news-db-data: null
