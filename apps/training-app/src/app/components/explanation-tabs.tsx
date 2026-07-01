@@ -6,6 +6,7 @@ import { PwnDictionaryView } from './pwn-dictionary-view';
 import { explainWord, lookupPwnDictionary, ProviderExplanation, PwnDictionaryEntry } from '../api/srs.api';
 import { useI18n } from '../i18n/i18n-context';
 import { usePwnEnabled } from '../hooks/use-pwn-enabled';
+import { useExplanationProvider } from '../hooks/use-explanation-provider';
 
 type PwnAsyncCell =
   | { status: 'loading' }
@@ -41,6 +42,7 @@ interface ExplanationTabsProps {
 export function ExplanationTabs({ word, language, active = true, explanationOnly = false }: ExplanationTabsProps) {
   const { t, locale } = useI18n();
   const [pwnEnabled] = usePwnEnabled();
+  const [explanationProvider] = useExplanationProvider();
   const showTabs = !explanationOnly && pwnEnabled && language === 'pl';
 
   const [activeTab, setActiveTab] = useState<'pwn' | 'llm'>('pwn');
@@ -81,7 +83,7 @@ export function ExplanationTabs({ word, language, active = true, explanationOnly
     setLoadingExplanation(true);
     setExplanationError(null);
     try {
-      const e = await explainWord(word, language, 'gemini', locale);
+      const e = await explainWord(word, language, explanationProvider, locale);
       setExplanation(e);
       setExplained(true);
     } catch (err) {
@@ -89,7 +91,7 @@ export function ExplanationTabs({ word, language, active = true, explanationOnly
     } finally {
       setLoadingExplanation(false);
     }
-  }, [word, language, locale]);
+  }, [word, language, locale, explanationProvider]);
 
   // In tabs mode, request the explanation automatically as soon as its tab is opened.
   // In single-view mode it stays on-demand (button below).
