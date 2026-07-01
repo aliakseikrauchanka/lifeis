@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
 import { useAudioDevices } from '@lifeis/common-ui';
-import { BookOpen, Check, Headphones, Languages, Mic, User, X } from 'lucide-react';
+import { BookOpen, Check, Headphones, Languages, Mic, Sparkles, User, X } from 'lucide-react';
 import { useState } from 'react';
 import { APP_LEVELS, useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { usePwnEnabled } from '../hooks/use-pwn-enabled';
+import { useEnabledProviders } from '../hooks/use-enabled-providers';
 import { LANGUAGE_OPTIONS } from '../constants/language-options';
+import { TRANSLATION_PROVIDERS, PROVIDER_LABELS } from '../constants/translation-providers';
 import type { CefrLevel } from '../api/srs.api';
 import { Button } from './ui/button';
 import { useI18n } from '../i18n/i18n-context';
@@ -77,6 +79,7 @@ export function ProfileMenu() {
   const [level, setLevel] = useAppLevel();
   const { nativeLanguage, trainingLanguage, setNativeLanguage, setTrainingLanguage } = useAppLanguages();
   const [pwnEnabled, setPwnEnabled] = usePwnEnabled();
+  const [enabledProviders, setEnabledProviders] = useEnabledProviders();
   const { locale, setLocale, t } = useI18n();
 
   useEffect(() => {
@@ -87,6 +90,13 @@ export function ProfileMenu() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open]);
+
+  const toggleProvider = (provider: (typeof TRANSLATION_PROVIDERS)[number], checked: boolean) => {
+    const set = new Set(enabledProviders);
+    if (checked) set.add(provider);
+    else set.delete(provider);
+    setEnabledProviders(TRANSLATION_PROVIDERS.filter((p) => set.has(p)));
+  };
 
   return (
     <>
@@ -223,6 +233,32 @@ export function ProfileMenu() {
                   />
                 </label>
                 <p className="text-xs text-muted-foreground">{t('profile.pwnHint')}</p>
+              </section>
+
+              <section className="flex flex-col gap-2">
+                <h4 className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  <Sparkles className="h-3.5 w-3.5" /> {t('profile.sectionProviders')}
+                </h4>
+                {TRANSLATION_PROVIDERS.map((provider) => {
+                  const checked = enabledProviders.includes(provider);
+                  const isLastChecked = checked && enabledProviders.length === 1;
+                  return (
+                    <label
+                      key={provider}
+                      className="flex items-center justify-between gap-3 text-sm text-foreground cursor-pointer"
+                    >
+                      <span>{PROVIDER_LABELS[provider]}</span>
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        disabled={isLastChecked}
+                        onChange={(e) => toggleProvider(provider, e.target.checked)}
+                        className="h-4 w-4 accent-violet-600 disabled:opacity-50"
+                      />
+                    </label>
+                  );
+                })}
+                <p className="text-xs text-muted-foreground">{t('profile.providersHint')}</p>
               </section>
 
               <section className="flex flex-col gap-2">
