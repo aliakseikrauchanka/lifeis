@@ -1,13 +1,14 @@
 import { useEffect } from 'react';
 import { useAudioDevices } from '@lifeis/common-ui';
-import { BookOpen, Check, Headphones, Languages, Mic, Sparkles, User, X } from 'lucide-react';
+import { BookOpen, Check, Headphones, Languages, MessageSquare, Mic, Sparkles, User, X } from 'lucide-react';
 import { useState } from 'react';
 import { APP_LEVELS, useAppLevel } from '../hooks/use-app-level';
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { usePwnEnabled } from '../hooks/use-pwn-enabled';
 import { useEnabledProviders } from '../hooks/use-enabled-providers';
+import { useExplanationProvider } from '../hooks/use-explanation-provider';
 import { LANGUAGE_OPTIONS } from '../constants/language-options';
-import { TRANSLATION_PROVIDERS, PROVIDER_LABELS } from '../constants/translation-providers';
+import { TRANSLATION_PROVIDERS, PROVIDER_LABELS, EXPLANATION_PROVIDERS } from '../constants/translation-providers';
 import type { CefrLevel } from '../api/srs.api';
 import { Button } from './ui/button';
 import { useI18n } from '../i18n/i18n-context';
@@ -80,6 +81,7 @@ export function ProfileMenu() {
   const { nativeLanguage, trainingLanguage, setNativeLanguage, setTrainingLanguage } = useAppLanguages();
   const [pwnEnabled, setPwnEnabled] = usePwnEnabled();
   const [enabledProviders, setEnabledProviders] = useEnabledProviders();
+  const [explanationProvider, setExplanationProvider] = useExplanationProvider();
   const { locale, setLocale, t } = useI18n();
 
   useEffect(() => {
@@ -259,6 +261,25 @@ export function ProfileMenu() {
                   );
                 })}
                 <p className="text-xs text-muted-foreground">{t('profile.providersHint')}</p>
+              </section>
+
+              <section className="flex flex-col gap-2">
+                <h4 className="flex items-center gap-2 text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  <MessageSquare className="h-3.5 w-3.5" /> {t('profile.sectionExplanationProvider')}
+                </h4>
+                <select
+                  id="profile-explanation-provider"
+                  value={explanationProvider}
+                  onChange={(e) => setExplanationProvider(e.target.value as (typeof EXPLANATION_PROVIDERS)[number])}
+                  className="h-9 px-2 text-sm rounded-md border border-input bg-background"
+                >
+                  {EXPLANATION_PROVIDERS.map((provider) => (
+                    <option key={provider} value={provider}>
+                      {PROVIDER_LABELS[provider]}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-muted-foreground">{t('profile.explanationProviderHint')}</p>
               </section>
 
               <section className="flex flex-col gap-2">
