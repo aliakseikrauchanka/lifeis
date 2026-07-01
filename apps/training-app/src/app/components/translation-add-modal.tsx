@@ -28,6 +28,7 @@ import {
 import { useAppLanguages } from '../hooks/use-app-languages';
 import { matchesAppLanguagePair } from '../constants/language-options';
 import { useI18n } from '../i18n/i18n-context';
+import { TRANSLATION_PROVIDERS, PROVIDER_LABELS } from '../constants/translation-providers';
 
 const ORIGINAL_REC_ID = 'global-add-original';
 const TRANSLATION_REC_ID = 'global-add-translation';
@@ -57,17 +58,6 @@ function formatEntry(value: string): string {
   if (s.length === 0) return s;
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
-
-const TRANSLATION_PROVIDERS = ['claude-opus', 'claude-sonnet', 'gemini', 'deepseek', 'glosbe'] as const satisfies readonly TranslationProvider[];
-
-const PROVIDER_LABELS: Record<TranslationProvider, string> = {
-  openai: 'OpenAI',
-  deepseek: 'DeepSeek',
-  glosbe: 'Glosbe',
-  gemini: 'Gemini',
-  'claude-sonnet': 'Claude Sonnet',
-  'claude-opus': 'Claude Opus',
-};
 
 type AddFormFields = {
   original: string;
