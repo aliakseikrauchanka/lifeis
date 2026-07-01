@@ -150,8 +150,14 @@ curl -X POST https://<your-app>.vercel.app/api/cron/generate \
 { "crons": [{ "path": "/api/cron/generate", "schedule": "0 0 * * *" }] }
 ```
 
-Vercel registers the cron from `vercel.json` on deploy. Verify it under
-**Project → Settings → Cron Jobs**.
+> **⚠️ `--prebuilt` deploys ignore `vercel.json`.** The verified deploy flow uses
+> `vercel deploy --prebuilt`, which reads its configuration from the Build Output
+> API `.vercel/output/config.json` — **not** from `vercel.json`. The Astro/Vercel
+> adapter does not copy the `crons` array into that output, so a plain prebuilt
+> deploy registers **no cron** and the daily generation silently never runs.
+> `scripts/deploy.sh` fixes this by injecting the `crons` from `vercel.json` into
+> `.vercel/output/config.json` before deploying. If you deploy by hand, replicate
+> that step. After deploying, verify the job under **Project → Settings → Cron Jobs**.
 
 > **⚠️ Vercel Cron invokes the path with `GET`**, not POST, and adds
 > `Authorization: Bearer <CRON_SECRET>` automatically. The handler in
@@ -178,7 +184,7 @@ Vercel registers the cron from `vercel.json` on deploy. Verify it under
 | ------------------------ | ------ | ----------------------------------------------------- | -------------------------------- |
 | `/`                      | GET    | none                                                  | Public reading page (SSR).       |
 | `/api/edition/latest`    | GET    | none                                                  | Latest published edition (JSON). |
-| `/api/cron/generate`     | POST   | `Authorization: Bearer <CRON_SECRET>` or `x-cron-secret` | Run generation.              |
+| `/api/cron/generate`     | GET, POST | `Authorization: Bearer <CRON_SECRET>` or `x-cron-secret` | Run generation (GET = cron, POST = manual). |
 | `/api/admin/logs`        | GET    | `x-cron-secret: <CRON_SECRET>`                        | Recent generation logs.          |
 
 ---
@@ -201,5 +207,5 @@ apps/news-app/scripts/deploy.sh
 - **`vercel env pull` writes empty values** — the env vars were created as **Sensitive**, which are write-only and cannot be pulled. They still inject into deployments fine; for local migrate/seed/generate, pass the real `DATABASE_URL`/`GEMINI_API_KEY` directly (e.g. `source apps/news-app/.env.local`).
 - **`url: ''` from `drizzle-kit` even after setting `DATABASE_URL`** — a stale **Nx daemon** is holding an old (empty) env. Run `npx nx reset`, or bypass Nx: `npx drizzle-kit migrate` / `npx tsx src/db/seed.ts` from `apps/news-app`.
 - **Cron returns 401** — `CRON_SECRET` mismatch; redeploy after changing env vars so functions pick up the new value.
-- **Daily cron never generates** — the endpoint must export a `GET` handler (Vercel cron uses GET). See [§7](#7-cron-schedule).
+- **Daily cron never generates** — two independent causes: (1) `--prebuilt` deploys ignore `vercel.json`, so the `crons` must be injected into `.vercel/output/config.json` (handled by `scripts/deploy.sh`; check **Project → Settings → Cron Jobs** shows the job); (2) the endpoint must export a `GET` handler, since Vercel cron uses GET. See [§7](#7-cron-schedule).
 - **Empty page on a fresh deploy** — no edition exists yet; run [§6](#6-generate-the-first-edition).

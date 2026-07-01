@@ -1,7 +1,7 @@
 export const CATEGORY_SEED = [
   { slug: 'poland', position: 1, labels: { en: 'Poland', pl: 'Polska', ru: 'Польша' } },
   { slug: 'world', position: 2, labels: { en: 'World', pl: 'Świat', ru: 'Мир' } },
-  { slug: 'positive', position: 3, labels: { en: 'Positive', pl: 'Pozytywne', ru: 'Позитив' } },
+  { slug: 'positive', position: 3, labels: { en: 'Positive', pl: 'Pozytywy dla Kuby za darmo', ru: 'Позитив' } },
 ] as const;
 
 export const SOURCE_SEED = [
