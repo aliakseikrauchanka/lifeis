@@ -18,3 +18,11 @@ export const PROVIDER_LABELS: Record<TranslationProvider, string> = {
   'claude-sonnet': 'Claude Sonnet',
   'claude-opus': 'Claude Opus',
 };
+
+/** Providers that can produce an explanation (Glosbe cannot). */
+export const EXPLANATION_PROVIDERS: TranslationProvider[] = TRANSLATION_PROVIDERS.filter(
+  (p) => p !== 'glosbe',
+);
+
+/** Default explanation provider (preserves prior hardcoded behavior). */
+export const DEFAULT_EXPLANATION_PROVIDER: TranslationProvider = 'gemini';
