@@ -43,7 +43,7 @@ const UI_LANGUAGE_NAMES: Record<string, string> = {
   pl: 'Polish',
   es: 'Spanish',
 };
-const SUPPORTED_PROVIDERS = new Set(['openai', 'deepseek', 'glosbe', 'gemini', 'anthropic', 'claude-opus']);
+const SUPPORTED_PROVIDERS = new Set(['openai', 'deepseek', 'glosbe', 'gemini', 'claude-sonnet', 'claude-opus']);
 
 export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, genAi: GoogleGenerativeAI) => {
   const router = Router();
@@ -464,7 +464,7 @@ export const getTranslationRoutes = (client: MongoClient, openAiModel: OpenAI, g
       const result = await model.generateContent([systemPrompt, userText]);
       return result.response.text() ?? '{}';
     }
-    // anthropic | claude-opus
+    // claude-sonnet | claude-opus
     const result = await anthropic.messages.create({
       model: provider === 'claude-opus' ? 'claude-opus-4-8' : 'claude-sonnet-4-6',
       max_tokens: maxTokens,

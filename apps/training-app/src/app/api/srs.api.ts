@@ -173,7 +173,7 @@ export const deleteTranslation = async (translationId: string): Promise<void> =>
   if (!res.ok) throw new Error('Failed to delete translation');
 };
 
-export type TranslationProvider = 'openai' | 'deepseek' | 'glosbe' | 'gemini' | 'anthropic' | 'claude-opus';
+export type TranslationProvider = 'openai' | 'deepseek' | 'glosbe' | 'gemini' | 'claude-sonnet' | 'claude-opus';
 
 export interface InflectionTable {
   title: string;

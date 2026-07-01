@@ -58,14 +58,14 @@ function formatEntry(value: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-const TRANSLATION_PROVIDERS = ['claude-opus', 'anthropic', 'gemini', 'deepseek', 'glosbe'] as const satisfies readonly TranslationProvider[];
+const TRANSLATION_PROVIDERS = ['claude-opus', 'claude-sonnet', 'gemini', 'deepseek', 'glosbe'] as const satisfies readonly TranslationProvider[];
 
 const PROVIDER_LABELS: Record<TranslationProvider, string> = {
   openai: 'OpenAI',
   deepseek: 'DeepSeek',
   glosbe: 'Glosbe',
   gemini: 'Gemini',
-  anthropic: 'Claude Sonnet',
+  'claude-sonnet': 'Claude Sonnet',
   'claude-opus': 'Claude Opus',
 };
 
