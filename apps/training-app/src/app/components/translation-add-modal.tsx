@@ -29,6 +29,7 @@ import { useAppLanguages } from '../hooks/use-app-languages';
 import { matchesAppLanguagePair } from '../constants/language-options';
 import { useI18n } from '../i18n/i18n-context';
 import { TRANSLATION_PROVIDERS, PROVIDER_LABELS } from '../constants/translation-providers';
+import { useEnabledProviders } from '../hooks/use-enabled-providers';
 
 const ORIGINAL_REC_ID = 'global-add-original';
 const TRANSLATION_REC_ID = 'global-add-translation';
@@ -116,6 +117,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   const { stopListening } = useSpeechToText();
   const { nativeLanguage, trainingLanguage } = useAppLanguages();
   const { history, appendHistory, findByOriginalOrTranslation } = useTranslationAdd();
+  const [enabledProviders] = useEnabledProviders();
   const [cursor, setCursor] = useState<number | null>(null);
   const [addForm, setAddForm] = useState(() => {
     const savedOrig = !isEdit ? localStorage.getItem('modal-orig-lang') : null;
@@ -274,9 +276,9 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
     setActiveContentTab('translations');
     setExplanations({});
     setLastSource({ text: plan.sourceText, lang: plan.sourceLang });
-    setLoadingProviders(TRANSLATION_PROVIDERS);
+    setLoadingProviders(enabledProviders);
 
-    TRANSLATION_PROVIDERS.forEach(async (p) => {
+    enabledProviders.forEach(async (p) => {
       try {
         const result = await translateText(plan.sourceText, plan.targetLang, plan.sourceLang, p, locale);
         setProviderResults((prev) => ({ ...(prev ?? {}), [p]: result }));
@@ -414,6 +416,12 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
   useEffect(() => {
     if (!hasPolish && activeContentTab === 'dictionary') setActiveContentTab('translations');
   }, [hasPolish, activeContentTab]);
+
+  useEffect(() => {
+    if (enabledProviders.length > 0 && !enabledProviders.includes(activeProvider)) {
+      setActiveProvider(enabledProviders[0]);
+    }
+  }, [enabledProviders, activeProvider]);
 
   // Fetch the PWN dictionary entry on demand when the user opens the Dictionary tab (cached per word).
   useEffect(() => {
@@ -776,7 +784,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
             {providerResults && (
               <div className="rounded-md border">
                 <div className="flex flex-nowrap justify-between gap-1 px-1 border-b sticky top-0 bg-background rounded-t-md z-10 overflow-x-auto no-scrollbar">
-                  {TRANSLATION_PROVIDERS.map((p) => {
+                  {enabledProviders.map((p) => {
                     const r = providerResults[p];
                     const label = PROVIDER_LABELS[p];
                     const count = r?.translations?.length ?? 0;
