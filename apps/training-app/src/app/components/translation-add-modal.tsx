@@ -532,7 +532,7 @@ function ModalBody({ mode, editId, prefill, onClose, onChanged, onSttLanguageCha
       }}
     >
       <div
-        className="relative flex flex-col w-full h-full bg-background rounded-lg shadow-lg border overflow-hidden"
+        className="relative flex flex-col w-full max-w-3xl h-full bg-background rounded-lg shadow-lg border overflow-hidden"
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-translation-title"
